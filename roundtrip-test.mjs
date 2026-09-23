@@ -24,7 +24,7 @@ const V = new Function(region + `
     encryptBody,decryptBody,serializeFile,parseFile,kdfOk,KDF_DEFAULT,KDF_BOUNDS,MAX_ENTRIES,MAX_FILE_BYTES,emptyVault,sanitizeEntry,sanitizeEntries,sanitizeVault,sanitizeSettings,
     SETTINGS_DEFAULT,SETTINGS_ALLOWED,BG_NEVER,normalizeTotp,otpauthUri,sanitizeItems,ITEMS_MAX,ENTRY_TYPES,CAPS,mergeEntries,winner,canon,purgeTombstones,tombstone,
     totpCode,totpRemaining,genWords,passStrength,passCheck,MAX_TOMBSTONES,liveCount,tombFrom,isWiped,wipeTrash,shapeIncoming,TRASH_DAYS,MAX_TRASH,TOMBSTONE_DAYS,ts,
-    dupKey,entryType,line,bioKey,parseBioBlob,serializeBioBlob,bioWrapOk,wrapTag};`)();
+    dupKey,entryType,line,bioKey,parseBioBlob,serializeBioBlob,bioWrapOk,wrapTag,mdParse,mdInline,noteText,linesToItems,itemsToBody};`)();
 
 let pass=0, fail=0; const ok=(c,m)=>{ if(c){pass++;console.log('  ✓',m);} else {fail++;console.log('  ✗ FEHLER:',m);} };
 const throwsWith=async(fn,code,m)=>{ try{ await fn(); ok(false,m+' (kein Fehler)'); }catch(e){ ok(e&&e.message===code,m+' → '+(e&&e.message)); } };
@@ -456,6 +456,36 @@ console.log('\n[13] Verdrängung durch fremde Dateien (shapeIncoming, purgeTombs
   { const live=[mk({id:hid('d',13), title:'Lebt'})], inc0=V.sanitizeEntries(live, now);
     const out=V.shapeIncoming([], inc0);
     ok(out.length===1&&out[0]===inc0[0],'shapeIncoming reicht lebende Einträge unverändert durch (identisch)'); }
+}
+
+console.log('\n[14] Markdown-Zerlegung (mdParse/mdInline), Kopiertext, Zeilen ↔ Einträge');
+{
+  const P=V.mdParse;
+  const h=P('# Titel\n## Zwei\n### Drei\n#### Vier'); ok(h.length===4&&h[0].type==='h'&&h[0].level===1&&h[1].level===2&&h[2].level===3&&h[3].type==='p','Überschriften # bis ### — vier Rauten bleiben Absatz');
+  ok(h[0].inline.length===1&&h[0].inline[0].t==='text'&&h[0].inline[0].s==='Titel','Überschrift trägt Inline-Text');
+  const p=P('Zeile 1\nZeile 2\n\nAbsatz 2'); ok(p.length===2&&p[0].type==='p'&&p[0].inline[0].s==='Zeile 1\nZeile 2'&&p[1].inline[0].s==='Absatz 2','Absätze: Zeilenumbrüche bleiben, Leerzeile trennt');
+  const i=V.mdInline('a **fett** b *kursiv* c `code` d _unter_ e'); ok(i.map(x=>x.t).join()==='text,b,text,i,text,code,text,i,text'&&i[1].s==='fett'&&i[3].s==='kursiv'&&i[5].s==='code'&&i[7].s==='unter','Inline: fett, kursiv (* und _), Code');
+  ok(V.mdInline('2 * 3 * 4')[0].t==='text'&&V.mdInline('2 * 3 * 4').length===1,'Sternchen mit Leerzeichen sind kein Kursiv');
+  ok(V.mdInline('snake_case_name').length===1&&V.mdInline('snake_case_name')[0].t==='text','Unterstriche mitten im Wort sind kein Kursiv');
+  const l=P('- eins\n- zwei\n1. drei\n2) vier\n* fünf'); ok(l.length===3&&l[0].type==='list'&&!l[0].ordered&&l[0].items.length===2&&l[1].ordered&&l[1].items.length===2&&!l[2].ordered,'Listen: ungeordnet / geordnet / wieder ungeordnet getrennt');
+  const c=P('- [ ] offen\n- [x] erledigt\n- [X] auch\n- ohne'); ok(c[0].items.map(x=>x.check).join()==='false,true,true,'&&c[0].items[3].check===null,'Kästchen: offen/erledigt/ohne');
+  const f=P('```\ncode **nicht fett**\n\n# keine Überschrift\n```\ndanach'); ok(f.length===2&&f[0].type==='code'&&f[0].text==='code **nicht fett**\n\n# keine Überschrift'&&f[1].type==='p','Zaun-Code roh, Absatz danach');
+  const ind=P('    eingerückt\n\ttab\nnormal'); ok(ind.length===2&&ind[0].type==='code'&&ind[0].text==='eingerückt\ntab'&&ind[1].type==='p','Eingerückter Code (4 Leerzeichen / Tab)');
+  const r=P('a\n---\nb\n***\n___'); ok(r.length===5&&r[1].type==='hr'&&r[3].type==='hr'&&r[4].type==='hr'&&r.filter(x=>x.type==='hr').length===3,'Trennlinien --- *** ___');
+  const u=P('Siehe https://example.com/x und <b>kein HTML</b>'); ok(u[0].inline.length===1&&u[0].inline[0].s==='Siehe https://example.com/x und <b>kein HTML</b>','URL und HTML bleiben Text (kein Link, kein Markup)');
+  ok(P('').length===0&&P(null).length===0&&P('\n\n').length===0,'leer → keine Blöcke');
+  ok(P('a\r\nb\rc')[0].inline[0].s==='a\nb\nc','CRLF/CR normalisiert');
+  { const big='- x\n'.repeat(5000); const t0=Date.now(); const out=P(big); ok(out.length===1&&out[0].items.length===5000&&Date.now()-t0<2000,'5.000 Listenzeilen zügig zerlegt'); }
+  ok(P('#NoSpace').length===1&&P('#NoSpace')[0].type==='p','Raute ohne Leerzeichen ist keine Überschrift');
+  // Kopiertext
+  ok(V.noteText({type:'text',title:'T',body:'a\nb'})==='T\n\na\nb'&&V.noteText({type:'text',title:'',body:'nur'})==='nur','noteText: Titel + Leerzeile + Text, ohne Titel nur Text');
+  ok(V.noteText({type:'list',title:'Einkauf',items:[{text:'Milch',done:true},{text:'Brot',done:false}]})==='Einkauf\n\n- [x] Milch\n- [ ] Brot','noteText: Checkliste als - [x]-Zeilen');
+  // Text ↔ Checkliste
+  const li=V.linesToItems('Milch\n- [x] Brot\n\n* [ ] Eier\n1. nicht nummeriert weg? \n   ');
+  ok(li.length===4&&li[0].text==='Milch'&&!li[0].done&&li[1].text==='Brot'&&li[1].done&&li[2].text==='Eier'&&!li[2].done&&li[3].text==='1. nicht nummeriert weg?','linesToItems: Zeilen → Einträge, Kästchen-Marker verstanden, leere Zeilen weg');
+  ok(V.linesToItems('x\n'.repeat(300)).length===V.ITEMS_MAX,'linesToItems kappt auf ITEMS_MAX');
+  ok(V.itemsToBody([{text:'a',done:true},{text:'b',done:false}])==='- [x] a\n- [ ] b','itemsToBody: Einträge → Zeilen');
+  ok(V.canon(V.linesToItems(V.itemsToBody(li)))===V.canon(li),'Zeilen ↔ Einträge ist ein Roundtrip');
 }
 
 console.log(`\n${pass} ok, ${fail} Fehler`); process.exit(fail?1:0);

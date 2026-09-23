@@ -16,6 +16,57 @@
 <script src="app.js"></script>
 <link href="vendor/fonts/fonts.css" rel="stylesheet">
 <link href="app-theme.css" rel="stylesheet">
+<style>
+/* App-eigene Ergänzungen zum Kit (app-theme.css): Listenkarten, Editor, Checkliste, Markdown-Ansicht */
+.gate{max-width:440px;margin:6vh auto 0;}
+.gate .card{padding:26px;}
+.meter{margin-top:4px;font-size:.78rem;}
+.pin-input{letter-spacing:6px;text-align:center;font-size:1.3rem;}
+.entry .av.list{font-family:'Share Tech Mono',monospace;font-size:1.1rem;}
+.entry .meta{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:4px;}
+.entry .d{font-size:.66rem;color:var(--text-dim);letter-spacing:1px;margin-right:3px;}
+.entry.static{cursor:default;}
+.entry.static:hover{background:none;}
+.pill.fav{color:var(--yellow);border-color:rgba(255,204,68,.5);}
+.pill.pin{color:var(--neon);border-color:var(--neon-mid);}
+.pill.type{color:var(--text-mid);border-color:var(--border);}
+.pill.cat{color:var(--yellow);border-color:rgba(255,204,68,.35);text-transform:none;letter-spacing:.5px;}
+.chip.fav{color:var(--yellow);}
+.chip.fav.on{color:var(--yellow);border-color:rgba(255,204,68,.5);background:rgba(255,204,68,.1);}
+/* Editor */
+#f-body{min-height:42vh;line-height:1.55;font-size:.95rem;resize:vertical;}
+.ed-foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:6px;font-size:.7rem;color:var(--text-dim);letter-spacing:1px;}
+.ed-opts{display:flex;gap:6px 16px;flex-wrap:wrap;margin-top:12px;}
+.ed-opts label.chk{margin:0;}
+.ed-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+.ed-actions .btn{flex:1;min-width:110px;}
+.seg.md-seg{max-width:260px;margin:0 0 8px;}
+/* Checkliste im Editor: Kästchen (Kit) + Textfeld + Entfernen */
+.crow{display:flex;gap:8px;margin-bottom:6px;align-items:center;}
+.crow label.chk{margin:0;flex:none;}
+.crow input[type=text]{flex:1;min-width:0;}
+.crow .idel{flex:0 0 auto;}
+.crow.done input[type=text]{text-decoration:line-through;color:var(--text-dim);}
+/* Markdown-Ansicht: nur createElement/textContent, Links bleiben Text */
+.md{background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:3px;padding:12px 14px;min-height:42vh;color:var(--neon);font-size:.95rem;line-height:1.6;overflow-wrap:anywhere;}
+.md h2,.md h3,.md h4{font-family:'Orbitron',sans-serif;color:var(--neon);letter-spacing:1px;margin:14px 0 6px;font-weight:700;}
+.md h2{font-size:1.05rem;text-transform:uppercase;}.md h3{font-size:.95rem;}.md h4{font-size:.85rem;color:var(--text-mid);}
+.md h2:first-child,.md h3:first-child,.md h4:first-child,.md p:first-child{margin-top:0;}
+.md p{margin:6px 0;white-space:pre-wrap;}
+.md ul,.md ol{margin:6px 0 6px 22px;}
+.md li{margin:3px 0;}
+.md li.chk{list-style:none;margin-left:-18px;}
+.md li .box{display:inline-block;width:1.3em;color:var(--text-mid);}
+.md li.chk.on{color:var(--text-dim);text-decoration:line-through;}
+.md li.chk.on .box{color:var(--neon);text-decoration:none;}
+.md code{background:rgba(0,255,204,.1);padding:1px 5px;border-radius:3px;font-size:.88em;}
+.md pre{background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:3px;padding:10px;margin:8px 0;overflow-x:auto;white-space:pre;}
+.md pre code{background:none;padding:0;}
+.md hr{border:0;border-top:1px solid var(--neon-mid);margin:12px 0;}
+.md strong{color:var(--neon);font-weight:700;}
+.md em{color:var(--text-mid);font-style:italic;}
+@media (max-width:560px){ .row{flex-direction:column;} .row>*{min-width:0;width:100%;} .entry .badges{max-width:50%;} }
+</style>
 </head>
 <body>
 <div class="container">
@@ -27,19 +78,294 @@
     <div class="tagline" data-i18n="tagline">Notizen · lokal &amp; verschlüsselt · offline</div>
   </div>
 
-  <div class="card">
-    <h2 data-i18n="scaffold.title">Grundgerüst</h2>
-    <p class="muted" data-i18n="scaffold.text">Repo, Design-Kit und Dateiformat (AINV1) stehen. Die Oberfläche folgt im nächsten Schritt.</p>
-    <div class="list-count" id="ver"></div>
+  <!-- ===================== SETUP ===================== -->
+  <div id="screen-setup" class="gate hidden">
+    <div class="card">
+      <div class="lockicon"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h6"/><path d="M9 16h6"/></svg></div>
+      <h2 data-i18n="setup.title">Notizen einrichten</h2>
+      <p class="muted" data-i18n-html="setup.intro">Vergib eine starke Passphrase. Sie verschlüsselt alle Notizen direkt auf diesem Gerät (Argon2id + AES-256-GCM). <strong>Es gibt kein Backdoor und kein Reset</strong> — vergisst du die Passphrase, sind die Notizen weg.</p>
+      <label data-i18n="lbl.passphrase">Passphrase</label>
+      <input id="setup-pass1" type="password" autocomplete="new-password" autocapitalize="none" spellcheck="false" placeholder="mind. 12 Zeichen, besser eine Wortfolge" data-i18n-ph="setup.ph1" data-input="meterSetup">
+      <div id="setup-meter" class="meter"></div>
+      <label data-i18n="setup.repeat">Passphrase wiederholen</label>
+      <input id="setup-pass2" type="password" autocomplete="new-password" autocapitalize="none" spellcheck="false" data-enter="doSetup">
+      <button class="btn ghost sm" style="margin-top:10px" data-action="suggestPass" data-i18n="setup.suggest">Passphrase vorschlagen (6 Würfelwörter)</button>
+      <label style="margin-top:14px" data-i18n="setup.kdf">Schlüsselableitung (Argon2id)</label>
+      <div class="combo">
+        <button class="combo-btn" type="button" data-action="toggleCombo" data-arg="setup-kdf"><span id="cb-setup-kdf"></span><span class="caret">▾</span></button>
+        <select class="combo-native" id="setup-kdf">
+        <option value="32768" data-i18n="setup.kdfLight">Leicht — 32 MiB (ältere Geräte)</option>
+        <option value="65536" selected data-i18n="setup.kdfStd">Standard — 64 MiB</option>
+        <option value="131072" data-i18n="setup.kdfStrong">Stark — 128 MiB</option>
+      </select>
+        <div id="cm-setup-kdf" class="combo-menu hidden"></div>
+      </div>
+      <div id="setup-bench" class="muted" style="margin-top:6px"></div>
+      <div id="setup-err" class="warn hidden" style="margin-top:12px"></div>
+      <button id="setup-btn" class="btn" style="margin-top:16px;width:100%" data-action="doSetup" data-i18n="setup.create">Notizen anlegen</button>
+    </div>
   </div>
 
-  <div class="foot">Alien Investor · 100 % lokal · keine Cloud · keine Telemetrie</div>
+  <!-- ===================== LOCK ===================== -->
+  <div id="screen-lock" class="gate hidden">
+    <div class="card">
+      <div class="lockicon"><svg class="ic" viewBox="0 0 24 24"><rect x="4.5" y="10" width="15" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="14.5" r="1.3"/><path d="M12 15.8v1.6"/></svg></div>
+      <h2 data-i18n="lock.title">Notizen entsperren</h2>
+      <label data-i18n="lbl.passphrase">Passphrase</label>
+      <input id="lock-pass" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" data-enter="doUnlock">
+      <div id="lock-err" class="warn hidden" style="margin-top:12px"></div>
+      <button id="unlock-btn" class="btn" style="margin-top:16px;width:100%" data-action="doUnlock" data-i18n="lock.unlock">Entsperren</button>
+    </div>
+  </div>
+
+  <!-- ===================== AEGIS-HÜRDE (Schritt 4 aktiviert die Einrichtung) ===================== -->
+  <div id="screen-totp" class="gate hidden">
+    <div class="card">
+      <div class="lockicon"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l7 2.5v5.6c0 4.3-3 7.1-7 8.4-4-1.3-7-4.1-7-8.4V5.5L12 3z"/><path d="M9 12l2 2 4-4.2"/></svg></div>
+      <h2 data-i18n="totp.title">Zweiter Faktor</h2>
+      <p class="muted" data-i18n-html="totp.intro">Gib den aktuellen 6-stelligen Code aus deinem <strong>Aegis 2FA Manager</strong> ein.</p>
+      <input id="totp-code" class="pin-input" inputmode="numeric" maxlength="6" autocomplete="one-time-code" autocapitalize="none" spellcheck="false" placeholder="000000" data-enter="doTotp">
+      <div id="totp-err" class="warn hidden" style="margin-top:12px"></div>
+      <button id="totp-btn" class="btn" style="margin-top:16px;width:100%" data-action="doTotp" data-i18n="totp.confirm">Bestätigen</button>
+      <button class="btn ghost sm" style="margin-top:10px;width:100%" data-action="cancelTotp" data-i18n="btn.cancel">Abbrechen</button>
+    </div>
+  </div>
+
+  <!-- ===================== APP ===================== -->
+  <div id="screen-app" class="hidden">
+    <div class="tabs">
+      <button class="tab active" data-tab="list" data-action="tab" data-arg="list" data-i18n="tab.list">Notizen</button>
+      <button class="tab" data-tab="add" data-action="newEntry" data-i18n="tab.add">Neu</button>
+      <button class="tab" data-tab="backup" data-action="tab" data-arg="backup" data-i18n="tab.backup">Sicherung</button>
+      <button class="tab" data-tab="settings" data-action="tab" data-arg="settings" data-i18n="tab.settings">Einstellungen</button>
+    </div>
+
+    <!-- LISTE -->
+    <div id="tab-list" class="tabview">
+      <div class="card">
+        <div class="search-row">
+          <input id="search" type="search" placeholder="Notizen durchsuchen …" data-i18n-ph="list.search" data-input="renderList" autocomplete="off" autocapitalize="none" spellcheck="false">
+          <button class="btn sm" data-action="newEntry" title="Neue Notiz" data-i18n-title="list.newTitle">+</button>
+          <button id="trash-btn" class="btn sm icon ghost" data-action="openTrash" title="Papierkorb" aria-label="Papierkorb"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M9.5 7V5.5A1.5 1.5 0 0 1 11 4h2a1.5 1.5 0 0 1 1.5 1.5V7"/><path d="M6.6 7l.8 12a2 2 0 0 0 2 1.9h5.2a2 2 0 0 0 2-1.9L17.4 7"/><path d="M10 11v6"/><path d="M14 11v6"/></svg><span id="trash-n"></span></button>
+        </div>
+        <div id="cat-chips" class="chips"></div>
+        <div id="backup-hint"></div>
+        <div id="entry-list"></div>
+      </div>
+    </div>
+
+    <!-- PAPIERKORB (eigene Ansicht ohne Tab-Knopf; „Notizen“ bleibt markiert) -->
+    <div id="tab-trash" class="tabview hidden">
+      <div class="card">
+        <h2 data-i18n="trash.title">Papierkorb</h2>
+        <p class="muted" data-i18n-html="trash.intro">Gelöschte Notizen bleiben <strong>30 Tage</strong> hier und lassen sich zurückholen, höchstens <strong>200</strong> gleichzeitig — ist der Papierkorb voll, vernichtet jede weitere Löschung die älteste sofort. Danach wird der Inhalt beim nächsten Entsperren endgültig gelöscht; die Löschmarke für den Abgleich bleibt noch bis ein Jahr nach dem Löschen. <strong>Solange eine Notiz hier liegt, steht sie auch in jedem Backup dieses Geräts.</strong> „Endgültig löschen“ vernichtet sie sofort. <strong>Der Papierkorb ist gerätelokal:</strong> die Löschung wandert beim Zusammenführen auf deine anderen Geräte, der Inhalt nicht — wiederherstellen kannst du nur dort, wo du gelöscht hast.</p>
+        <div id="trash-msg" class="muted" style="margin-top:8px"></div>
+        <div id="trash-list" style="margin-top:12px"></div>
+        <div class="row" style="margin-top:14px">
+          <button class="btn ghost" data-action="tab" data-arg="list" data-i18n="trash.back">Zurück zu den Notizen</button>
+          <button id="trash-empty-btn" class="btn danger" data-action="emptyTrash" data-i18n="trash.emptyBtn">Papierkorb leeren</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- EDITOR (Notiz / Checkliste, Autosave — kein Speichern-Knopf) -->
+    <div id="tab-add" class="tabview hidden">
+      <div class="card">
+        <h2 id="add-title">Neue Notiz</h2>
+        <div class="seg" id="f-type-seg">
+          <button id="ft-text" class="on" type="button" data-action="changeEntryType" data-arg="text" data-i18n="type.text">Notiz</button>
+          <button id="ft-list" type="button" data-action="changeEntryType" data-arg="list" data-i18n="type.list">Checkliste</button>
+        </div>
+        <label data-i18n="f.title">Titel</label>
+        <input id="f-title" type="text" maxlength="200" autocomplete="off" autocapitalize="sentences" spellcheck="false" placeholder="Titel (leer = erste Zeile des Textes)" data-i18n-ph="f.titlePh" data-input="editorChanged">
+        <label data-i18n="f.cat">Kategorie</label>
+        <div class="combo">
+          <div class="combo-row">
+            <input id="f-cat" type="text" maxlength="40" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="z.B. Privat, Arbeit, Ideen — leer = keine" data-i18n-ph="f.catPh" data-input="catInput" data-action="openCatMenu">
+            <button class="btn sm ghost icon" type="button" data-action="toggleCatMenu" aria-label="Kategorie wählen">▾</button>
+          </div>
+          <div id="cat-menu" class="combo-menu hidden"></div>
+        </div>
+        <div id="grp-text">
+          <div id="md-seg" class="seg md-seg hidden" style="margin-top:12px">
+            <button id="mm-edit" class="on" type="button" data-action="mdModeEdit" data-i18n="md.edit">Text</button>
+            <button id="mm-view" type="button" data-action="mdModeView" data-i18n="md.view">Ansicht</button>
+          </div>
+          <label data-i18n="f.body">Text</label>
+          <textarea id="f-body" maxlength="100000" autocomplete="off" autocapitalize="sentences" spellcheck="false" placeholder="Hier schreiben …" data-i18n-ph="f.bodyPh" data-input="editorChanged"></textarea>
+          <div id="md-view" class="md hidden"></div>
+        </div>
+        <div id="grp-list" class="hidden">
+          <label data-i18n="f.items">Einträge</label>
+          <div id="f-items"></div>
+          <div class="row" style="margin-top:6px">
+            <button id="f-iadd" class="btn sm ghost" type="button" data-action="addItemRow" data-i18n="f.itemAdd">+ Zeile</button>
+            <button class="btn sm ghost" type="button" data-action="sortDone" data-i18n="f.sortDone">Erledigte nach unten</button>
+          </div>
+        </div>
+        <div class="ed-foot"><span id="ed-count"></span><span id="ed-meta"></span></div>
+        <div class="ed-opts">
+          <label class="chk"><input type="checkbox" id="f-pinned" data-change="editorChanged"> <span data-i18n="f.pinned">Oben anheften</span></label>
+          <label class="chk"><input type="checkbox" id="f-fav" data-change="editorChanged"> <span data-i18n="f.fav">Favorit</span></label>
+          <label class="chk" id="f-md-wrap"><input type="checkbox" id="f-md" data-change="mdToggle"> <span data-i18n="f.md">Markdown-Ansicht</span></label>
+        </div>
+        <div id="add-err" class="warn hidden" style="margin-top:10px"></div>
+        <div class="ed-actions">
+          <button class="btn" type="button" data-action="doneEditor" data-i18n="ed.done">Fertig</button>
+          <button class="btn ghost" type="button" data-action="copyCurrent" data-i18n="ed.copy">Kopieren</button>
+          <button id="ed-del" class="btn danger hidden" type="button" data-action="deleteCurrent" data-i18n="ed.delete">Löschen</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SICHERUNG -->
+    <div id="tab-backup" class="tabview hidden">
+      <div class="card">
+        <h2 data-i18n="bk.title">Verschlüsseltes Backup</h2>
+        <p class="muted" data-i18n-html="bk.intro">Die <code>.notes</code>-Datei enthält alle Notizen <strong>verschlüsselt</strong> (Argon2id + AES-256-GCM) — sie lässt sich nur mit der Passphrase öffnen. Für den Abgleich zwischen Geräten z.B. über Syncthing; nie unverschlüsselt exportiert.</p>
+        <button class="btn" style="margin-top:8px" data-action="exportVault"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v11"/><path d="M8 11.5l4 4 4-4"/><path d="M5 19.5h14"/></svg> <span data-i18n="bk.export">Backup erstellen (.notes)</span></button>
+        <p id="bk-msg" class="muted" style="margin-top:10px"></p>
+      </div>
+      <div class="card">
+        <h2 data-i18n="bk.importTitle">Backup importieren (zusammenführen)</h2>
+        <p class="muted" data-i18n-html="bk.importIntro">Führt eine <code>.notes</code>-Datei mit diesen Notizen zusammen: je Notiz gewinnt die <strong>neuere Änderung</strong>, Löschungen werden übernommen. Die Datei darf eine andere Passphrase haben — deine lokale bleibt unverändert.</p>
+        <input type="file" id="vault-file" accept=".notes,application/json,application/octet-stream" class="hidden" data-change="importVault">
+        <button class="btn ghost" style="margin-top:8px" data-action="pickFile" data-arg="vault-file" data-i18n="bk.pick">.notes-Datei wählen</button>
+        <div id="import-pass-box" class="hidden" style="margin-top:12px">
+          <label data-i18n="bk.filePass">Passphrase der Datei</label>
+          <input id="import-pass" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" data-enter="doImportVault">
+          <div class="row" style="margin-top:10px">
+            <button id="import-btn" class="btn" data-action="doImportVault" data-i18n="bk.doImport">Zusammenführen</button>
+            <button class="btn ghost" data-action="cancelImport" data-i18n="btn.cancel">Abbrechen</button>
+          </div>
+        </div>
+        <div id="import-msg" class="muted" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <!-- EINSTELLUNGEN -->
+    <div id="tab-settings" class="tabview hidden">
+      <div class="card">
+        <h2 data-i18n="set.secTitle">Sperren</h2>
+        <label data-i18n="set.autolock">Sperren nach Inaktivität</label>
+        <div class="combo" style="max-width:260px">
+          <button class="combo-btn" type="button" data-action="toggleCombo" data-arg="set-autolock"><span id="cb-set-autolock"></span><span class="caret">▾</span></button>
+          <select class="combo-native" id="set-autolock" data-change="setAutolock">
+          <option value="0" data-i18n="set.off">Aus</option>
+          <option value="1" data-i18n="set.al1">1 Minute</option>
+          <option value="2" data-i18n="set.al2">2 Minuten</option>
+          <option value="5" data-i18n="set.al5">5 Minuten</option>
+          <option value="15" data-i18n="set.al15">15 Minuten</option>
+        </select>
+          <div id="cm-set-autolock" class="combo-menu hidden"></div>
+        </div>
+        <label data-i18n="set.bgLock">Sperren im Hintergrund nach</label>
+        <div class="combo" style="max-width:260px">
+          <button class="combo-btn" type="button" data-action="toggleCombo" data-arg="set-bglock"><span id="cb-set-bglock"></span><span class="caret">▾</span></button>
+          <select class="combo-native" id="set-bglock" data-change="setBgLock">
+          <option value="0" data-i18n="set.bg0">sofort</option>
+          <option value="60" data-i18n="set.bg60">1 Minute</option>
+          <option value="300" data-i18n="set.bg300">5 Minuten</option>
+          <option value="1800" data-i18n="set.bg1800">30 Minuten</option>
+          <option value="-1" data-i18n="set.bgNever">nie</option>
+        </select>
+          <div id="cm-set-bglock" class="combo-menu hidden"></div>
+        </div>
+        <p class="muted" style="margin-top:8px" data-i18n="set.lockNote">Ab Werk aus: Die Notizen bleiben offen, bis du selbst sperrst oder die App beendet wird. „Nie“ im Hintergrund heißt ehrlich: Der Schlüssel bleibt im Arbeitsspeicher, bis Android den Prozess beendet; die Datei auf dem Gerät ist trotzdem immer verschlüsselt. Änderungen im Editor werden beim Tippen gespeichert, vor jeder Sperre.</p>
+        <label data-i18n="set.clip">Zwischenablage leeren nach</label>
+        <div class="combo" style="max-width:260px">
+          <button class="combo-btn" type="button" data-action="toggleCombo" data-arg="set-clip"><span id="cb-set-clip"></span><span class="caret">▾</span></button>
+          <select class="combo-native" id="set-clip" data-change="setClipClear">
+          <option value="15" data-i18n="set.c15">15 Sekunden</option>
+          <option value="30" data-i18n="set.c30">30 Sekunden</option>
+          <option value="60" data-i18n="set.c60">1 Minute</option>
+          <option value="0" data-i18n="set.cOff">nur beim Sperren (aus)</option>
+        </select>
+          <div id="cm-set-clip" class="combo-menu hidden"></div>
+        </div>
+        <p class="muted" style="margin-top:8px" data-i18n="set.clipNote">Notizen sind nicht immer geheim, deshalb lässt sich das abschalten. In der Android-App wird Kopiertes als „sensibel“ markiert — die System-Vorschau zeigt den Inhalt dann nicht an (Android 13+). Ab Android 13 leert das System die Zwischenablage zusätzlich nach etwa einer Stunde selbst.</p>
+        <div style="margin-top:14px">
+          <button class="btn ghost" data-action="lockNow"><svg class="ic" viewBox="0 0 24 24"><rect x="4.5" y="10" width="15" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> <span data-i18n="set.lockNow">Jetzt sperren</span></button>
+        </div>
+      </div>
+      <div class="card">
+        <h2 data-i18n="set.cpTitle">Passphrase ändern</h2>
+        <label data-i18n="set.cpCur">Aktuelle Passphrase</label><input id="cp-cur" type="password" autocomplete="off" autocapitalize="none" spellcheck="false">
+        <label data-i18n="set.cpNew">Neue Passphrase</label><input id="cp1" type="password" autocomplete="new-password" autocapitalize="none" spellcheck="false" data-input="meterCp">
+        <div id="cp-meter" class="meter"></div>
+        <label data-i18n="set.cpRepeat">Wiederholen</label><input id="cp2" type="password" autocomplete="new-password" autocapitalize="none" spellcheck="false">
+        <div id="cp-err" class="warn hidden" style="margin-top:10px"></div>
+        <button id="cp-btn" class="btn" style="margin-top:12px" data-action="changePass" data-i18n="set.cpBtn">Ändern</button>
+        <p class="muted" style="margin-top:10px" data-i18n="set.cpNote">Beim Wechsel wird auch der interne Datenschlüssel erneuert. Bereits exportierte .notes-Backups behalten ihre alte Passphrase.</p>
+      </div>
+      <div class="card">
+        <h2 data-i18n="set.themeTitle">Darstellung</h2>
+        <div class="seg">
+          <button id="th-dark" class="on" type="button" data-action="theme" data-arg="dark" data-i18n="set.themeDark">Schwarz (Neon)</button>
+          <button id="th-soft" type="button" data-action="theme" data-arg="soft" data-i18n="set.themeSoft">Soft (Marine)</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2 data-i18n="set.dangerTitle">Gefahrenzone</h2>
+        <button class="btn danger" data-action="wipeLocal" data-i18n="set.wipe">Notizen auf diesem Gerät löschen</button>
+        <p class="muted" style="margin-top:10px" data-i18n-html="set.wipeNote">Entfernt die verschlüsselten Notizen nur auf <em>diesem</em> Gerät. Exportierte <code>.notes</code>-Dateien bleiben bestehen. Kein sicheres Überschreiben des Speichers — dafür sorgt die Verschlüsselung.</p>
+        <p class="muted" style="margin-top:10px" id="about-line"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span data-i18n="foot.line1">Alien Investor · Alien Notes · 100 % lokal · keine Cloud · keine Telemetrie</span><br>
+    <span data-i18n="foot.line2">Verschlüsselung: Argon2id · AES-256-GCM · WebCrypto</span><br>
+    <a href="https://alien-investor.org/spenden.html" target="_blank" rel="noopener noreferrer" style="color:var(--neon);text-decoration:none;display:inline-block;margin-top:10px;letter-spacing:2px;"><svg class="ic" viewBox="0 0 24 24" style="width:1.4em;height:1.4em;vertical-align:-0.32em;margin-right:.2em"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span data-i18n="foot.donate">Energie aufladen · Spenden</span></a>
+  </div>
 </div>
 
+<!-- ===================== HANDBUCH ===================== -->
 <div id="help-overlay" class="help-overlay hidden">
   <div class="help-inner">
-    <div class="help-head"><div class="logo" data-i18n="help.title">Handbuch</div><button class="btn sm ghost" data-action="closeHelp">✕</button></div>
-    <p data-i18n="help.p1">Alien Notes ist im Bau. Das Handbuch kommt zusammen mit der Oberfläche.</p>
+    <div class="help-head">
+      <div class="logo" data-i18n="help.title">Handbuch</div>
+      <button class="btn ghost sm" data-action="closeHelp" data-i18n="help.closeX">Schließen ✕</button>
+    </div>
+    <h2 data-i18n="help.h1">Was ist Alien Notes?</h2>
+    <p data-i18n-html="help.p1">Eine <strong>lokale, verschlüsselte Notizen-App</strong> für Notizen und Checklisten. Läuft komplett <strong>offline</strong> — keine Cloud, kein Server, keine Telemetrie, kein Konto. Die Android-App hat nicht einmal eine Internet-Berechtigung. Deine Notizen verlassen das Gerät nie im Klartext.</p>
+    <p class="warn" data-i18n="help.warn">⚠ Es gibt kein Reset und kein Backdoor. Vergisst du die Passphrase, sind die Notizen unwiederbringlich weg. Mach regelmäßig Backups und bewahre die Passphrase sicher auf.</p>
+    <h2 data-i18n="help.h2">Erste Schritte</h2>
+    <ul data-i18n-html="help.l2">
+      <li><strong>Passphrase wählen</strong> — mindestens 12 Zeichen, besser sechs Würfelwörter (der Vorschlag-Knopf baut sie aus der EFF-Liste). Aufschreiben und sicher verwahren.</li>
+      <li><strong>+</strong> legt eine Notiz an. Der Titel darf leer bleiben — dann dient die erste Zeile des Textes als Titel. Einen Speichern-Knopf gibt es nicht: Die App speichert beim Tippen und beim Verlassen der Notiz.</li>
+      <li><strong>Checklisten:</strong> Schalte eine Notiz auf „Checkliste“ — jede Zeile wird ein Eintrag mit Kästchen; „Erledigte nach unten“ sortiert abgehakte Einträge ans Ende. Zurückschalten macht aus den Einträgen „- [x] …“-Zeilen.</li>
+      <li><strong>Kategorien</strong> wirken wie Ordner: frei eintippen (Vorschläge aus vorhandenen). Die Liste filtert über die Chips oben; der ★-Chip zeigt nur Favoriten. Angeheftete Notizen stehen immer ganz oben.</li>
+      <li>Die Suche findet Titel, Text, Checklisten-Einträge und Kategorie.</li>
+    </ul>
+    <h2 data-i18n="help.h3">Markdown-Ansicht</h2>
+    <p data-i18n-html="help.p3">Jede Notiz hat einen Schalter „Markdown-Ansicht“. Bearbeitet wird immer im reinen Textfeld; die Ansicht stellt eine kleine Untermenge dar: Überschriften (<code>#</code> bis <code>###</code>), <strong>fett</strong> (<code>**…**</code>), <em>kursiv</em> (<code>*…*</code>), Listen (<code>-</code>, <code>1.</code>), Kästchen (<code>- [ ]</code>, <code>- [x]</code>), Code (<code>`…`</code> oder ```-Blöcke), Trennlinien (<code>---</code>). Links werden bewusst nur als Text gezeigt, nie anklickbar — die App hat ohnehin kein Netz.</p>
+    <h2 data-i18n="help.h4">Sperren</h2>
+    <p data-i18n-html="help.p4">Anders als ein Passwort-Manager bleiben die Notizen ab Werk offen: keine Sperre nach Inaktivität, im Hintergrund erst nach 30 Minuten. Beides lässt sich in den Einstellungen wählen, bis hin zu „nie“ — das heißt ehrlich: Der Schlüssel bleibt im Arbeitsspeicher, bis Android den Prozess beendet. Die Datei auf dem Gerät ist immer verschlüsselt, egal was du wählst. „Jetzt sperren“ löscht Schlüssel und alles Angezeigte sofort. Die Android-App verbietet Screenshots und zeigt im App-Umschalter keine Vorschau.</p>
+    <h2 data-i18n="help.hTrash">Papierkorb</h2>
+    <p data-i18n-html="help.pTrash">Gelöschte Notizen wandern für <strong>30 Tage</strong> in den Papierkorb — das Symbol rechts neben dem <strong>+</strong> in der Suchzeile; die Zahl daneben sagt, wie viel drinliegt. Er zeigt nur <strong>Titel, Typ und Löschdatum</strong>. <strong>Der Papierkorb fasst 200 Notizen</strong>; ist er voll, vernichtet die nächste Löschung die älteste sofort und endgültig, und die Rückfrage nennt sie. <strong>Ehrlich:</strong> Solange eine Notiz im Papierkorb liegt, steht sie auch in jedem Backup dieses Geräts. Wer etwas sofort loswerden will, nutzt „Endgültig löschen“ oder „Papierkorb leeren“. <strong>Der Papierkorb ist gerätelokal:</strong> Eine Löschung wandert beim Zusammenführen auf deine anderen Geräte, der <em>Inhalt</em> nicht. Wiederherstellen geht also nur auf dem Gerät, auf dem du gelöscht hast.</p>
+    <h2 data-i18n="help.h7">Backup &amp; Sync</h2>
+    <ul data-i18n-html="help.l7">
+      <li><strong>Backup erstellen</strong> schreibt eine <code>.notes</code>-Datei (verschlüsselt mit deiner Passphrase). Sie darf bedenkenlos in Syncthing, auf einen Stick oder in ein Backup.</li>
+      <li><strong>Importieren</strong> führt zusammen: je Notiz gewinnt die neuere Änderung, Löschungen werden übernommen (ein Jahr lang). Die Datei darf eine andere Passphrase haben — deine lokale bleibt.</li>
+      <li>Mit zwei Geräten: auf beiden regelmäßig exportieren und das Backup des jeweils anderen importieren. Beide Seiten landen beim selben Stand.</li>
+      <li>Alien Pass und Alien Notes nutzen dieselbe Format-Familie, aber getrennte Dateien: Eine <code>.vault</code>-Datei wird hier abgewiesen, eine <code>.notes</code>-Datei dort — sie teilen nie Schlüssel.</li>
+    </ul>
+    <h2 data-i18n="help.h8">Zwischenablage</h2>
+    <ul data-i18n-html="help.l8">
+      <li>„Kopieren“ legt die ganze Notiz in die Zwischenablage (Titel, Text oder Checkliste als „- [x] …“-Zeilen).</li>
+      <li>Die App leert die Zwischenablage nach der eingestellten Zeit (Standard 30 s) und beim Sperren. Notizen sind nicht immer geheim, deshalb lässt sich das in den Einstellungen abschalten.</li>
+      <li>Die Android-App markiert Kopiertes als <strong>sensibel</strong>: Die System-Vorschau beim Kopieren zeigt den Inhalt nicht (Android 13+).</li>
+    </ul>
+    <h2 data-i18n="help.h9">Sicherheit im Detail</h2>
+    <ul data-i18n-html="help.l9">
+      <li><strong>Schlüsselableitung:</strong> Argon2id (Standard 64 MiB, 3 Durchläufe) aus deiner Passphrase — speicherhart, also teuer für GPU-Angriffe auf eine gestohlene Datei.</li>
+      <li><strong>Verschlüsselung:</strong> AES-256-GCM (WebCrypto). Ein zufälliger Datenschlüssel verschlüsselt die Notizen; die Passphrase verpackt nur diesen Schlüssel. Auch der Dateikopf ist authentisiert — Manipulation fällt auf.</li>
+      <li><strong>Gerät:</strong> Die Android-App fordert keine Internet-Berechtigung an, nur die für den Fingerabdruck. Sie verbietet Screenshots (FLAG_SECURE, abschaltbar) und nimmt sich aus Cloud-, adb- und Gerät-zu-Gerät-Backups heraus.</li>
+      <li><strong>Fremdcode:</strong> nur die Argon2-Bibliothek hash-wasm (MIT) und die EFF-Wortliste, beide gebündelt und beim Bauen per Hash geprüft. Kein CDN, kein Tracker.</li>
+      <li><strong>Grenzen:</strong> keine Bilder oder Anhänge, kein Teilen von Klartext, keine Passwörter je Notiz. Eine Passphrase lässt sich nicht wiederherstellen.</li>
+    </ul>
   </div>
 </div>
 <div id="toast" class="toast hidden"></div>
