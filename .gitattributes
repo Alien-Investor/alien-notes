@@ -1,0 +1,43 @@
+# git-crypt: alles verschlüsseln außer explizit ausgenommene Dateien (Muster wie Alien Pass)
+* filter=git-crypt diff=git-crypt
+
+# Klartext-Ausnahmen (git-crypt-Metadaten + diese Steuerdateien)
+.gitattributes !filter !diff
+.gitignore !filter !diff
+.git-crypt/** !filter !diff
+
+# Öffentliche Nutzer-Doku (bewusst KLARTEXT, rendert auf der Codeberg-Startseite —
+# enthält KEINE Geheimnisse). Build-/Keystore-/Deploy-Interna liegen verschlüsselt in BUILD.md/CLAUDE.md.
+/README.md !filter !diff
+/CHANGELOG.md !filter !diff
+/LICENSE !filter !diff
+
+# Auditierbarer Client-Quellcode — bewusst KLARTEXT (Open Source, offline-Prüfbarkeit).
+/index.html !filter !diff
+/app.js !filter !diff
+/app-theme.css !filter !diff
+/icon.svg !filter !diff
+/capacitor.config.json !filter !diff
+/package.json !filter !diff
+/package-lock.json !filter !diff
+/VERSION !filter !diff
+/roundtrip-test.mjs !filter !diff
+vendor/** !filter !diff
+assets/** !filter !diff
+
+# Zapstore-Publishing: Listing-Config (nur npub + öffentliche Metadaten) + Demo-Screenshots.
+/zapstore.yaml !filter !diff
+screenshots/** !filter !diff
+
+# Nativer Code (Java-Quellen für FLAG_SECURE, Backup-Regeln, SecureClip, Biometric) und der Vendor-Hash-Check
+# sind laut README „im Repo einsehbar“ — also KLARTEXT. Enthalten keine Geheimnisse (nur ~/-relative Toolchain-Pfade).
+# build-apk.sh, patch-signing.mjs, make-release.sh, BUILD.md, CLAUDE.md bleiben verschlüsselt.
+/patch-hardening.mjs !filter !diff
+/build-www.sh !filter !diff
+
+# Desktop-Hülle (Electron im Flatpak): Hauptprozess, Brücke, Build-Skripte, Flatpak-Manifest und Prüfprogramm sind die nativen
+# Teile der Desktop-Fassung — einsehbar wie patch-hardening.mjs, also KLARTEXT. Enthalten keine Geheimnisse und keine Pfade außer ~/.cache.
+desktop/** !filter !diff
+
+# Öffentlicher GPG-Release-Schlüssel (Signatur der Desktop-Pakete) — öffentlich, KLARTEXT.
+/alien-investor-release-key.asc !filter !diff

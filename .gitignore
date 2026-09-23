@@ -1,0 +1,47 @@
+# Exportierte Notizen-/Tresor-Dateien gehören NICHT ins Repo (auch verschlüsselt nicht — Nutzerdaten)
+*.notes
+*.vault
+
+# lokale Secrets / Daten
+.env
+.env.*
+data/
+
+# OS-Müll
+.DS_Store
+Thumbs.db
+
+# Claude-Code-Sessiondaten (lokale Permissions)
+.claude/
+
+# Referenzkopien (nur lokal zum Nachschlagen)
+ref/
+
+# lokale Test-Helfer (maschinenspezifischer playwright-core/Brave-Pfad)
+serve-test.mjs
+verify-*.mjs
+verify-*.png
+
+# Capacitor / Android-Build (regenerierbar aus web-Assets + capacitor.config.json)
+node_modules/
+www/
+android/
+gradle-build.log
+release-build.log
+
+# SIGNATUR-GEHEIMNISSE — NIEMALS committen
+*.keystore
+*.jks
+keystore.properties
+release-signing.properties
+
+# App-Trailer: regenerierbare Artefakte (Screenshots, Frames, Karten, Musik, Videos)
+trailer/out/
+trailer/musik/
+trailer/shots/
+trailer/frames/
+trailer/cards/
+trailer/thumbs/
+
+# Desktop-Build (regenerierbar: Electron entpackt, app.asar, Flatpak-Bauordner)
+desktop/build/

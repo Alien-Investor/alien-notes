@@ -1,0 +1,206 @@
+/* app-theme.css — Alien-Investor App-Design (Offline-Android-Apps, Capacitor-WebView)
+   Quelle: Alien Pass v1.5.1 (16.09.2026). Referenz-App bleibt Alien Pass — Änderungen dort zuerst, dann hierher.
+   Regeln: keine externen Ressourcen, Schriften lokal (fonts/fonts.css), Symbole als data:-SVG (CSP img-src 'self' data:),
+   Farben NUR über die Variablen, damit beide Darstellungen („Schwarz (Neon)“ / „Soft (Navy)“) automatisch mitziehen. */
+
+/* ===== Farben / Darstellungen ===== */
+:root{
+  --neon:#00ffcc; --neon-dim:rgba(0,255,204,.15); --neon-mid:rgba(0,255,204,.4);
+  --red:#ff4466; --red-dim:rgba(255,68,102,.15);
+  --yellow:#ffcc44; --orange:#ff8844;
+  --bg:#000; --card-bg:#050f0d; --border:rgba(0,255,204,.2);
+  --text-dim:#4a7a6d; --text-mid:#7ab8a8;
+}
+[data-theme="soft"]{
+  --neon:#00c8a0; --neon-dim:rgba(0,200,160,.15); --neon-mid:rgba(0,200,160,.35);
+  --bg:#0d1a2b; --card-bg:#0f2535; --border:rgba(0,200,160,.18);
+  --text-dim:#5d8f82; --text-mid:#8ac8b8; --red:#e03355; --red-dim:rgba(224,51,85,.15);
+}
+[data-theme="soft"] body::after{opacity:.35;}
+
+/* ===== Grundlage: Sternenhimmel + Scanlines ===== */
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--neon);font-family:'Share Tech Mono',monospace;min-height:100vh;overflow-x:hidden;position:relative;}
+body::before{content:'';position:fixed;inset:0;background-image:
+ radial-gradient(1px 1px at 10% 15%,rgba(0,255,204,.4) 0%,transparent 100%),
+ radial-gradient(1px 1px at 30% 40%,rgba(0,255,204,.25) 0%,transparent 100%),
+ radial-gradient(1px 1px at 55% 20%,rgba(0,255,204,.35) 0%,transparent 100%),
+ radial-gradient(1px 1px at 70% 60%,rgba(0,255,204,.2) 0%,transparent 100%),
+ radial-gradient(1px 1px at 85% 30%,rgba(0,255,204,.3) 0%,transparent 100%),
+ radial-gradient(1px 1px at 20% 75%,rgba(0,255,204,.2) 0%,transparent 100%),
+ radial-gradient(1px 1px at 45% 85%,rgba(0,255,204,.3) 0%,transparent 100%),
+ radial-gradient(1px 1px at 90% 80%,rgba(0,255,204,.25) 0%,transparent 100%);
+ pointer-events:none;z-index:0;}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.15) 2px,rgba(0,0,0,.15) 4px);pointer-events:none;z-index:1;}
+.container{position:relative;z-index:2;max-width:900px;margin:0 auto;padding:24px 16px 60px;}
+a{color:var(--neon);}
+.hidden{display:none!important;}
+.center{text-align:center;}
+
+/* ===== Kopf: Logo, Tagline, Sprach- und Hilfe-Knopf ===== */
+.app-head{text-align:center;position:relative;margin-bottom:24px;}
+.header-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(400px,100%);height:100px;background:radial-gradient(ellipse,rgba(0,255,204,.08) 0%,transparent 70%);pointer-events:none;}
+.logo{font-family:'Orbitron',sans-serif;font-size:clamp(1.3rem,4vw,1.9rem);font-weight:900;letter-spacing:4px;text-transform:uppercase;color:var(--neon);text-shadow:0 0 20px rgba(0,255,204,.7),0 0 40px rgba(0,255,204,.3);}
+.app-head .logo{padding:0 52px;min-height:36px;display:flex;align-items:center;justify-content:center;text-align:center;}
+@media(max-width:520px){.app-head .logo{letter-spacing:2px;font-size:clamp(1rem,4.4vw,1.5rem);}}
+.tagline{font-size:.72rem;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase;margin-top:6px;}
+.help-btn{position:absolute;top:0;right:0;width:36px;height:36px;border:1px solid var(--neon-mid);border-radius:50%;background:var(--neon-dim);color:var(--neon);font-family:'Orbitron',sans-serif;font-weight:700;font-size:1.05rem;cursor:pointer;z-index:5;display:flex;align-items:center;justify-content:center;}
+.lang-btn{position:absolute;top:0;left:0;height:36px;padding:0 10px;border:1px solid var(--neon-mid);border-radius:18px;background:var(--neon-dim);color:var(--neon);font-family:'Orbitron',sans-serif;font-weight:700;font-size:.7rem;letter-spacing:1px;cursor:pointer;z-index:5;}
+.lang-btn:hover,.help-btn:hover{box-shadow:0 0 12px rgba(0,255,204,.45);}
+
+/* ===== Karten, Überschriften, Hinweise ===== */
+.card{background:var(--card-bg);border:1px solid var(--border);border-radius:4px;padding:18px;margin-bottom:16px;}
+.card p,.card li,.card code{overflow-wrap:break-word;}
+.card h2{font-family:'Orbitron',sans-serif;font-size:.85rem;letter-spacing:2px;text-transform:uppercase;color:var(--neon);margin-bottom:14px;font-weight:700;}
+.muted{color:var(--text-dim);font-size:.78rem;line-height:1.5;}
+.warn{border:1px solid rgba(255,136,68,.4);border-radius:4px;background:rgba(255,136,68,.06);padding:12px;color:var(--orange);font-size:.78rem;line-height:1.5;}
+.ok{border:1px solid var(--neon-mid);border-radius:4px;background:var(--neon-dim);padding:12px;color:var(--neon);font-size:.78rem;line-height:1.5;}
+.foot{text-align:center;color:var(--text-dim);font-size:.7rem;letter-spacing:1px;margin-top:30px;line-height:1.7;}
+
+/* ===== Sperr-/Einrichtungsbildschirm ===== */
+.gate{max-width:440px;margin:6vh auto 0;}
+.gate .card{padding:26px;}
+.lockicon{display:flex;justify-content:center;margin-bottom:10px;}
+.lockicon .ic{width:2.6rem;height:2.6rem;stroke-width:1.3;color:var(--neon);filter:drop-shadow(0 0 10px rgba(0,255,204,.6));}
+.meter{margin-top:4px;font-size:.78rem;}
+
+/* ===== Linien-Symbole (inline <svg class="ic" viewBox="0 0 24 24">, Strich = currentColor) ===== */
+.ic{width:1.1em;height:1.1em;vertical-align:-0.18em;display:inline-block;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 3px rgba(0,255,204,.45));}
+.btn .ic{stroke-width:1.9;flex-shrink:0;}   /* .btn ist inline-flex: bricht der Text um, staucht der Browser das SVG sonst auf Punktgröße (Sachwert-Tresor v3.0) */
+
+/* ===== Formular ===== */
+label{display:block;font-size:.72rem;letter-spacing:1px;color:var(--text-mid);margin:10px 0 4px;text-transform:uppercase;}
+input,select,textarea{width:100%;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:3px;color:var(--neon);font-family:'Share Tech Mono',monospace;font-size:.9rem;padding:9px 10px;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--neon-mid);box-shadow:0 0 8px rgba(0,255,204,.25);}
+/* Autofill (Passwortmanager): Browser legt sonst ein helles Feld mit eigener Schriftfarbe drüber. Hintergrund lässt sich nicht direkt setzen, daher Innenschatten. */
+input:-webkit-autofill,input:-webkit-autofill:hover{-webkit-text-fill-color:var(--neon);caret-color:var(--neon);box-shadow:0 0 0 1000px var(--bg) inset;transition:background-color 600000s 0s,color 600000s 0s;}
+input:-webkit-autofill:focus{box-shadow:0 0 0 1000px var(--bg) inset,0 0 8px rgba(0,255,204,.25);}
+textarea{min-height:80px;resize:vertical;}
+select option{background:#06120f;}
+input[type=range]{accent-color:var(--neon);padding:0;height:26px;}
+
+/* Kästchen: nie das native Weiß/Blau. <label class="chk"><input type="checkbox"> Text</label> */
+label.chk{display:flex;gap:6px;align-items:center;cursor:pointer;text-transform:none;letter-spacing:0;font-size:.8rem;}
+.chk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:6px 12px;margin-top:6px;}
+input[type=checkbox]{-webkit-appearance:none;appearance:none;flex:none;width:18px;height:18px;padding:0;margin:0;border:1px solid var(--neon-mid);border-radius:3px;background:rgba(0,0,0,.4) center/14px 14px no-repeat;cursor:pointer;transition:background-color .15s,box-shadow .15s;}
+input[type=checkbox]:checked{background-color:var(--neon);border-color:var(--neon);box-shadow:0 0 8px var(--neon-mid);
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");}
+input[type=checkbox]:focus{box-shadow:none;}
+input[type=checkbox]:focus-visible{outline:none;box-shadow:0 0 0 2px var(--neon-mid);}
+input[type=checkbox]:checked:focus{box-shadow:0 0 8px var(--neon-mid);}
+input[type=checkbox]:disabled{opacity:.4;cursor:default;}
+
+/* Auge im Passwortfeld: wird per JS (enhancePassFields/eyeWrap) um jedes input[type=password] gelegt.
+   Knopf data-showpass=<Feld-ID>, Zustand aria-pressed, Symbol als Maske auf ::before in Theme-Farbe. */
+.pw-wrap{position:relative;flex:1;min-width:0;}
+.pw-wrap input{padding-right:40px;}
+.pw-eye{position:absolute;top:0;right:0;bottom:0;width:38px;padding:0;margin:0;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.pw-eye::before{content:'';width:19px;height:19px;background:var(--text-mid);
+ -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") center/contain no-repeat;
+ mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") center/contain no-repeat;}
+.pw-eye[aria-pressed="true"]::before{background:var(--neon);
+ -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.9 4.2A11 11 0 0 1 12 4c7 0 11 8 11 8a18 18 0 0 1-2.3 3.3'/%3E%3Cpath d='M6.6 6.6A18 18 0 0 0 1 12s4 8 11 8a11 11 0 0 0 5.4-1.4'/%3E%3Cpath d='M9.9 9.9a3 3 0 0 0 4.2 4.2'/%3E%3Cpath d='M2 2l20 20'/%3E%3C/svg%3E");
+ mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.9 4.2A11 11 0 0 1 12 4c7 0 11 8 11 8a18 18 0 0 1-2.3 3.3'/%3E%3Cpath d='M6.6 6.6A18 18 0 0 0 1 12s4 8 11 8a11 11 0 0 0 5.4-1.4'/%3E%3Cpath d='M9.9 9.9a3 3 0 0 0 4.2 4.2'/%3E%3Cpath d='M2 2l20 20'/%3E%3C/svg%3E");}
+.pw-eye:hover::before{background:var(--neon);}
+.pw-eye:focus-visible{outline:none;}
+.pw-eye:focus-visible::before{background:var(--neon);filter:drop-shadow(0 0 4px var(--neon-mid));}
+
+/* Suchfeld: Löschen-X in Theme-Farbe statt WebView-Blau (<input type="search">) */
+.search-row{display:flex;gap:8px;align-items:center;margin-bottom:12px;}
+.search-row input{flex:1;}
+input[type=search]::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;width:14px;height:14px;margin-left:6px;cursor:pointer;background:var(--neon);
+ -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 6l12 12M18 6L6 18' stroke='%23000' stroke-width='2.8' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;
+ mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 6l12 12M18 6L6 18' stroke='%23000' stroke-width='2.8' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;}
+
+/* Auswahlfeld: natives <select class="combo-native"> bleibt unsichtbar als Wertspeicher, darüber Knopf #cb-<id> + Menü #cm-<id>.
+   Die aufgeklappte System-Liste der WebView ist grau und mit CSS nicht erreichbar. Datumsfeld (type=date) bleibt nativ. */
+.combo{position:relative;}
+.combo-row{display:flex;gap:8px;}
+.combo-row input{flex:1;}
+.combo-native{display:none;}
+.combo-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:3px;color:var(--neon);font-family:'Share Tech Mono',monospace;font-size:.9rem;padding:9px 10px;cursor:pointer;text-align:left;}
+.combo-btn:hover{border-color:var(--neon-mid);}
+.caret{color:var(--text-dim);flex:none;}
+.combo-menu{position:absolute;left:0;right:0;top:100%;margin-top:4px;z-index:60;background:var(--card-bg);border:1px solid var(--neon-mid);border-radius:3px;max-height:190px;overflow-y:auto;box-shadow:0 0 14px rgba(0,255,204,.2);}
+.combo-opt{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--border);color:var(--text-mid);font-family:'Share Tech Mono',monospace;font-size:.85rem;letter-spacing:1px;padding:10px;cursor:pointer;}
+.combo-opt:last-child{border-bottom:0;}
+.combo-opt:hover,.combo-opt.on{color:var(--neon);background:var(--neon-dim);}
+
+/* ===== Knöpfe ===== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--neon-dim);border:1px solid var(--neon-mid);border-radius:4px;color:var(--neon);font-family:'Orbitron',sans-serif;font-weight:700;font-size:.78rem;letter-spacing:2px;padding:10px 18px;cursor:pointer;text-transform:uppercase;transition:all .2s;text-decoration:none;}
+.btn:hover{background:rgba(0,255,204,.2);box-shadow:0 0 14px rgba(0,255,204,.4);}
+.btn:disabled{opacity:.5;cursor:default;box-shadow:none;}
+.btn.ghost{background:none;border-color:var(--border);color:var(--text-mid);}
+.btn.ghost:hover{border-color:var(--neon-mid);color:var(--neon);box-shadow:none;}
+.btn.danger{background:var(--red-dim);border-color:var(--red);color:var(--red);}
+.btn.danger:hover{box-shadow:0 0 14px rgba(255,68,102,.4);}
+.btn.sm{padding:6px 10px;font-size:.68rem;}
+.btn.icon{padding:6px 8px;letter-spacing:0;}
+.row{display:flex;gap:12px;flex-wrap:wrap;}
+.row>*{flex:1;min-width:120px;}
+
+/* ===== Tabs, Segmente, Chips ===== */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;justify-content:center;}
+.tab{background:none;border:1px solid var(--border);border-radius:2px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:.74rem;letter-spacing:2px;padding:8px 14px;cursor:pointer;text-transform:uppercase;transition:all .2s;}
+.tab:hover{color:var(--text-mid);border-color:var(--neon-mid);}
+.tab.active{color:var(--neon);background:var(--neon-dim);border-color:var(--neon-mid);}
+.seg{display:flex;gap:8px;margin-bottom:12px;}
+.seg button{flex:1;background:none;border:1px solid var(--border);color:var(--text-dim);padding:8px;border-radius:3px;cursor:pointer;font-family:inherit;font-size:.74rem;letter-spacing:1px;text-transform:uppercase;}
+.seg button.on{color:var(--neon);background:var(--neon-dim);border-color:var(--neon-mid);}
+/* Nicht waehlbare Stufe (z.B. Zeitraum ohne Daten) — ausgrauen statt verstecken, sonst springt die Leiste.
+   Sachwert-Tresor v2.12. */
+.seg button:disabled{opacity:.35;cursor:default;}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.chip{background:none;border:1px solid var(--border);border-radius:12px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:1px;padding:4px 11px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.chip.on{color:var(--neon);background:var(--neon-dim);border-color:var(--neon-mid);}
+
+/* ===== Listen & Detail (optional) ===== */
+.entry{display:flex;align-items:center;gap:12px;padding:12px 10px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.entry:hover{background:var(--neon-dim);}
+.entry .av{width:36px;height:36px;border-radius:50%;border:1px solid var(--neon-mid);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-weight:700;font-size:.9rem;color:var(--neon);background:rgba(0,0,0,.4);flex-shrink:0;}
+.entry .main{flex:1;min-width:0;}
+.entry .t{font-family:'Orbitron',sans-serif;font-size:.8rem;letter-spacing:1px;color:var(--neon);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.entry .u{font-size:.76rem;color:var(--text-mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px;}
+.entry .badges{display:flex;gap:4px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;max-width:40%;}
+.list-count{text-align:center;color:var(--text-dim);font-size:.72rem;letter-spacing:1px;padding:14px 0 2px;}
+.empty{text-align:center;color:var(--text-dim);padding:30px 10px;font-size:.82rem;line-height:1.6;}
+.pill{display:inline-block;padding:1px 7px;border-radius:10px;font-size:.62rem;letter-spacing:1px;text-transform:uppercase;border:1px solid;white-space:nowrap;}
+.pill.neon{color:var(--neon);border-color:var(--neon-mid);}
+.pill.warn{color:var(--orange);border-color:rgba(255,136,68,.5);}
+.pill.gold{color:var(--yellow);border-color:rgba(255,204,68,.5);}
+.pill.dim{color:var(--text-mid);border-color:var(--border);}
+.kv{padding:10px 0;border-bottom:1px solid var(--border);}
+.kv .k{font-size:.66rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:4px;}
+.kv .vrow{display:flex;gap:8px;align-items:flex-start;}
+.kv .v{flex:1;min-width:0;font-size:.92rem;color:var(--neon);overflow-wrap:anywhere;white-space:pre-wrap;line-height:1.5;}
+
+/* ===== Toast, Handbuch-Overlay ===== */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--card-bg);border:1px solid var(--neon-mid);color:var(--neon);padding:10px 18px;border-radius:4px;z-index:200;font-size:.8rem;letter-spacing:1px;box-shadow:0 0 20px rgba(0,255,204,.3);max-width:92vw;text-align:center;}
+.help-overlay{position:fixed;inset:0;background:rgba(0,8,6,.975);z-index:100;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.help-inner{max-width:760px;margin:0 auto;padding:0 18px 60px;}
+.help-head{display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:0;background:rgba(0,8,6,.99);padding:16px 0 12px;border-bottom:1px solid var(--neon-dim);margin-bottom:6px;z-index:2;}
+.help-head .logo{font-size:1.05rem;overflow-wrap:anywhere;text-align:left;}
+.help-inner h2{font-family:'Orbitron',sans-serif;color:var(--neon);font-size:.92rem;letter-spacing:2px;margin:24px 0 8px;text-transform:uppercase;}
+.help-inner p{font-size:.86rem;line-height:1.65;color:var(--text-mid);margin:6px 0;overflow-wrap:break-word;}
+.help-inner ul{margin:6px 0 6px 18px;}
+.help-inner li{font-size:.86rem;line-height:1.6;color:var(--text-mid);margin:4px 0;overflow-wrap:break-word;}
+.help-inner strong{color:var(--neon);}
+.help-inner code{background:rgba(0,255,204,.1);padding:1px 5px;border-radius:3px;font-size:.82rem;}
+
+/* ===== Handy ===== */
+@media (max-width:560px){
+  .row{flex-direction:column;}
+  .row>*{min-width:0;width:100%;}
+  .entry .badges{max-width:50%;}
+}
+
+/* ---------- CHART-TOOLTIP (Sachwert-Tresor v2.12) ----------
+   Ein absolut positioniertes div im .chart-wrap, KEIN SVG-<text>: ein SVG skaliert mit
+   preserveAspectRatio="none" und wuerde die Schrift verzerren. Pointer -> Datenpunkt wird nur
+   ueber die X-Achse aus getBoundingClientRect() zurueckgerechnet.
+   pointerleave DIREKT am Container registrieren, nicht per Capture-Delegation — sonst feuert es
+   schon beim Wechsel zwischen SVG-Kindelementen und der Tooltip blendet sich selbst weg. */
+.chart-cursor{stroke:var(--neon);stroke-width:.8;stroke-dasharray:3 3;opacity:.5;}
+.chart-tip{position:absolute;top:8px;pointer-events:none;background:var(--card-bg);border:1px solid var(--neon-mid);border-radius:4px;padding:5px 8px;font-size:.66rem;line-height:1.45;color:var(--text);white-space:nowrap;z-index:4;box-shadow:0 0 14px rgba(0,0,0,.5);}
+.chart-tip b{display:block;color:var(--neon);font-size:.68rem;letter-spacing:1px;margin-bottom:2px;}
+.chart-tip span{display:block;}

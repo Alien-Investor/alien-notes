@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="75%">
+      <stop offset="0%" stop-color="#0b201a"/>
+      <stop offset="60%" stop-color="#04100c"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+    <radialGradient id="head" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#3db86a"/>
+      <stop offset="70%" stop-color="#1a6635"/>
+      <stop offset="100%" stop-color="#0a2016"/>
+    </radialGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
+
+  <!-- Sternchen -->
+  <g fill="#ffffff" opacity="0.45">
+    <circle cx="172" cy="180" r="3"/><circle cx="300" cy="120" r="2"/>
+    <circle cx="724" cy="120" r="2"/><circle cx="852" cy="190" r="3"/>
+    <circle cx="150" cy="850" r="2"/><circle cx="884" cy="838" r="3"/>
+  </g>
+  <g fill="#00ffcc" opacity="0.5">
+    <circle cx="384" cy="150" r="2"/><circle cx="648" cy="872" r="2"/>
+  </g>
+
+  <!-- Alien Pass: Schlüsselring (Schlüsselkopf als Ring, Bart unten rechts) -->
+  <g transform="translate(512,512) scale(0.86) translate(-512,-512)">
+    <g filter="url(#glow)" fill="none" stroke="#00ffcc" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Ring = Schlüsselkopf -->
+      <circle cx="512" cy="470" r="330" stroke-width="24" opacity="0.9"/>
+      <circle cx="512" cy="470" r="272" stroke-width="10" stroke-dasharray="14 60" opacity="0.6"/>
+      <!-- Schlüsselschaft + Bart -->
+      <path d="M512 800 V 940" stroke-width="30"/>
+      <path d="M512 870 H 612" stroke-width="26"/>
+      <path d="M512 930 H 580" stroke-width="26"/>
+    </g>
+    <!-- Alien-Kopf im Ring -->
+    <g transform="translate(368,330) scale(8)" filter="url(#glow)">
+      <line x1="13" y1="2" x2="4" y2="-12" stroke="#00ffcc" stroke-width="1.4" stroke-linecap="round"/>
+      <circle cx="4" cy="-13" r="2.8" fill="#00ffcc"/>
+      <line x1="23" y1="2" x2="32" y2="-12" stroke="#00ffcc" stroke-width="1.4" stroke-linecap="round"/>
+      <circle cx="32" cy="-13" r="2.8" fill="#00ffcc"/>
+      <path fill="url(#head)" stroke="#00ffcc" stroke-width="0.8" d="M35 17c0 9.389-13.223 19-17 19-3.778 0-17-9.611-17-19S8.611 0 18 0s17 7.611 17 17z"/>
+      <path fill="#001a0e" stroke="#00ffcc" stroke-width="0.5" d="M13.503 14.845c3.124 3.124 4.39 6.923 2.828 8.485-1.562 1.562-5.361.297-8.485-2.828-3.125-3.124-4.391-6.923-2.828-8.485s5.361-.296 8.485 2.828zm8.994 0c-3.124 3.124-4.39 6.923-2.828 8.485 1.562 1.562 5.361.297 8.485-2.828 3.125-3.125 4.391-6.923 2.828-8.485-1.562-1.562-5.361-.297-8.485 2.828z"/>
+      <path fill="none" stroke="#001a0e" stroke-width="1.2" stroke-linecap="round" d="M12 27 Q18 33 24 27"/>
+    </g>
+    <!-- Schloss-Punkte am Ring -->
+    <g fill="#00ffcc" opacity="0.8">
+      <circle cx="512" cy="140" r="12"/><circle cx="182" cy="470" r="12"/><circle cx="842" cy="470" r="12"/>
+    </g>
+  </g>
+</svg>

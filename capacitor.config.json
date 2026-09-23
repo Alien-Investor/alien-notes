@@ -1,0 +1,6 @@
+{
+  "appId": "org.alieninvestor.notes",
+  "appName": "Alien Notes",
+  "webDir": "www",
+  "android": { "allowMixedContent": false }
+}

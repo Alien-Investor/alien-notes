@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Alien Notes — Offline-Notizen</title>
+<meta name="description" content="Alien Notes: lokale, verschlüsselte Notizen und Checklisten. Läuft komplett offline auf deinem Gerät — keine Cloud, kein Server, keine Telemetrie.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#000000">
+<!-- CSP wie Alien Pass: blockiert jede Netz-Verbindung (connect-src 'none'), fremde Quellen UND Inline-Script (kein 'unsafe-inline'
+     in script-src — alle Handler laufen über Event-Delegation in app.js). 'wasm-unsafe-eval' braucht Chromium für die
+     WebAssembly-Kompilierung (Argon2id aus vendor/hash-wasm); es erlaubt ausschließlich WASM, kein String-Eval. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<script src="vendor/hash-wasm/argon2.umd.min.js"></script>
+<script src="vendor/eff/eff-wordlist.js"></script>
+<script src="app.js"></script>
+<link href="vendor/fonts/fonts.css" rel="stylesheet">
+<link href="app-theme.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+  <div class="app-head">
+    <div class="header-glow"></div>
+    <button class="help-btn" data-action="openHelp" title="Handbuch" aria-label="Hilfe / Handbuch">?</button>
+    <button class="lang-btn" id="lang-btn" data-action="toggleLang" title="Sprache / Language">DE</button>
+    <div class="logo">Alien Notes</div>
+    <div class="tagline" data-i18n="tagline">Notizen · lokal &amp; verschlüsselt · offline</div>
+  </div>
+
+  <div class="card">
+    <h2 data-i18n="scaffold.title">Grundgerüst</h2>
+    <p class="muted" data-i18n="scaffold.text">Repo, Design-Kit und Dateiformat (AINV1) stehen. Die Oberfläche folgt im nächsten Schritt.</p>
+    <div class="list-count" id="ver"></div>
+  </div>
+
+  <div class="foot">Alien Investor · 100 % lokal · keine Cloud · keine Telemetrie</div>
+</div>
+
+<div id="help-overlay" class="help-overlay hidden">
+  <div class="help-inner">
+    <div class="help-head"><div class="logo" data-i18n="help.title">Handbuch</div><button class="btn sm ghost" data-action="closeHelp">✕</button></div>
+    <p data-i18n="help.p1">Alien Notes ist im Bau. Das Handbuch kommt zusammen mit der Oberfläche.</p>
+  </div>
+</div>
+<div id="toast" class="toast hidden"></div>
+</body>
+</html>

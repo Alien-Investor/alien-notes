@@ -1,0 +1,21 @@
+{
+  "name": "alien-notes",
+  "version": "1.0.0",
+  "description": "Alien Notes — lokale, verschlüsselte Offline-Notizen-App für GrapheneOS und Linux-Desktop (Capacitor). Keine Cloud, kein Server, keine Telemetrie.",
+  "private": true,
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://codeberg.org/Alien-Investor/alien-notes.git" },
+  "scripts": { "test": "node roundtrip-test.mjs" },
+  "dependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/cli": "^6.2.1",
+    "@capacitor/core": "^6.2.1",
+    "@capacitor/filesystem": "^6.0.4",
+    "@capacitor/share": "^6.0.4"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "hash-wasm": "4.12.0",
+    "sharp": "^0.33.5"
+  }
+}
