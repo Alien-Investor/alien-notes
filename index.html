@@ -69,6 +69,21 @@ html.desk .no-desk{display:none;}
 .md hr{border:0;border-top:1px solid var(--neon-mid);margin:12px 0;}
 .md strong{color:var(--neon);font-weight:700;}
 .md em{color:var(--text-mid);font-style:italic;}
+/* Desktop-Hülle (html.desk) im breiten Fenster: Liste links, Editor rechts statt eigener Ansicht — Android/Handy unverändert */
+.detail-empty{display:none;}
+@media (min-width:1000px){
+  html.desk .container{max-width:1400px;}
+  html.desk #tab-list{display:grid;grid-template-columns:minmax(360px,460px) minmax(0,1fr);gap:18px;align-items:start;}
+  html.desk #tab-list>.card{margin:0;}
+  html.desk #tab-add,html.desk .detail-empty{grid-column:2;grid-row:1;}
+  html.desk #tab-add{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto;}
+  html.desk #tab-add>.card{margin:0;}
+  html.desk #tab-add #f-body,html.desk #tab-add .md{min-height:50vh;}
+  html.desk .detail-empty{display:flex;align-items:center;justify-content:center;min-height:260px;border:1px dashed var(--border);border-radius:4px;color:var(--text-dim);font-size:.85rem;letter-spacing:1px;}
+  html.desk #tab-add:not(.hidden)~.detail-empty{display:none;}
+  html.desk .entry.sel{background:var(--neon-dim);box-shadow:inset 3px 0 0 var(--neon);}
+}
+@media (max-width:999px){ html.desk #tab-list.editing>.card{display:none;} }
 @media (max-width:560px){ .row{flex-direction:column;} .row>*{min-width:0;width:100%;} .entry .badges{max-width:50%;} }
 </style>
 </head>
@@ -115,6 +130,14 @@ html.desk .no-desk{display:none;}
     <div class="card">
       <div class="lockicon"><svg class="ic" viewBox="0 0 24 24"><rect x="4.5" y="10" width="15" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="14.5" r="1.3"/><path d="M12 15.8v1.6"/></svg></div>
       <h2 data-i18n="lock.title">Notizen entsperren</h2>
+      <!-- Schnell-Entsperren per PIN: nur sichtbar, solange ein PIN-Slot im Arbeitsspeicher liegt und kein Riegel gesetzt ist -->
+      <div id="pin-box" class="hidden">
+        <label data-i18n="lock.pinLabel">PIN</label>
+        <input id="lock-pin" type="password" inputmode="numeric" autocomplete="off" autocapitalize="none" spellcheck="false" data-enter="doPin">
+        <button id="pin-btn" class="btn" style="margin-top:12px;width:100%" data-action="doPin" data-i18n="lock.pinUnlock">Mit PIN entsperren</button>
+        <p id="pin-msg" class="muted hidden" style="margin-top:10px"></p>
+        <p class="muted" style="margin-top:16px" data-i18n="lock.orPass">… oder mit der Passphrase entsperren:</p>
+      </div>
       <label data-i18n="lbl.passphrase">Passphrase</label>
       <input id="lock-pass" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" data-enter="doUnlock">
       <div id="lock-err" class="warn hidden" style="margin-top:12px"></div>
@@ -159,6 +182,7 @@ html.desk .no-desk{display:none;}
         <div id="backup-hint"></div>
         <div id="entry-list"></div>
       </div>
+      <div id="detail-empty" class="detail-empty" data-i18n="d.pick">Notiz links auswählen oder neu anlegen</div>
     </div>
 
     <!-- PAPIERKORB (eigene Ansicht ohne Tab-Knopf; „Notizen“ bleibt markiert) -->
@@ -342,6 +366,21 @@ html.desk .no-desk{display:none;}
         <label class="chk"><input type="checkbox" id="set-secure" checked data-change="setSecure"> <span data-i18n="set.secure">Screenshots verbieten und die Vorschau im App-Umschalter verbergen (ab Werk an)</span></label>
         <p class="muted" style="margin-top:8px" data-i18n="set.secureNote">An: Android verweigert Screenshots und Bildschirmaufnahmen der App und zeigt im App-Umschalter eine schwarze Karte. Aus: Du kannst Screenshots deiner Notizen machen — die Vorschau im App-Umschalter zeigt dann ihren Inhalt. Gesperrt und beim Einrichten ist der Schutz immer an.</p>
       </div>
+      <div class="card only-desk hidden" id="pin-card">
+        <h2 data-i18n="set.pinTitle">Schnell-Entsperren mit PIN (bis zum Beenden)</h2>
+        <div id="pin-off">
+          <p class="muted" data-i18n-html="set.pinOffIntro">Nach einer Sperre durch Inaktivität oder Hintergrund genügt eine PIN statt der Passphrase — bis die App beendet wird, höchstens 24 Stunden. <strong>Ehrlich gesagt:</strong> Die PIN schützt nie die Notizen-Datei: Sechs Ziffern sind ein winziger Suchraum; mit den Argon2-Parametern der Datei ist er auf einer gewöhnlichen CPU in wenigen Stunden durchprobiert, auf einer einzelnen Grafikkarte in etwa zehn Minuten — als Schutz für die Datei reicht das nie, jede weitere Ziffer verzehnfacht nur den Aufwand. Sie schützt nur eine Kopie des Datenschlüssels, die beim Sperren im Arbeitsspeicher bleibt, unter der PIN verpackt; nichts davon wird gespeichert. „Gesperrt“ heißt mit PIN also nicht mehr „Schlüssel aus dem Speicher gelöscht“: Wer den Arbeitsspeicher des laufenden Programms auslesen kann, hat den verpackten Schlüssel und kann die PIN offline raten — die drei Fehlversuche sind eine Regel im Code, keine kryptografische Grenze. Drei Fehlversuche verwerfen die PIN, ebenso ein Passphrase-Wechsel, der Ablauf der 24 Stunden und das Beenden der App. „Jetzt sperren“ (Strg+L) ist der Riegel: danach einmal die Passphrase, dann gilt die PIN wieder. Wer einen Rechner mit anderen teilt oder unverschlüsselten Swap hat, lässt die PIN aus.</p>
+          <label data-i18n="set.pinNew">PIN (6–12 Ziffern)</label><input id="pin-new" type="password" inputmode="numeric" autocomplete="off" autocapitalize="none" spellcheck="false">
+          <label data-i18n="set.pinRep">PIN wiederholen</label><input id="pin-rep" type="password" inputmode="numeric" autocomplete="off" autocapitalize="none" spellcheck="false">
+          <label data-i18n="set.pinPass">Passphrase zur Bestätigung</label><input id="pin-pass" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" data-enter="pinEnable">
+          <div id="pin-err" class="warn hidden" style="margin-top:10px"></div>
+          <button id="pin-btn-on" class="btn" style="margin-top:12px" data-action="pinEnable" data-i18n="set.pinEnable">PIN einrichten</button>
+        </div>
+        <div id="pin-on" class="hidden">
+          <p class="muted"><svg class="ic" viewBox="0 0 24 24" style="color:var(--neon)"><path d="M5 12.5l4 4 10-10"/></svg> <span data-i18n="set.pinOnText">Aktiv. Nach einer Sperre genügt die PIN — bis die App beendet wird, höchstens 24 Stunden. „Jetzt sperren“ (Strg+L) verlangt einmal die Passphrase, danach gilt die PIN wieder. Drei Fehlversuche, ein Passphrase-Wechsel, der Ablauf der 24 Stunden oder das Beenden der App verwerfen sie. Nichts davon wird gespeichert; die Notizen-Datei bleibt unverändert.</span></p>
+          <button class="btn danger sm" style="margin-top:10px" data-action="pinDisable" data-i18n="set.pinDisable">PIN verwerfen</button>
+        </div>
+      </div>
       <div class="card">
         <h2 data-i18n="set.cpTitle">Passphrase ändern</h2>
         <label data-i18n="set.cpCur">Aktuelle Passphrase</label><input id="cp-cur" type="password" autocomplete="off" autocapitalize="none" spellcheck="false">
@@ -385,6 +424,16 @@ html.desk .no-desk{display:none;}
     <h2 data-i18n="help.h1">Was ist Alien Notes?</h2>
     <p data-i18n-html="help.p1">Eine <strong>lokale, verschlüsselte Notizen-App</strong> für Notizen und Checklisten. Läuft komplett <strong>offline</strong> — keine Cloud, kein Server, keine Telemetrie, kein Konto. Die Android-App hat nicht einmal eine Internet-Berechtigung. Deine Notizen verlassen das Gerät nie im Klartext.</p>
     <p class="warn" data-i18n="help.warn">⚠ Es gibt kein Reset und kein Backdoor. Vergisst du die Passphrase, sind die Notizen unwiederbringlich weg. Mach regelmäßig Backups und bewahre die Passphrase sicher auf.</p>
+    <h2 class="only-desk" data-i18n="help.hDesk">Desktop-Fassung (Linux)</h2>
+    <ul class="only-desk" data-i18n-html="help.lDesk">
+      <li><strong>Kein Netz — vom System erzwungen:</strong> Die Desktop-App läuft als Flatpak ohne Netzwerk-Berechtigung; im Käfig gibt es keine Verbindung nach außen. Zusätzlich blockt die App selbst jede Verbindung. Nachprüfen: <code>flatpak info --show-permissions org.alieninvestor.notes</code> — dort steht kein <code>network</code>.</li>
+      <li><strong>Notizen-Datei:</strong> <code>~/.var/app/org.alieninvestor.notes/data/alien-notes/notes.ainv</code> — verschlüsselt, nur für dich lesbar, bei jeder Änderung vollständig neu geschrieben (nie halb). Sonst sieht die App keine Dateien: Backup und Import laufen über den Dateidialog des Systems, der nur die gewählte Datei freigibt.</li>
+      <li><strong>Zwischenablage:</strong> Kopierte Notizen sind für KDE als Passwort markiert — Klipper nimmt sie nicht in den Verlauf. Andere Zwischenablage-Verwalter beachten die Markierung nicht unbedingt. Die App leert die Zwischenablage nach der eingestellten Zeit auch im Hintergrund und beim Beenden, aber nur, wenn noch ihre eigene Kopie drin ist. Dasselbe gilt für Text, den du in der App mit der Maus markierst (unter Linux sofort per Mittelklick einfügbar); Strg+C und Strg+X in der App kopieren wie der Kopier-Knopf.</li>
+      <li><strong>Abgleich mit dem Handy:</strong> auf dem Handy „Backup erstellen“ in einen Syncthing-Ordner, am Desktop unter Sicherung importieren — und umgekehrt. Siehe „Backup &amp; Sync“.</li>
+      <li><strong>Sperren:</strong> nach Inaktivität und beim Minimieren oder Verstecken des Fensters (Einstellung „Sperren im Hintergrund“ — „Hintergrund“ heißt hier minimiert oder versteckt; ein Wechsel zu einem anderen Fenster zählt nicht, leert aber getippte Passphrasen und PINs). Bei <strong>Bildschirmsperre und Ruhezustand sperrt die Desktop-App nicht von selbst</strong> — im Flatpak erfährt sie davon nichts. Deshalb die Sperre des Systems nutzen und bei Bedarf eine kurze Inaktivitäts-Sperre einstellen; Strg+L sperrt sofort.</li>
+      <li><strong>Tastatur:</strong> Strg+F Suche, Strg+N neue Notiz, Strg+L sperren, Esc schließt. Ab etwa 1000 Pixel Fensterbreite stehen Liste und Notiz nebeneinander.</li>
+      <li><strong>Ehrliche Grenzen:</strong> Die Desktop-App bringt ihre Browser-Engine (Electron) selbst mit — Sicherheits-Updates dafür kommen nur mit einer neuen Version der App, nicht über das System. Kein Schutz vor Bildschirmfotos (Linux kennt keine Sperre dafür). Unter X11 kann jedes laufende Programm Tastatur und Zwischenablage mitlesen; Wayland trennt Programme besser. Kein Fingerabdruck.</li>
+    </ul>
     <h2 data-i18n="help.h2">Erste Schritte</h2>
     <ul data-i18n-html="help.l2">
       <li><strong>Passphrase wählen</strong> — mindestens 12 Zeichen, besser sechs Würfelwörter (der Vorschlag-Knopf baut sie aus der EFF-Liste). Aufschreiben und sicher verwahren.</li>
@@ -399,6 +448,8 @@ html.desk .no-desk{display:none;}
     <p data-i18n-html="help.p4">Anders als ein Passwort-Manager bleiben die Notizen ab Werk offen: keine Sperre nach Inaktivität, im Hintergrund erst nach 30 Minuten. Beides lässt sich in den Einstellungen wählen, bis hin zu „nie“ — das heißt ehrlich: Der Schlüssel bleibt im Arbeitsspeicher, bis Android den Prozess beendet. Die Datei auf dem Gerät ist immer verschlüsselt, egal was du wählst. „Jetzt sperren“ löscht Schlüssel und alles Angezeigte sofort. Die Android-App verbietet Screenshots und zeigt im App-Umschalter keine Vorschau.</p>
     <h2 data-i18n="help.hAegis">Aegis-Hürde beim Entsperren</h2>
     <p data-i18n-html="help.pAegis">Optional verlangt die App nach der Passphrase einen Aegis-Code (Einstellungen → Aegis-Hürde). <strong>Was sie leistet:</strong> Wer deine Passphrase abgeschaut hat und dein entsperrtes Handy hält, kommt ohne deine Aegis-App nicht hinein. <strong>Was sie nicht leistet:</strong> Der TOTP-Schlüssel liegt in der Notizen-Datei selbst. Wer die Datei <em>und</em> die Passphrase besitzt, entschlüsselt sie außerhalb der App — das Format ist offen dokumentiert. Ein echter zweiter Faktor braucht eine Stelle, die ihn erzwingt. Für eine lokale Datei bleibt die Passphrase der einzige kryptografische Schutz; mach sie lang.</p>
+    <h2 class="only-desk" data-i18n="help.hPin">Schnell-Entsperren mit PIN (Desktop)</h2>
+    <p class="only-desk" data-i18n-html="help.pPin">Optional ersetzt eine PIN nach einer Sperre die Passphrase (Einstellungen → Schnell-Entsperren mit PIN). <strong>Wie es funktioniert:</strong> Beim Einrichten verpackt die App eine Kopie des Datenschlüssels unter einem aus deiner PIN abgeleiteten Schlüssel (Argon2id, dieselben Parameter wie die Notizen-Datei) und hält diese Kopie <em>nur im Arbeitsspeicher</em>. Eine Sperre durch Inaktivität oder den Hintergrund räumt die Sitzung wie bisher ab, diese verpackte Kopie bleibt; die PIN öffnet sie wieder. Nichts davon wird auf die Platte geschrieben, die Notizen-Datei bleibt unverändert, Backups tragen nichts davon mit. Beim Beenden der App ist die Kopie weg, spätestens nach 24 Stunden verwirft die App sie selbst: Der nächste Start verlangt die Passphrase. <strong>Was es kostet:</strong> Sechs Ziffern sind ein winziger Suchraum. Mit den Argon2-Parametern der Datei ist er auf einer gewöhnlichen CPU in wenigen Stunden durchprobiert, auf einer einzelnen Grafikkarte in etwa zehn Minuten — als Schutz für die Datei reicht das nie, jede weitere Ziffer verzehnfacht nur den Aufwand. Die PIN schützt allein diese Kopie im Arbeitsspeicher. „Gesperrt“ heißt mit PIN darum nicht mehr „Schlüssel aus dem Speicher gelöscht“: Wer den Arbeitsspeicher des laufenden Programms auslesen kann, hat den verpackten Schlüssel und kann PINs offline durchprobieren — die drei Fehlversuche sind eine Regel im Code, keine kryptografische Grenze. <strong>Was die PIN verwirft:</strong> drei Fehlversuche, ein Passphrase-Wechsel, das Löschen der Notizen, eine veränderte oder getauschte Notizen-Datei, der Ablauf der 24 Stunden und das Beenden der App. <strong>Der bewusste Riegel:</strong> „Jetzt sperren“ (Strg+L) behält die PIN, verlangt aber einmal die Passphrase — danach gilt die PIN wieder. Wer einen Rechner mit anderen teilt oder unverschlüsselten Swap hat, lässt die PIN aus.</p>
     <h2 class="no-desk" data-i18n="help.hBio">Fingerabdruck-Entsperren</h2>
     <p class="no-desk" data-i18n-html="help.pBio">Optional entsperrt der Fingerabdruck des Geräts die Notizen (Einstellungen → Fingerabdruck, nur Android-App). <strong>Wie es funktioniert:</strong> Der Datenschlüssel wird zusätzlich unter einem Zufallsschlüssel verpackt; den verwahrt der Android-Keystore und gibt ihn nur nach einem starken Fingerabdruck heraus, jedes Mal frisch. Die Notizen-Datei selbst bleibt unverändert, Backups tragen nichts davon. <strong>Was es kostet:</strong> Ein Fingerabdruck ist kein Geheimnis. Er lässt sich erzwingen — von jemandem, der deine Hand führt, oder an einer Grenze; die Passphrase im Kopf nicht. Deshalb verlangt die App die Passphrase nach jedem Neustart des Handys (außer du hast beim Aktivieren „auch nach Neustart“ angehakt), nach einem Passphrase-Wechsel und sobald ein neuer Fingerabdruck im System eingerichtet wird. Wurde ein Fingerabdruck neu registriert, richtet die App den Zugang nicht von selbst wieder ein, sondern zeigt eine Warnung, bis du sie liest oder bewusst neu aktivierst. Die Neustart-Regel ist eine Regel im Code, keine kryptografische Garantie. <strong>Der bewusste Riegel:</strong> „Jetzt sperren“ in den Einstellungen bedeutet, dass der nächste Start die Passphrase verlangt — kein Fingerabdruck-Knopf, kein Prompt; danach gilt der Fingerabdruck wieder, ohne Neu-Aktivierung. Nutze ihn vor einer Grenze, bevor du das Handy aus der Hand gibst, immer wenn ein Finger erzwungen werden könnte.</p>
     <h2 data-i18n="help.hTrash">Papierkorb</h2>

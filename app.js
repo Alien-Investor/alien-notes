@@ -70,6 +70,17 @@ const I18N = {
   "set.totpSetup3":"Aegis now shows a 6-digit code. Enter it to confirm:","set.activate":"Activate",
   "set.totpOnText":"Hurdle active. Unlocking additionally asks for an Aegis code. It applies only to this app on this device — backups do not carry it.","set.totpDisable":"Disable hurdle",
   "lock.bio":"Unlock with fingerprint",
+  "lock.pinLabel":"PIN","lock.pinUnlock":"Unlock with PIN","lock.orPass":"… or unlock with the passphrase:",
+  "set.pinTitle":"Quick unlock with a PIN (until you quit)",
+  "set.pinOffIntro":"After a lock through inactivity or the background a PIN is enough instead of the passphrase — until the app is quit, at most 24 hours. <strong>Honestly:</strong> the PIN never protects the notes file: six digits are a tiny search space; with the file's Argon2 parameters an ordinary CPU tries them all in a few hours, a single graphics card in roughly ten minutes — never enough to protect the file, each extra digit only multiplies the effort by ten. It only protects a copy of the data key that stays in memory when locking, wrapped under the PIN; none of it is ever stored. With a PIN, “locked” therefore no longer means “key wiped from memory”: whoever can read the memory of the running program holds the wrapped key and can guess the PIN offline — the three attempts are a rule in the code, not a cryptographic limit. Three wrong attempts discard the PIN, so do a passphrase change, the end of the 24 hours and quitting the app. “Lock now” (Ctrl+L) is the bolt: the passphrase once, afterwards the PIN applies again. If you share the computer with others or have unencrypted swap, leave the PIN off.",
+  "set.pinNew":"PIN (6–12 digits)","set.pinRep":"Repeat PIN","set.pinPass":"Passphrase to confirm","set.pinEnable":"Set up PIN",
+  "set.pinOnText":"Active. After a lock the PIN is enough — until the app is quit, at most 24 hours. “Lock now” (Ctrl+L) asks for the passphrase once, afterwards the PIN applies again. Three wrong attempts, a passphrase change, the end of the 24 hours or quitting the app discard it. Nothing of it is stored; the notes file stays unchanged.",
+  "set.pinDisable":"Discard PIN",
+  "d.pick":"Select a note on the left or create a new one",
+  "help.hDesk":"Desktop version (Linux)",
+  "help.lDesk":"<li><strong>No network — enforced by the system:</strong> the desktop app runs as a Flatpak without network permission; inside the sandbox there is no connection to the outside. On top of that the app itself blocks every connection. Check: <code>flatpak info --show-permissions org.alieninvestor.notes</code> — there is no <code>network</code>.</li><li><strong>Notes file:</strong> <code>~/.var/app/org.alieninvestor.notes/data/alien-notes/notes.ainv</code> — encrypted, readable only by you, rewritten completely on every change (never half-written). The app sees no other files: backup and import go through the system file dialog, which only grants the chosen file.</li><li><strong>Clipboard:</strong> copied notes are marked as a password for KDE — Klipper keeps them out of its history. Other clipboard managers may ignore the mark. The app clears the clipboard after the set time, also in the background and on quit, but only if its own copy is still there. The same applies to text you select with the mouse in the app (on Linux instantly pasteable with a middle click); Ctrl+C and Ctrl+X in the app copy like the copy button.</li><li><strong>Syncing with the phone:</strong> on the phone “Create backup” into a Syncthing folder, on the desktop import it under Backup — and the other way round. See “Backup &amp; Sync”.</li><li><strong>Locking:</strong> after inactivity and when the window is minimised or hidden (setting “Lock in background” — “background” here means minimised or hidden; switching to another window does not count, but it clears typed passphrases and PINs). On <strong>screen lock and suspend the desktop app does not lock by itself</strong> — inside the Flatpak it is not told. So use the system lock and, if you want, a short inactivity lock; Ctrl+L locks immediately.</li><li><strong>Keyboard:</strong> Ctrl+F search, Ctrl+N new note, Ctrl+L lock, Esc closes. From about 1000 pixels window width, list and note sit side by side.</li><li><strong>Honest limits:</strong> the desktop app ships its own browser engine (Electron) — security updates for it only arrive with a new app version, not through the system. No protection against screenshots (Linux has no way to block them). Under X11 every running program can read keyboard and clipboard; Wayland separates programs better. No fingerprint.</li>",
+  "help.hPin":"Quick unlock with a PIN (desktop)",
+  "help.pPin":"Optionally a PIN replaces the passphrase after a lock (Settings → Quick unlock with a PIN). <strong>How it works:</strong> when you set it up, the app wraps a copy of the data key under a key derived from your PIN (Argon2id, same parameters as the notes file) and keeps that copy <em>in memory only</em>. A lock through inactivity or the background clears the session as before, but that wrapped copy stays; the PIN opens it again. Nothing of it is written to disk, the notes file stays unchanged and backups carry none of it. Quitting the app removes the copy, and after 24 hours at the latest the app discards it itself: the next start asks for the passphrase. <strong>What it costs:</strong> six digits are a tiny search space. With the file's Argon2 parameters an ordinary CPU tries them all in a few hours, a single graphics card in roughly ten minutes — never enough to protect the file, each extra digit only multiplies the effort by ten. The PIN only protects that copy in memory. With a PIN, “locked” therefore no longer means “key wiped from memory”: whoever can read the memory of the running program holds the wrapped key and can try PINs offline — the three attempts are a rule in the code, not a cryptographic limit. <strong>What discards the PIN:</strong> three wrong attempts, a passphrase change, deleting the notes, an altered or swapped notes file, the end of the 24 hours, and quitting the app. <strong>The deliberate bolt:</strong> “Lock now” (Ctrl+L) keeps the PIN but demands the passphrase once — afterwards the PIN applies again. If you share the computer with others or have unencrypted swap, leave the PIN off.",
   "set.bioTitle":"Fingerprint unlock (Android)",
   "set.bioOffIntro":"Unlocks the notes with the device fingerprint instead of the passphrase. <strong>Honestly:</strong> a fingerprint is convenient, but it can be forced — at a border, or by someone holding your hand. Android binds the key to every strong biometric of the device: where a strong face unlock is enrolled (some stock Pixels; not on GrapheneOS), that opens the notes too, after a confirmation tap. The passphrase stays the real protection: it is required after every restart of the phone (as long as the box below is unticked), after a passphrase change and as soon as a new fingerprint is enrolled in the system. Technically a random key wrapped by the Android keystore unlocks the data key; nothing of it enters backups.",
   "set.bioPass":"Passphrase to confirm",
@@ -163,6 +174,18 @@ const T = {
   "bio.held":{de:"Bewusst gesperrt: Diesmal ist die Passphrase nötig — danach gilt der Fingerabdruck wieder.",en:"Locked deliberately: the passphrase is required this time — the fingerprint works again afterwards."},
   "bio.tampered":{de:"Der Fingerabdruck-Slot wurde verändert — Fingerabdruck verworfen. Bitte die Passphrase eingeben und den Fingerabdruck in den Einstellungen bewusst neu aktivieren.",en:"The fingerprint slot was altered — fingerprint discarded. Enter the passphrase and deliberately re-enable the fingerprint in Settings."},
   "confirm.bioDisable":{de:"Fingerabdruck-Entsperren wirklich deaktivieren?",en:"Really disable fingerprint unlock?"},
+  "pin.format":{de:"Die PIN muss aus {a} bis {b} Ziffern bestehen.",en:"The PIN must be {a} to {b} digits."},
+  "pin.mismatch":{de:"Die beiden PINs stimmen nicht überein.",en:"The two PINs do not match."},
+  "pin.wrong":{de:"Falsche PIN — noch {n} Versuch(e), danach ist die PIN verworfen.",en:"Wrong PIN — {n} attempt(s) left, then the PIN is discarded."},
+  "pin.dropped":{de:"Drei Fehlversuche: Das Schnell-Entsperren per PIN wurde verworfen. Bitte die Passphrase eingeben; danach lässt sich in den Einstellungen eine neue PIN einrichten.",en:"Three wrong attempts: quick unlock with a PIN was discarded. Enter the passphrase; afterwards you can set up a new PIN in Settings."},
+  "pin.fileChanged":{de:"Die Notizen-Datei hat sich geändert — die PIN gilt nicht mehr. Bitte die Passphrase eingeben.",en:"The notes file has changed — the PIN no longer applies. Please enter the passphrase."},
+  "pin.on":{de:"Schnell-Entsperren per PIN aktiv — bis die App beendet wird, höchstens 24 Stunden",en:"Quick unlock with a PIN active — until the app is quit, at most 24 hours"},
+  "pin.off":{de:"PIN verworfen — beim nächsten Entsperren gilt die Passphrase",en:"PIN discarded — the next unlock needs the passphrase"},
+  "pin.busy":{de:"Bitte erst den laufenden PIN-Vorgang abschließen.",en:"Finish the pending PIN step first."},
+  "pin.expired":{de:"Die PIN ist abgelaufen (24 Stunden) — bitte die Passphrase eingeben; danach lässt sich eine neue PIN einrichten.",en:"The PIN has expired (24 hours) — please enter the passphrase; afterwards you can set up a new PIN."},
+  "pin.failed":{de:"PIN konnte nicht eingerichtet werden.",en:"The PIN could not be set up."},
+  "pin.aborted":{de:"PIN nicht eingerichtet — Vorgang durch Sperre oder Passphrase-Wechsel abgebrochen",en:"PIN not set up — interrupted by lock or passphrase change"},
+  "confirm.pinDisable":{de:"Schnell-Entsperren per PIN wirklich verwerfen? Beim nächsten Entsperren wird die Passphrase verlangt.",en:"Really discard quick unlock with a PIN? The next unlock will require the passphrase."},
   "pw.toggle":{de:"Anzeigen / verbergen",en:"Show / hide"},
   "busy.decrypting":{de:"Entschlüssele…",en:"Decrypting…"},
   "busy.creating":{de:"Erzeuge Schlüssel…",en:"Deriving key…"},
@@ -644,6 +667,10 @@ const App = (function(){
   function vaultGet(){ return DESK ? DESK.store.read() : localStorage.getItem(LS_KEY); }
   function vaultSet(s){ if(DESK) DESK.store.write(s); else localStorage.setItem(LS_KEY, s); }
   function vaultDel(){ if(DESK) DESK.store.del(); else localStorage.removeItem(LS_KEY); }
+  // Ein Stand aus dem Browser-Speicher (z.B. Web-Test in der Hülle) wird einmalig in die Datei übernommen, erst nach Gegenlesen gelöscht
+  function migrateDesk(){ if(!DESK) return; let ls=null; try{ ls=localStorage.getItem(LS_KEY); }catch(_){} if(!ls) return;
+    const cur=DESK.store.read(); if(cur===null){ DESK.store.write(ls); if(DESK.store.read()!==ls) throw new Error('store'); } else if(cur!==ls) return;
+    localStorage.removeItem(LS_KEY); }
 
   /* ===== KIT: Helfer ===== */
   const $ = id => document.getElementById(id);
@@ -689,9 +716,9 @@ const App = (function(){
   /* ---------- boot / setup / unlock / lock ---------- */
   function boot(){
     loadLockState(); syncCombos();
-    let raw; try{ raw=vaultGet(); }catch(_){ screen('lock'); renderBioGate(); err('lock-err',tr('err.storeRead')); return; }   // auch hier Riegel und Slot rendern (Audit run-8 #11)
-    if(!raw){ screen('setup'); setTimeout(()=>$('setup-pass1').focus(),100); benchKdf(); bioDrop(true); }   // ohne Datei kein Fingerabdruck-Slot
-    else { screen('lock'); setTimeout(()=>$('lock-pass').focus(),100); bioProbe(bioAuto); }   // bioAuto wird erst von afterGate() wieder gesetzt (nach „Jetzt sperren“ kein Auto-Prompt bis zur nächsten Entsperrung, Audit run-3)
+    let raw; try{ migrateDesk(); raw=vaultGet(); }catch(_){ screen('lock'); renderPinGate(); renderBioGate(); err('lock-err',tr('err.storeRead')); return; }   // auch hier Riegel und Slots rendern (Audit run-8 #11)
+    if(!raw){ screen('setup'); setTimeout(()=>$('setup-pass1').focus(),100); benchKdf(); bioDrop(true); pinDrop(); }   // ohne Datei weder Fingerabdruck-Slot noch PIN-Slot
+    else { screen('lock'); renderPinGate(); setTimeout(()=>$((PIN&&!pinHold)?'lock-pin':'lock-pass').focus(),100); bioProbe(bioAuto); }   // bioAuto wird erst von afterGate() wieder gesetzt (nach „Jetzt sperren“ kein Auto-Prompt bis zur nächsten Entsperrung, Audit run-3)
     const soft=document.documentElement.getAttribute('data-theme')==='soft';
     $('th-dark').classList.toggle('on',!soft); $('th-soft').classList.toggle('on',soft);
   }
@@ -729,12 +756,12 @@ const App = (function(){
     enterApp(); toast(tr('toast.vaultCreated'));
   }
   async function doUnlock(){
-    if(doUnlock._busy) return; err('lock-err');
+    if(doUnlock._busy||doPin._busy) return; err('lock-err');                         // nicht neben einem PIN-Argon2 (Audit run-8); ein hängender Fingerabdruck-Prompt darf die Passphrase NICHT blockieren
     loadLockState();                                                                   // Stand eines anderen Tabs übernehmen
     const now=Date.now(); if(now<lockedUntil) return err('lock-err',tr('err.wait',{s:Math.ceil((lockedUntil-now)/1000)}));
     let raw; try{ raw=vaultGet(); }catch(_){ $('lock-pass').value=''; maskInputs('#screen-lock'); return err('lock-err',tr('err.storeRead')); } if(!raw) return boot();
     let f; try{ f=parseFile(raw); }catch(e){ $('lock-pass').value=''; maskInputs('#screen-lock'); return err('lock-err',fileErrMsg(e)); }
-    const btn=$('unlock-btn'), orig=btn.textContent; doUnlock._busy=true; btn.disabled=true; btn.textContent=tr('busy.decrypting'); renderBioGate();   // Fingerabdruck-Knopf solange aus
+    const btn=$('unlock-btn'), orig=btn.textContent; doUnlock._busy=true; btn.disabled=true; btn.textContent=tr('busy.decrypting'); renderBioGate(); renderPinGate();   // Fingerabdruck- und PIN-Knopf solange aus
     const gen=bioGen;                                                                  // Generation: gewinnt zwischendurch der Fingerabdruck, verfällt dieses Ergebnis (Audit run-3 #1)
     try{
       const kek=await deriveKek(passBytes($('lock-pass').value), f.kdf);
@@ -751,17 +778,17 @@ const App = (function(){
       failCount++; if(failCount>=3) lockedUntil=Date.now()+Math.min(30,(failCount-2)*2)*1000; saveLockState();
       $('lock-pass').value=''; maskInputs('#screen-lock');                    // Fehlversuch: Eingabe nie stehen lassen (Audit run-2 #1)
       return err('lock-err', e&&e.message==='toomany'?tr('err.tooMany'):tr('err.wrongPass'));
-    }finally{ doUnlock._busy=false; btn.disabled=false; btn.textContent=orig; renderBioGate(); }
+    }finally{ doUnlock._busy=false; btn.disabled=false; btn.textContent=orig; renderBioGate(); renderPinGate(); }
     afterGate();
   }
   // Gemeinsamer Abschluss von Passphrase- und Fingerabdruck-Pfad: Eingaben leeren, Aegis-Wartestellung oder App
   function afterGate(){
-    $('lock-pass').value=''; maskInputs('#screen-lock'); bioMsg(''); bioAuto=true;
+    $('lock-pass').value=''; $('lock-pin').value=''; maskInputs('#screen-lock'); bioMsg(''); pinMsg(''); bioAuto=true;
     if(pendingUnlock){ if(leaveGate()) return; screen('totp'); $('totp-code').value=''; err('totp-err'); resetIdle(); setTimeout(()=>$('totp-code').focus(),100); return; }   // Idle-Sperre gilt auch in der Wartestellung
     releaseHolds(); enterApp();
   }
   // Riegel („Jetzt sperren“) erst lösen, wenn die LETZTE Pforte bestanden ist — bei gesetzter Aegis-Hürde also erst nach dem Code (Audit run-8 #12)
-  function releaseHolds(){ setBioHold(false); }
+  function releaseHolds(){ setBioHold(false); pinHold=false; renderPinGate(); }
   async function doTotp(){
     if(doTotp._busy||!pendingUnlock) return; err('totp-err');
     loadLockState();
@@ -787,7 +814,7 @@ const App = (function(){
     if(o&&Number.isInteger(o.f)&&o.f>0&&o.f<100000){ failCount=Math.max(failCount,o.f);
       if(Number.isFinite(o.u)&&o.u>n) lockedUntil=Math.max(lockedUntil,Math.min(o.u,n+30000)); } }catch(_){} }
   // Sperr-/Setup-/Import-Eingaben leeren und maskieren — beim Verstecken der App und nach jedem Fehlversuch (Gate-Hygiene, Audit run-2 #1)
-  function clearGateInputs(){ ['lock-pass','setup-pass1','setup-pass2','import-pass','totp-code','bio-pass','cp-cur','cp1','cp2'].forEach(id=>{ const n=$(id); if(n) n.value=''; }); maskInputs('#screen-lock'); maskInputs('#screen-setup'); maskInputs('#tab-settings'); maskInputs('#tab-backup'); err('lock-err'); bioMsg(''); }   // auch die Passphrase-Felder in den Einstellungen (Audit run-3); Fehlversuch-Hinweise ebenso (Audit run-8 #8)
+  function clearGateInputs(){ ['lock-pass','lock-pin','setup-pass1','setup-pass2','import-pass','totp-code','bio-pass','cp-cur','cp1','cp2','pin-new','pin-rep','pin-pass'].forEach(id=>{ const n=$(id); if(n) n.value=''; }); maskInputs('#screen-lock'); maskInputs('#screen-setup'); maskInputs('#tab-settings'); maskInputs('#tab-backup'); err('lock-err'); pinMsg(''); bioMsg(''); }   // auch die Passphrase-Felder in den Einstellungen (Audit run-3); Fehlversuch-Hinweise ebenso (Audit run-8 #8)
   /* ===== KIT: Auge im Passwortfeld ===== */
   function setEye(b,on){ b.setAttribute('aria-pressed',on?'true':'false'); b.dataset.showpass.split(',').forEach(id=>{ const f=$(id); if(f) f.type=on?'text':'password'; }); }
   function togglePass(_,b){ if(b) setEye(b,b.getAttribute('aria-pressed')!=='true'); }
@@ -813,9 +840,9 @@ const App = (function(){
   function clearRendered(){
     ['entry-list','backup-hint','cat-chips','cat-menu','trash-list','f-items','md-view','cp-meter','setup-meter','bio-alert-list','bio-alert'].forEach(id=>{ const n=$(id); if(n) n.replaceChildren(); });
     ['bk-msg','import-msg','about-line','trash-msg','trash-n','ed-count','ed-meta','add-title','totp-secret'].forEach(id=>{ const n=$(id); if(n) n.textContent=''; });
-    ['f-title','f-cat','f-body','search','import-pass','cp-cur','cp1','cp2','lock-pass','setup-pass1','setup-pass2','totp-code','totp-verify','bio-pass','vault-file'].forEach(id=>{ const n=$(id); if(n) n.value=''; });
+    ['f-title','f-cat','f-body','search','import-pass','cp-cur','cp1','cp2','lock-pass','lock-pin','pin-new','pin-rep','pin-pass','setup-pass1','setup-pass2','totp-code','totp-verify','bio-pass','vault-file'].forEach(id=>{ const n=$(id); if(n) n.value=''; });
     ['f-fav','f-pinned','f-md','bio-keep','set-secure'].forEach(id=>{ const n=$(id); if(n) n.checked=false; });   // „auch nach Neustart“ nie stehen lassen (ab Werk aus)
-    setEntryType('text'); setMdMode('edit'); err('add-err'); err('cp-err'); err('lock-err'); err('setup-err'); err('totp-err'); err('totp-setup-err'); err('bio-err'); bioMsg('');
+    setEntryType('text'); setMdMode('edit'); err('add-err'); err('cp-err'); err('lock-err'); err('setup-err'); err('totp-err'); err('totp-setup-err'); err('bio-err'); bioMsg(''); err('pin-err'); pinMsg('');
     maskInputs(''); closeMenus();
     hide('help-overlay'); hide('import-pass-box'); hide('totp-setup');
     doImportVault._busy=false; const ib=$('import-btn'); if(ib){ ib.disabled=false; }
@@ -826,15 +853,18 @@ const App = (function(){
   let idleTimer=null, lastActivity=0, hiddenAt=0;
   const settings=()=>VAULT?VAULT.settings:(pendingUnlock?pendingUnlock.vault.settings:SETTINGS_DEFAULT);
   function clearIdle(){ if(idleTimer){ clearTimeout(idleTimer); idleTimer=null; } }
-  function resetIdle(){ clearIdle(); if(!DEK&&!pendingUnlock) return; const mins=settings().autolock; if(!mins) return; idleTimer=setTimeout(()=>{ clearIdle(); commitEditor(true); lock(); toast(tr('toast.autolocked')); }, mins*60000); }
+  function resetIdle(){ clearIdle(); if(!DEK&&!pendingUnlock) return; const mins=settings().autolock; if(!mins) return; idleTimer=setTimeout(()=>{ clearIdle(); lockSaving('toast.autolocked'); }, mins*60000); }
+  // Sperren mit Editor-Sicherung: erst den Autosave-Persist zu Ende laufen lassen (AES-GCM, Millisekunden), DANN sperren — sonst
+  // verwirft persist() den Stand als „tote Sitzung“ und die letzte Änderung wäre weg. Ohne offenen Editor sperrt es im nächsten Mikrotask.
+  function lockSaving(toastKey){ const p=commitEditor(true); (p&&p.then?p:Promise.resolve()).then(()=>{},()=>{}).then(()=>{ if(!DEK&&!pendingUnlock) return; lock(); if(toastKey) toast(tr(toastKey)); }); }
   function activity(){ if(!DEK&&!pendingUnlock) return; const n=Date.now(); if(n-lastActivity<5000) return; lastActivity=n; resetIdle(); }
   ['click','keydown','touchstart','scroll','mousemove'].forEach(ev=>document.addEventListener(ev, activity, {passive:true}));
   let bgAway=false;
   function onHidden(){
     if(bgAway) return; bgAway=true;
     hiddenAt=Date.now(); clearGateInputs(); if(DESK&&!DEK&&clipOwnedAt) clearClip();
-    if(DEK&&editing) commitEditor(true);                           // Editor-Stand sichern, BEVOR eine Hintergrund-Sperre greift
-    if((DEK||pendingUnlock)&&settings().bgLock===0){ lock(); }     // „sofort“: getippte Passphrasen (auch in den Einstellungen) nie stehen lassen
+    if((DEK||pendingUnlock)&&settings().bgLock===0){ lockSaving(); }   // „sofort“: Editor-Stand sichern, dann sperren; getippte Passphrasen nie stehen lassen
+    else if(DEK&&editing) commitEditor(true);                          // sonst nur den Editor-Stand sichern, bevor Android die App einfriert
   }
   function onShown(){
     if(!bgAway) return; bgAway=false;
@@ -842,11 +872,12 @@ const App = (function(){
     if(clipOwnedAt&&(clipDue||(settings().clipClear>0&&Date.now()-clipOwnedAt>=settings().clipClear*1000))) clearClip();
     if(!DEK&&!pendingUnlock){ if(bioArmed&&bioAuto&&!$('screen-lock').classList.contains('hidden')) doBio(); return; }   // zurück auf dem Sperrbildschirm: Fingerabdruck anbieten
     const s=settings();   // BG_NEVER (-1): nie durch Hintergrund sperren — die Idle-Regel gilt trotzdem, wenn gesetzt
-    if((s.bgLock>0&&away>s.bgLock*1000)||(s.autolock>0&&away>s.autolock*60000)){ commitEditor(true); lock(); toast(tr('toast.autolocked')); }
+    if((s.bgLock>0&&away>s.bgLock*1000)||(s.autolock>0&&away>s.autolock*60000)){ lockSaving('toast.autolocked'); }
     else resetIdle();
   }
   document.addEventListener('visibilitychange',()=>{ if(document.hidden) onHidden(); else onShown(); });
   if(DESK&&typeof DESK.onBackground==='function') DESK.onBackground(h=>{ if(h==='blur') clearGateInputs(); else if(h) onHidden(); else onShown(); });
+  if(DESK&&typeof DESK.onLock==='function') DESK.onLock(()=>{ if(DEK||pendingUnlock) lockSaving(); });   // Hülle meldet Ruhezustand/Bildschirmsperre — im Flatpak wirkungslos (kein logind im Käfig), Handbuch sagt es
 
   /* ---------- Zwischenablage (synchron im Klick-Handler aufrufen!) — wortgleich Alien Pass ---------- */
   function fallbackCopy(text){ let ta=null; try{ ta=document.createElement('textarea'); ta.value=text; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); return document.execCommand('copy'); }catch(_){ return false; } finally{ if(ta){ ta.value=''; ta.remove(); } } }
@@ -880,16 +911,21 @@ const App = (function(){
   /* ---------- tabs ---------- */
   const TAB_ACTIVE={trash:'list'};   // Ansichten ohne eigenen Tab-Knopf: welcher Knopf markiert bleibt
   function tab(name){
-    if(name!=='add'&&editing) closeEditor();   // Editor verlassen = speichern (Autosave), nie still verwerfen
+    if(name!=='add'&&editing&&!(DESK&&name==='list')) closeEditor();   // Editor verlassen = speichern (Autosave), nie still verwerfen; am Desktop bleibt er neben der Liste offen
     const mark=TAB_ACTIVE[name]||name;
     document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===mark));
-    document.querySelectorAll('.tabview').forEach(v=>v.classList.toggle('hidden',v.id!=='tab-'+name));
-    closeMenus();
+    const view=(DESK&&name==='add')?'list':name;   // Desktop (html.desk): der Editor steckt als rechte Spalte in der Listen-Ansicht
+    document.querySelectorAll('.tabview').forEach(v=>{ if(DESK&&v.id==='tab-add') return; v.classList.toggle('hidden',v.id!=='tab-'+view); });
+    renderDeskPane(); closeMenus();
     if(name==='trash') renderTrash();
-    if(name==='list') renderList();
+    if(name==='list'||view==='list') renderList();
     if(name==='settings') renderSettings();
     if(name==='backup') renderBackupMsg();
   }
+
+  // Desktop: rechte Spalte nur während des Bearbeitens; darunter (< 1000 px) verdeckt der Editor die Liste (Klasse .editing)
+  function renderDeskPane(){ if(!DESK) return; const a=$('tab-add'), l=$('tab-list'); if(a) a.classList.toggle('hidden',!editing); if(l) l.classList.toggle('editing',editing); }
+  function markSel(){ document.querySelectorAll('#entry-list .entry').forEach(r=>r.classList.toggle('sel',editing&&r.dataset.arg===editId)); }   // Desktop: bearbeitete Zeile markieren
 
   /* ===== KIT: Auswahlfeld (.combo) — das native <select> bleibt Wertspeicher ===== */
   function closeMenus(){ document.querySelectorAll('.combo-menu').forEach(m=>{ m.classList.add('hidden'); m.replaceChildren(); }); }
@@ -949,7 +985,7 @@ const App = (function(){
     if(search) items=items.filter(e=>(e.title+'\n'+e.body+'\n'+e.items.map(x=>x.text).join('\n')+'\n'+e.cat).toLowerCase().includes(search));
     if(!items.length){ list.appendChild(el('div','empty',all.length?tr('list.noMatch'):tr('list.empty'))); return; }
     for(const e of items){
-      const row=el('div','entry'); row.dataset.action='openEditor'; row.dataset.arg=e.id;
+      const row=el('div',(editing&&e.id===editId)?'entry sel':'entry'); row.dataset.action='openEditor'; row.dataset.arg=e.id;
       row.appendChild(el('div','av'+(e.type==='list'?' list':''),e.type==='list'?'☑':((e.title||preview(e)).trim()[0]||'·').toUpperCase()));
       const main=el('div','main'); main.appendChild(el('div','t',titleOf(e)));
       main.appendChild(el('div','u',preview(e)));
@@ -1024,7 +1060,7 @@ const App = (function(){
     $('f-title').value=e.title; $('f-cat').value=e.cat; $('f-fav').checked=e.fav; $('f-pinned').checked=e.pinned;
     if(e.type==='text'){ $('f-body').value=e.body; $('f-md').checked=e.md; $('md-seg').classList.toggle('hidden',!e.md); setMdMode(e.md?'view':'edit'); }
     else setItemRows(e.items);
-    $('ed-meta').textContent=tr('ed.meta',{c:fmtDate(e.created),u:fmtDate(e.updated)}); $('ed-del').classList.remove('hidden'); renderCounter(); tab('add'); }
+    $('ed-meta').textContent=tr('ed.meta',{c:fmtDate(e.created),u:fmtDate(e.updated)}); $('ed-del').classList.remove('hidden'); renderCounter(); tab('add'); markSel(); }
   // Entwurf aus dem Formular; leerer Titel → erste Zeile des Textes (Konzept: Easy-Notes-Bedienung)
   function readDraft(){ const t=formType, body=t==='text'?$('f-body').value:'', items=t==='list'?readItemRows():[];
     let title=line($('f-title').value,CAPS.title); if(!title&&t==='text'){ const first=body.split('\n').map(l=>line(l,CAPS.title)).find(Boolean); title=first||''; }
@@ -1046,11 +1082,11 @@ const App = (function(){
     const snapshot=VAULT.entries.slice(), wasNew=!before;
     if(idx>=0) VAULT.entries[idx]=entry; else VAULT.entries.push(entry);
     if(wasNew){ editId=entry.id; renderAddTitle(); $('ed-del').classList.remove('hidden'); }
-    return persist().then(()=>{ if(stay&&editing&&editId===entry.id) $('ed-meta').textContent=tr('ed.meta',{c:fmtDate(entry.created),u:fmtDate(entry.updated)}); return true; })
+    return persist().then(()=>{ if(stay&&editing&&editId===entry.id){ $('ed-meta').textContent=tr('ed.meta',{c:fmtDate(entry.created),u:fmtDate(entry.updated)}); if(DESK){ renderList(); } } return true; })
       .catch(e=>{ rollback(snapshot)(e); if(!(e&&e.locked)&&wasNew&&editing){ editId=null; renderAddTitle(); $('ed-del').classList.add('hidden'); } return false; });
   }
   // Editor verlassen: speichern, dann Formular leeren. Eine leere neue Notiz wird verworfen (mit Hinweis).
-  function closeEditor(){ if(!editing) return; const blankNew=!editId&&isBlank(readDraft()); commitEditor(false); editing=false; editId=null; resetForm(); if(blankNew) toast(tr('toast.discarded')); }
+  function closeEditor(){ if(!editing) return; const blankNew=!editId&&isBlank(readDraft()); commitEditor(false); editing=false; editId=null; resetForm(); renderDeskPane(); markSel(); if(blankNew) toast(tr('toast.discarded')); }
   function doneEditor(){ closeEditor(); tab('list'); }
   function copyCurrent(){ if(!editing) return; copyText(noteText(readDraft()),'what.note'); }
   function deleteCurrent(){ if(!editing||!editId) return; const e=byId(editId); if(!e) return;
@@ -1122,6 +1158,27 @@ const App = (function(){
   const isNative = !!(CAP && CAP.isNativePlatform && CAP.isNativePlatform());
   const SC = (isNative && CAP.Plugins && CAP.Plugins.SecureClip) ? CAP.Plugins.SecureClip   // eigenes Mini-Plugin (patch-hardening.mjs)
            : (DESK && DESK.clip) || null;
+  // X11-Auswahl: mit der Maus Markiertes landet ohne Strg+C in der Auswahl (Mittelklick fügt ein). Am Desktop der Hülle melden
+  // und mit der Kopier-Frist mitlöschen; läuft schon eine Frist, gilt diese (Alien Pass Gerätetest 22.09.2026).
+  if(DESK&&DESK.clip&&typeof DESK.clip.selected==='function'){
+    // AUCH maskierte Felder (type=password) melden: Chromium legt ihre Markierung im KLARTEXT in die X11-Auswahl (Messung 23.09.2026, Electron 44, X11)
+    const selText=()=>{ const a=document.activeElement;
+      if(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA')&&typeof a.selectionStart==='number') return a.value.substring(a.selectionStart,a.selectionEnd);
+      const g=window.getSelection(); return g?String(g):''; };
+    // Auch auf Sperr-/Einrichtungsbildschirm (DEK null): eine markierte Passphrase läge sonst unbegrenzt in der Auswahl — beim Verlassen des Bildschirms wird gelöscht (leaveGate)
+    const onSel=()=>{ const t=selText(); if(!t) return;
+      let p=null; try{ p=DESK.clip.selected(t); }catch(_){ p=null; }
+      if(p&&p.then) p.then(()=>{ if(!clipOwnedAt) armClip(); },()=>{}); };
+    document.addEventListener('mouseup',onSel);
+    // Strg+C auf Markiertem: nicht Chromium kopieren lassen (ohne KDE-Hinweis, ohne Löschen → Klipper-Verlauf), sondern über die Brücke
+    document.addEventListener('copy',ev=>{ const t=selText(); if(!t) return; ev.preventDefault(); copyText(t,'what.sel'); });
+    // Strg+X / Shift+Entf ebenso (Audit run-7 #1); danach die Markierung im Feld entfernen: execCommand('delete') hält Rückgängig intakt
+    document.addEventListener('cut',ev=>{ const a=document.activeElement, t=selText(); if(!t) return; ev.preventDefault(); copyText(t,'what.sel');
+      if(!a||(a.tagName!=='INPUT'&&a.tagName!=='TEXTAREA')||a.readOnly||a.disabled) return;
+      let done=false; try{ done=document.execCommand('delete'); }catch(_){}
+      if(!done){ a.setRangeText('',a.selectionStart,a.selectionEnd,'end'); a.dispatchEvent(new Event('input',{bubbles:true})); } });
+    document.addEventListener('keyup',ev=>{ if(ev.shiftKey||ev.key==='Shift'||((ev.ctrlKey||ev.metaKey)&&(ev.key||'').toLowerCase()==='a')) onSel(); });
+  }
   const BIO = (isNative && CAP.Plugins && CAP.Plugins.Biometric) ? CAP.Plugins.Biometric : null;   // Fingerabdruck-Plugin (patch-hardening.mjs), Web: kein Slot
   const SEC = (isNative && CAP.Plugins && CAP.Plugins.SecureScreen) ? CAP.Plugins.SecureScreen : null;   // FLAG_SECURE zur Laufzeit (patch-hardening.mjs)
   async function nativeSaveAndShare(name, content, dir, shareText){
@@ -1229,7 +1286,8 @@ const App = (function(){
     const w=el('div','warn',tr('bio.alert')); w.style.marginBottom='12px'; const b=el('button','btn sm',tr('bio.alertOk')); b.dataset.action='bioAlertOk'; b.style.marginTop='8px';
     w.appendChild(el('br')); w.appendChild(b); box.appendChild(w); }
   // Eine laufende Passphrase-Pforte lässt den Fingerabdruck-Knopf ruhen; ein hängender Prompt friert die Passphrase NICHT ein (run-3, verify-bio [14]).
-  function renderBioGate(){ const b=$('bio-btn'); if(b){ b.classList.toggle('hidden',!bioArmed||bioHold()); b.disabled=!!doUnlock._busy; } }   // Riegel: Knopf verborgen
+  function gateBusy(){ return !!(doUnlock._busy||doPin._busy||doBio._busy); }
+  function renderBioGate(){ const b=$('bio-btn'); if(b){ b.classList.toggle('hidden',!bioArmed||bioHold()); b.disabled=!!(doUnlock._busy||doPin._busy); } const u=$('unlock-btn'); if(u&&!doUnlock._busy) u.disabled=!!doPin._busy; }   // Riegel: Knopf verborgen; Passphrase ruht nur während eines PIN-Argon2
   // Slot verwerfen: JS-Blob + Marker immer, Keystore-Teil auf Wunsch (bei ungültigem Schlüssel hat das Plugin ihn schon selbst gelöscht). bioGen++ lässt laufende enroll/unlock verfallen.
   function bioDrop(native){ try{ localStorage.removeItem(BIO_KEY); }catch(_){} setBioMarker(false); setBioHold(false); bioArmed=false; bioNeedsRearm=false; bioRearmDek=null; bioKeep=false; bioGen++; if(native&&BIO){ try{ BIO.disable().catch(()=>{}); }catch(_){} } renderBioGate(); }
   // Sperrbildschirm: nativen Zustand abgleichen. auto = Prompt sofort zeigen (nicht nach manuellem Sperren, nie im Hintergrund)
@@ -1269,12 +1327,12 @@ const App = (function(){
   }
   // Sperrbildschirm: Fingerabdruck → Keystore gibt den Zufallsschlüssel heraus → DEK auspacken → gleicher Weg wie die Passphrase
   async function doBio(){
-    if(doBio._busy||doUnlock._busy||!BIO||!bioArmed||bioHold()||DEK||pendingUnlock) return; err('lock-err');   // Riegel: Passphrase-Pflicht
+    if(doBio._busy||doUnlock._busy||doPin._busy||!BIO||!bioArmed||bioHold()||DEK||pendingUnlock) return; err('lock-err');   // Riegel: Passphrase-Pflicht
     let raw; try{ raw=vaultGet(); }catch(_){ return err('lock-err',tr('err.storeRead')); } if(!raw) return boot();
     let f; try{ f=parseFile(raw); }catch(e){ return err('lock-err',fileErrMsg(e)); }
     const blob=bioBlob(); if(!blob){ bioDrop(true); return; }
     if(!bioWrapOk(blob,f.wrap)){ bioArmed=false; renderBioGate(); return bioMsg(tr('bio.wrapMismatch')); }   // fremder/veränderter Passphrase-Slot (ct ODER iv): nie übernehmen, Blob behalten (Backup-Restore heilt)
-    const gen=bioGen; doBio._busy=true; renderBioGate(); let secret=null;
+    const gen=bioGen; doBio._busy=true; renderBioGate(); renderPinGate(); let secret=null;
     try{
       const r=await BIO.unlock({title:tr('bio.promptTitle'), subtitle:tr('bio.promptUnlock'), negative:tr('bio.usePass')});
       secret=b64Bytes(r&&r.secret); if(!secret||secret.length!==32) throw new Error('invalid');
@@ -1292,13 +1350,14 @@ const App = (function(){
       if(c==='tampered'){ bioDrop(false); setBioAlert(true); return bioMsg(tr('bio.tampered')); }   // GCM-Tag der Slot-Datei falsch: nie „vorübergehend“, kein automatisches Wipe
       if(c==='invalidated') setBioAlert(true);                            // neuer Finger, während die App gesperrt im Hintergrund lag: bleibende Warnung
       bioDrop(c!=='invalidated'&&c!=='none'); return bioMsg(tr('bio.reset'));   // ungültiger Schlüssel, alter/fremder Blob, Manipulation
-    }finally{ doBio._busy=false; if(secret) secret.fill(0); renderBioGate(); }
+    }finally{ doBio._busy=false; if(secret) secret.fill(0); renderBioGate(); renderPinGate(); }
     afterGate();
   }
   // Einstellungen: aktivieren (Passphrase bestätigen → extrahierbarer DEK-Handle nur für das Verpacken) / deaktivieren
   async function bioEnable(){
     if(bioEnable._busy||!VAULT||!BIO) return; err('bio-err');
     if(changePass._busy) return err('bio-err',tr('bio.busy'));
+    if(pinEnable._busy) return err('bio-err',tr('pin.busy'));
     const btn=$('bio-btn-on'), orig=btn.textContent; bioEnable._busy=true; btn.disabled=true; btn.textContent=tr('busy.checking');   // Guard VOR dem ersten await
     try{
       let av; try{ av=await BIO.available(); }catch(_){ av={ok:false,reason:'error'}; }
@@ -1312,15 +1371,98 @@ const App = (function(){
   }
   function bioDisable(){ if(!VAULT||!bioArmed||!confirm(tr('confirm.bioDisable'))) return; bioDrop(true); toast(tr('bio.off')); renderSettings(); }
 
+
+  /* ---------- Schnell-Entsperren per PIN (Alien Pass v1.8, RAM-Slot bis zum Beenden, nur Desktop sichtbar) — Invarianten in PIN-INVARIANTEN.md dort ----------
+     Die PIN ersetzt nach einer Sperre INNERHALB derselben Programmlaufzeit die Passphrase. Sie schützt NIE die Datei auf der Platte,
+     sondern nur eine Kopie des Datenschlüssels, die beim Sperren im Arbeitsspeicher bleibt — unter einem PIN-abgeleiteten Argon2id-Schlüssel
+     verpackt (AAD-Rolle 'pin', an m/t/p/Salz der DATEI gebunden wie der Fingerabdruck-Slot). Der Slot lebt AUSSCHLIESSLICH in dieser Closure:
+     nie in localStorage, nie über die Desktop-Brücke, nie serialisiert, nie im Backup. Beenden der App = Kopie weg. Drei Fehlversuche verwerfen sie. */
+  const PIN_MIN=6, PIN_MAX=12, PIN_TRIES=3, PIN_RE=/^\d{6,12}$/;
+  const PIN_MAX_AGE=24*3600*1000;   // feste Grenze ohne Einstellung (Audit run-8): ein Desktop-Fenster bleibt sonst wochenlang offen
+  let PIN=null, pinHold=false;   // {blob:{iv,ct}, pkdf, w, at, tries} — NUR RAM. pinHold = Riegel nach „Jetzt sperren“/Strg+L
+  function pinMsg(t){ const n=$('pin-msg'); if(!n) return; n.textContent=t||''; n.classList.toggle('hidden',!t); }
+  function wipeSlot(s){ try{ s.blob.iv.fill(0); s.blob.ct.fill(0); s.pkdf.salt.fill(0); }catch(_){} }
+  function pinExpired(){ return !!PIN&&Date.now()-PIN.at>PIN_MAX_AGE; }
+  function renderPinGate(){
+    if(pinExpired()){ const s=PIN; PIN=null; pinHold=false; if(!doPin._busy) wipeSlot(s); if(!DEK&&!pendingUnlock) err('lock-err',tr('pin.expired')); if(VAULT) renderSettings(); }
+    const box=$('pin-box'); if(box) box.classList.toggle('hidden',!(PIN&&!pinHold)); const b=$('pin-btn'); if(b) b.disabled=gateBusy(); }
+  function pinDrop(){ const s=PIN; PIN=null; pinHold=false; if(s&&!doPin._busy) wipeSlot(s); renderPinGate(); if(VAULT) renderSettings(); }
+  async function doPin(){
+    if(doPin._busy||doUnlock._busy||doBio._busy||DEK||pendingUnlock) return; renderPinGate(); if(!PIN||pinHold) return; err('lock-err'); pinMsg('');
+    const pin=$('lock-pin').value;
+    if(!PIN_RE.test(pin)){ $('lock-pin').value=''; maskInputs('#screen-lock'); return pinMsg(tr('pin.format',{a:PIN_MIN,b:PIN_MAX})); }   // kein Fehlversuch: die Eingabe war nie eine PIN
+    let raw; try{ raw=vaultGet(); }catch(_){ $('lock-pin').value=''; maskInputs('#screen-lock'); return err('lock-err',tr('err.storeRead')); } if(!raw) return boot();
+    let f; try{ f=parseFile(raw); }catch(e){ $('lock-pin').value=''; maskInputs('#screen-lock'); return err('lock-err',fileErrMsg(e)); }
+    // fremder/veränderter Passphrase-Slot oder KDF-Header: der RAM-Slot passt nicht mehr — verwerfen und ehrlich „Datei geändert“ melden (Audit run-8 #1/#10)
+    if(PIN.w!==wrapTag(f.kdf,f.wrap)){ $('lock-pin').value=''; maskInputs('#screen-lock'); pinDrop(); return err('lock-err',tr('pin.fileChanged')); }
+    const slot=PIN, gen=bioGen;
+    const btn=$('pin-btn'), orig=btn.textContent; doPin._busy=true; btn.disabled=true; btn.textContent=tr('busy.decrypting'); renderBioGate();   // Passphrase-/Fingerabdruck-Knopf solange aus
+    try{
+      const pkey=await deriveKek(passBytes(pin), slot.pkdf);
+      const dek=await unwrapDek(slot.blob, pkey, f.kdf, false, 'pin');
+      const obj=await decryptBody(f.body, dek, f.kdf); const v=sanitizeVault(obj);
+      if(gen!==bioGen||DEK||pendingUnlock||PIN!==slot){ $('lock-pin').value=''; maskInputs('#screen-lock'); return; }   // eine andere Pforte war schneller oder der Slot ist verworfen
+      PIN.tries=0;
+      if(v.totp){ pendingUnlock={dek, kdf:f.kdf, wrap:f.wrap, vault:v}; }   // Aegis-Hürde bleibt auch vor der PIN
+      else { DEK=dek; KDF=f.kdf; WRAP=f.wrap; VAULT=v; failCount=0; lockedUntil=0; saveLockState(); }
+    }catch(e){
+      if(gen!==bioGen||DEK||pendingUnlock){ $('lock-pin').value=''; maskInputs('#screen-lock'); return; }
+      $('lock-pin').value=''; maskInputs('#screen-lock');
+      if(PIN!==slot) return;
+      PIN.tries++;   // PIN-Fehlversuche zählen NICHT in die Passphrase-Bremse — sie sagen nichts über die Passphrase aus
+      if(PIN.tries>=PIN_TRIES){ pinDrop(); return err('lock-err',tr('pin.dropped')); }
+      return pinMsg(tr('pin.wrong',{n:PIN_TRIES-PIN.tries}));
+    }finally{ doPin._busy=false; btn.disabled=false; btn.textContent=orig; if(PIN!==slot) wipeSlot(slot); renderPinGate(); renderBioGate(); }
+    afterGate();
+  }
+  // Einstellungen: einrichten (Passphrase bestätigen → EINZIGER extrahierbarer DEK-Handle, nur zum Verpacken). Alle Prüfungen IM try,
+  // damit das finally auf jedem Weg Felder leert und Augen schließt (Audit run-8 #2).
+  async function pinEnable(){
+    if(pinEnable._busy||!VAULT||!DEK) return; err('pin-err');
+    if(changePass._busy||bioEnable._busy) return err('pin-err',tr('pin.busy'));
+    const btn=$('pin-btn-on'), orig=btn.textContent; pinEnable._busy=true; btn.disabled=true; btn.textContent=tr('busy.checking');
+    const gen=bioGen; let done=false;
+    try{
+      const p1=$('pin-new').value, p2=$('pin-rep').value, pass=$('pin-pass').value;
+      if(!PIN_RE.test(p1)) return err('pin-err',tr('pin.format',{a:PIN_MIN,b:PIN_MAX}));
+      if(p1!==p2) return err('pin-err',tr('pin.mismatch'));
+      if(!pass) return err('pin-err',tr('err.cpWrong'));
+      let dekX; try{ const kek=await deriveKek(passBytes(pass), KDF); dekX=await unwrapDek(WRAP, kek, KDF, true); }
+      catch(_){ return err('pin-err',tr('err.cpWrong')); }
+      if(gen!==bioGen||!VAULT||!DEK) return;
+      const pkdf={m:KDF.m, t:KDF.t, p:KDF.p, salt:rand(16)};
+      const pkey=await deriveKek(passBytes(p1), pkdf);
+      if(gen!==bioGen||!VAULT||!DEK) return;
+      const blob=await wrapDek(dekX, pkey, KDF, 'pin');
+      if(gen!==bioGen||!VAULT||!DEK) return;
+      PIN={blob, pkdf, w:wrapTag(KDF,WRAP), at:Date.now(), tries:0}; pinHold=false; done=true;
+      toast(tr('pin.on'));
+    }catch(_){ err('pin-err',tr('pin.failed')); }
+    finally{ pinEnable._busy=false; btn.disabled=false; btn.textContent=orig; $('pin-new').value=$('pin-rep').value=$('pin-pass').value=''; maskInputs('#pin-card'); renderPinGate(); if(VAULT) renderSettings();
+      if(!done&&(gen!==bioGen||!VAULT||!DEK)) toast(tr('pin.aborted')); }
+  }
+  function pinDisable(){ if(!VAULT||!PIN||!confirm(tr('confirm.pinDisable'))) return; pinDrop(); toast(tr('pin.off')); }
+  // Desktop-Tastatur: Strg+L sperren, Strg+F Suche, Strg+N neue Notiz. Nur in der Hülle, nur entsperrt (Strg+L auch in der Wartestellung).
+  function deskKey(ev){
+    if(!DESK||!ev.ctrlKey||ev.altKey||ev.shiftKey||ev.metaKey) return false; const k=(ev.key||'').toLowerCase();
+    if(k==='l'&&(DEK||pendingUnlock)){ lockNow(); return true; }
+    if(!DEK) return false;
+    if(k==='f'){ closeHelp(); tab('list'); const q=$('search'); q.focus(); q.select(); return true; }
+    if(k==='n'){ closeHelp(); newEntry(); return true; }
+    return false;
+  }
+
   /* ---------- Einstellungen ---------- */
   // Bewusst gesperrt: Riegel für den Fingerabdruck — nächster Start nur mit Passphrase, danach gilt er wieder (Verwerfen würde die Gewohnheit bestrafen)
-  function lockNow(){ if(BIO&&(bioArmed||bioBlob())) setBioHold(true); bioAuto=false; commitEditor(true); lock(); }
+  function lockNow(){ if(BIO&&(bioArmed||bioBlob())) setBioHold(true); if(PIN) pinHold=true; bioAuto=false; lockSaving(); }
   function renderSettings(){ if(!VAULT) return; const s=VAULT.settings; $('set-autolock').value=String(s.autolock); $('set-bglock').value=String(s.bgLock); $('set-clip').value=String(s.clipClear); syncCombos();
     const on=!!VAULT.totp; $('totp-off').classList.toggle('hidden',on||!!pendingSecret); $('totp-on').classList.toggle('hidden',!on); $('totp-setup').classList.toggle('hidden',!pendingSecret);
     const bc=$('bio-card'); if(bc){ bc.classList.toggle('hidden',!BIO); $('bio-off').classList.toggle('hidden',bioArmed); $('bio-on').classList.toggle('hidden',!bioArmed);
       // zwei fertige Texte statt eines zusammengesetzten: beide tragen data-i18n, applyI18n übersetzt sie, hier wird nur umgeschaltet
       const bt=$('bio-on-text'), bk=$('bio-on-text-keep'); if(bt&&bk){ bt.classList.toggle('hidden',bioKeep); bk.classList.toggle('hidden',!bioKeep); }
       const ba=$('bio-alert'); if(ba){ ba.textContent=bioAlert()?tr('bio.alert'):''; ba.classList.toggle('hidden',!bioAlert()); } }
+    // PIN-Karte nur am Desktop (Klasse .only-desk im HTML, hier zusätzlich per JS — Android später freischalten, der Code ist plattformneutral)
+    const pc=$('pin-card'); if(pc){ pc.classList.toggle('hidden',!DESK); $('pin-off').classList.toggle('hidden',!!PIN); $('pin-on').classList.toggle('hidden',!PIN); }
     // FLAG_SECURE-Karte nur in der Android-App (Web/Desktop haben den Schalter nicht); Kästchen = Schutz AN
     const sc=$('secure-card'); if(sc){ sc.classList.toggle('hidden',!SEC); $('set-secure').checked=s.secure!==0; }
     const soft=document.documentElement.getAttribute('data-theme')==='soft'; $('th-dark').classList.toggle('on',!soft); $('th-soft').classList.toggle('on',soft);
@@ -1336,6 +1478,7 @@ const App = (function(){
   async function changePass(){
     if(changePass._busy||!VAULT) return; err('cp-err');
     if(bioEnable._busy) return err('cp-err',tr('bio.busy'));                 // nicht parallel zum Fingerabdruck-Aktivieren (Audit run-3 #5)
+    if(pinEnable._busy) return err('cp-err',tr('pin.busy'));                 // ebenso wenig parallel zum PIN-Einrichten
     const cur=$('cp-cur').value, p1=$('cp1').value, p2=$('cp2').value;
     if(p1.length<12){ maskInputs('#tab-settings'); return err('cp-err',tr('err.cpShort')); }        // Tippfehler: Augen zu, die alte Passphrase bleibt nie sichtbar stehen (Audit run-8 #2)
     if(p1!==p2){ maskInputs('#tab-settings'); return err('cp-err',tr('err.cpMismatch')); }
@@ -1353,11 +1496,11 @@ const App = (function(){
       DEK=dek; KDF=kdf; WRAP=wrap;
       // Bei .locked NICHT zurückrollen: die alten Schlüssel wiederherzustellen würde eine gesperrte Sitzung wiederbeleben
       try{ await persist(); }catch(e){ if(!(e&&e.locked)&&VAULT){ DEK=old.DEK; KDF=old.KDF; WRAP=old.WRAP; } return; }
-      const hadBio=bioArmed||!!bioBlob()||bioMarker(); if(hadBio) bioDrop(true); bioGen++;   // neuer DEK/Salt: Fingerabdruck-Slot passt nicht mehr → bewusst neu aktivieren; bioGen++ lässt auch einen laufenden enroll verfallen (Audit run-3 #5)
+      const hadBio=bioArmed||!!bioBlob()||bioMarker(); if(hadBio) bioDrop(true); pinDrop(); bioGen++;   // neuer DEK/Salt: Fingerabdruck- und PIN-Slot passen nicht mehr   // neuer DEK/Salt: Fingerabdruck-Slot passt nicht mehr → bewusst neu aktivieren; bioGen++ lässt auch einen laufenden enroll verfallen (Audit run-3 #5)
       $('cp-cur').value=$('cp1').value=$('cp2').value=''; $('cp-meter').textContent=''; toast(tr(hadBio?'toast.passChangedBio':'toast.passChanged')); renderSettings();
     }finally{ changePass._busy=false; btn.disabled=false; btn.textContent=orig; }
   }
-  function wipeLocal(){ if(!confirm(tr('confirm.wipe'))) return; bioDrop(true); try{ localStorage.removeItem(BIO_ALERT_KEY); }catch(_){}
+  function wipeLocal(){ if(!confirm(tr('confirm.wipe'))) return; bioDrop(true); pinDrop(); try{ localStorage.removeItem(BIO_ALERT_KEY); }catch(_){}
     if(DESK){ try{ localStorage.removeItem(LS_KEY); }catch(_){} }
     try{ vaultDel(); }catch(_){ toast(tr('err.saveFailed')); return; } editing=false; editId=null; lock(); }
 
@@ -1365,7 +1508,7 @@ const App = (function(){
   function openHelp(){ show('help-overlay'); $('help-overlay').scrollTop=0; }
   function closeHelp(){ hide('help-overlay'); }
   function toggleLang(){ setLang(LANG==='de'?'en':'de'); }
-  function relabel(){ if(!VAULT){ if(!pendingUnlock){ err('lock-err'); bioMsg(''); } return; } renderAddTitle(); relabelItemRows(); renderCounter(); if(editing&&editId){ const e=byId(editId); if(e) $('ed-meta').textContent=tr('ed.meta',{c:fmtDate(e.created),u:fmtDate(e.updated)}); } renderList(); renderTrash(); renderSettings(); renderBackupMsg(); }
+  function relabel(){ if(!VAULT){ if(!pendingUnlock){ err('lock-err'); pinMsg(''); bioMsg(''); } return; } renderAddTitle(); relabelItemRows(); renderCounter(); if(editing&&editId){ const e=byId(editId); if(e) $('ed-meta').textContent=tr('ed.meta',{c:fmtDate(e.created),u:fmtDate(e.updated)}); } renderList(); renderTrash(); renderSettings(); renderBackupMsg(); }
   function renderAll(){ renderList(); renderSettings(); renderBackupMsg(); }
   function kdfChanged(){ kdfTouched=true; }
 
@@ -1378,7 +1521,7 @@ const App = (function(){
     suggestPass,meterSetup,meterCp,kdfChanged,
     exportVault,importVault,doImportVault,cancelImport,pickFile,
     setAutolock,setBgLock,setClipClear,setSecure,theme,changePass,wipeLocal,
-    totpStart,totpConfirm,totpCancel,totpDisable,copySecret,copyOtpauth,doBio,bioEnable,bioDisable,bioAlertOk,
+    totpStart,totpConfirm,totpCancel,totpDisable,copySecret,copyOtpauth,doBio,bioEnable,bioDisable,bioAlertOk,doPin,pinEnable,pinDisable,deskKey,
     openHelp,closeHelp,toggleLang,relabel,togglePass,maskInputs,eyeWrap,enhancePassFields};
 })();
 
@@ -1403,6 +1546,7 @@ document.addEventListener('input',ev=>{
   const fn=App[elx.dataset.input]; if(typeof fn==='function') fn(elx.value, elx);
 });
 document.addEventListener('keydown',ev=>{
+  if(App.deskKey(ev)){ ev.preventDefault(); return; }
   if(ev.key==='Escape'){ App.closeMenus(); App.closeHelp(); return; }
   if(ev.key!=='Enter') return;
   const elx=ev.target.closest('[data-enter]'); if(!elx) return;
@@ -1412,6 +1556,9 @@ window.addEventListener('DOMContentLoaded',()=>{
   const ok=window.crypto&&crypto.subtle&&typeof WebAssembly!=='undefined'&&window.hashwasm&&typeof hashwasm.argon2id==='function';
   if(!ok){ const c=document.querySelector('.container'); c.replaceChildren(); const d=document.createElement('div'); d.className='card warn'; d.textContent=tr('nocrypto'); c.appendChild(d); return; }
   const k=document.getElementById('setup-kdf'); if(k) k.addEventListener('change',App.kdfChanged);
+  if(window.AlienDesktop){   // Zweispaltig im breiten Fenster (CSS html.desk): der Editor wird rechte Spalte der Liste statt eigener Ansicht
+    document.documentElement.classList.add('desk'); const a=document.getElementById('tab-add'), de=document.getElementById('detail-empty');
+    if(a&&de) de.parentNode.insertBefore(a,de); }
   App.enhancePassFields();   // vor applyI18n: setzt die Augen-Beschriftung
   applyI18n();
   App.boot();

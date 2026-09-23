@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Alien Notes
+Comment=Offline-Notizen ohne Cloud und ohne Netz
+Comment[en]=Offline notes without cloud or network
+Exec=alien-notes
+Icon=org.alieninvestor.notes
+Terminal=false
+Categories=Utility;Office;
+Keywords=notizen;notes;checkliste;checklist;offline;
+StartupWMClass=alien-notes
