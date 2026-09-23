@@ -22,6 +22,10 @@
 .gate .card{padding:26px;}
 .meter{margin-top:4px;font-size:.78rem;}
 .pin-input{letter-spacing:6px;text-align:center;font-size:1.3rem;}
+.secret-box{word-break:break-all;font-size:.82rem;color:var(--yellow);background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:3px;padding:10px;user-select:all;}
+.only-desk{display:none;}
+html.desk .only-desk{display:block;}
+html.desk .no-desk{display:none;}
 .entry .av.list{font-family:'Share Tech Mono',monospace;font-size:1.1rem;}
 .entry .meta{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:4px;}
 .entry .d{font-size:.66rem;color:var(--text-dim);letter-spacing:1px;margin-right:3px;}
@@ -115,6 +119,8 @@
       <input id="lock-pass" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" data-enter="doUnlock">
       <div id="lock-err" class="warn hidden" style="margin-top:12px"></div>
       <button id="unlock-btn" class="btn" style="margin-top:16px;width:100%" data-action="doUnlock" data-i18n="lock.unlock">Entsperren</button>
+      <button id="bio-btn" class="btn ghost hidden" style="margin-top:10px;width:100%" data-action="doBio"><svg class="ic" viewBox="0 0 24 24"><path d="M7 8.5a6 6 0 0 1 10 0"/><path d="M5.5 12a7.5 7.5 0 0 1 13 0"/><path d="M8.5 12a4 4 0 0 1 7 0v2a5 5 0 0 1-2 4"/><path d="M12 11.5v3a6 6 0 0 0 3 5"/><path d="M9 16.5a8 8 0 0 0 1.5 3"/></svg> <span data-i18n="lock.bio">Mit Fingerabdruck entsperren</span></button>
+      <p id="bio-msg" class="muted hidden" style="margin-top:12px"></p>
     </div>
   </div>
 
@@ -149,6 +155,7 @@
           <button id="trash-btn" class="btn sm icon ghost" data-action="openTrash" title="Papierkorb" aria-label="Papierkorb"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M9.5 7V5.5A1.5 1.5 0 0 1 11 4h2a1.5 1.5 0 0 1 1.5 1.5V7"/><path d="M6.6 7l.8 12a2 2 0 0 0 2 1.9h5.2a2 2 0 0 0 2-1.9L17.4 7"/><path d="M10 11v6"/><path d="M14 11v6"/></svg><span id="trash-n"></span></button>
         </div>
         <div id="cat-chips" class="chips"></div>
+        <div id="bio-alert-list"></div>
         <div id="backup-hint"></div>
         <div id="entry-list"></div>
       </div>
@@ -289,6 +296,53 @@
         </div>
       </div>
       <div class="card">
+        <h2 data-i18n="set.totpTitle">Aegis-Hürde (TOTP beim Entsperren)</h2>
+        <div id="totp-off">
+          <p class="muted" data-i18n-html="set.totpOffIntro">Zusätzliche Hürde beim Entsperren: Nach der Passphrase wird ein 6-stelliger Code aus <strong>Aegis</strong> verlangt. <strong>Ehrlich gesagt:</strong> Der Schlüssel liegt in der Notizen-Datei selbst — wer die Datei <em>und</em> die Passphrase hat, braucht den Code nicht. Die Hürde hilft gegen jemanden, der deine Passphrase abgeschaut hat und dein entsperrtes Handy in der Hand hält.</p>
+          <button class="btn" style="margin-top:12px" data-action="totpStart" data-i18n="set.totpEnable">Hürde aktivieren</button>
+        </div>
+        <div id="totp-setup" class="hidden">
+          <p class="muted" data-i18n-html="set.totpSetup1">In <strong>Aegis</strong> hinzufügen — ohne Kamera: „Schlüssel kopieren“ → in Aegis „Eintrag manuell hinzufügen“ → Typ <em>TOTP</em> → einfügen. Oder den otpauth-Link kopieren und dort importieren.</p>
+          <div class="secret-box" id="totp-secret"></div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn ghost sm" data-action="copySecret" data-i18n="set.copyKey">Schlüssel kopieren</button>
+            <button class="btn ghost sm" data-action="copyOtpauth" data-i18n="set.otpauth">otpauth-Link kopieren</button>
+          </div>
+          <p class="muted" style="margin-top:14px" data-i18n="set.totpSetup3">Aegis zeigt jetzt einen 6-stelligen Code. Gib ihn zur Bestätigung ein:</p>
+          <input id="totp-verify" class="pin-input" inputmode="numeric" maxlength="6" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="000000" data-enter="totpConfirm">
+          <div id="totp-setup-err" class="warn hidden" style="margin-top:10px"></div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn" data-action="totpConfirm" data-i18n="set.activate">Aktivieren</button>
+            <button class="btn ghost" data-action="totpCancel" data-i18n="btn.cancel">Abbrechen</button>
+          </div>
+        </div>
+        <div id="totp-on" class="hidden">
+          <p class="muted"><svg class="ic" viewBox="0 0 24 24" style="color:var(--neon)"><path d="M5 12.5l4 4 10-10"/></svg> <span data-i18n="set.totpOnText">Hürde aktiv. Beim Entsperren wird zusätzlich ein Aegis-Code verlangt. Sie gilt nur in dieser App auf diesem Gerät — Backups tragen sie nicht mit.</span></p>
+          <button class="btn danger sm" style="margin-top:10px" data-action="totpDisable" data-i18n="set.totpDisable">Hürde deaktivieren</button>
+        </div>
+      </div>
+      <div class="card hidden" id="bio-card">
+        <h2 data-i18n="set.bioTitle">Fingerabdruck-Entsperren (Android)</h2>
+        <div id="bio-alert" class="warn hidden" style="margin-bottom:12px"></div>
+        <div id="bio-off">
+          <p class="muted" data-i18n-html="set.bioOffIntro">Entsperrt die Notizen mit dem Fingerabdruck des Geräts statt mit der Passphrase. <strong>Ehrlich gesagt:</strong> Ein Fingerabdruck ist bequem, aber erzwingbar — an einer Grenze oder von jemandem, der deine Hand führt. Android bindet den Schlüssel an jede starke Biometrie des Geräts: Wo eine starke Gesichtserkennung eingerichtet ist (manche Stock-Pixel; auf GrapheneOS nicht), öffnet auch sie die Notizen, nach einem Bestätigungs-Tipp. Die Passphrase bleibt der eigentliche Schutz: Sie wird nach jedem Neustart des Handys verlangt (solange der Haken unten aus ist), nach einem Passphrase-Wechsel und sobald ein neuer Fingerabdruck im System eingerichtet wird. Technisch schließt ein vom Android-Keystore verwahrter Zufallsschlüssel den Datenschlüssel auf; nichts davon gelangt in Backups.</p>
+          <label class="chk" style="margin-top:12px"><input type="checkbox" id="bio-keep"> <span data-i18n="set.bioKeep">Auch nach einem Neustart des Handys mit Fingerabdruck entsperren (ab Werk aus)</span></label>
+          <p class="muted" data-i18n="set.bioKeepNote">Ab Werk verlangt die App nach jedem Neustart einmal die Passphrase. Das schützt in genau einem Fall: Jemand kennt oder erzwingt deine Geräte-PIN und kann deinen Finger erzwingen — dann hilft ein Neustart, weil die App danach die Passphrase will. GrapheneOS startet ab Werk neu, sobald das Handy 18 Stunden am Stück gesperrt bleibt (einstellbar von 10 Minuten bis 72 Stunden); wer den Zähler kurz stellt oder das Handy oft lange liegen lässt, tippt die Passphrase entsprechend oft. Mit diesem Haken gilt der Fingerabdruck über den Neustart hinaus. Unverändert bleiben: Passphrase nach einem Passphrase-Wechsel, Warnung bei einem neuen Fingerabdruck im System, „Jetzt sperren“ als Riegel. Änderbar nur durch Deaktivieren und erneutes Aktivieren.</p>
+          <label data-i18n="set.bioPass">Passphrase zur Bestätigung</label><input id="bio-pass" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" data-enter="bioEnable">
+          <div id="bio-err" class="warn hidden" style="margin-top:10px"></div>
+          <button id="bio-btn-on" class="btn" style="margin-top:12px" data-action="bioEnable" data-i18n="set.bioEnable">Fingerabdruck aktivieren</button>
+        </div>
+        <div id="bio-on" class="hidden">
+          <p class="muted"><svg class="ic" viewBox="0 0 24 24" style="color:var(--neon)"><path d="M5 12.5l4 4 10-10"/></svg> <span id="bio-on-text" data-i18n="set.bioOnText">Aktiv. Beim Entsperren genügt der Fingerabdruck — bis zum nächsten Neustart, Passphrase-Wechsel oder neuen Fingerabdruck im System. „Jetzt sperren“ ist der bewusste Riegel: Der nächste Start verlangt dann die Passphrase, danach gilt der Fingerabdruck wieder. Gilt nur auf diesem Gerät.</span><span id="bio-on-text-keep" class="hidden" data-i18n="set.bioOnTextKeep">Aktiv, auch über einen Neustart des Handys hinaus — so beim Aktivieren gewählt. Beim Entsperren genügt der Fingerabdruck, bis die Passphrase gewechselt wird oder im System ein neuer Fingerabdruck dazukommt. „Jetzt sperren“ ist der bewusste Riegel: Der nächste Start verlangt dann die Passphrase, danach gilt der Fingerabdruck wieder. Ändern geht nur durch Deaktivieren und erneutes Aktivieren. Gilt nur auf diesem Gerät.</span></p>
+          <button class="btn danger sm" style="margin-top:10px" data-action="bioDisable" data-i18n="set.bioDisable">Fingerabdruck deaktivieren</button>
+        </div>
+      </div>
+      <div class="card hidden" id="secure-card">
+        <h2 data-i18n="set.secureTitle">Screenshots und App-Umschalter</h2>
+        <label class="chk"><input type="checkbox" id="set-secure" checked data-change="setSecure"> <span data-i18n="set.secure">Screenshots verbieten und die Vorschau im App-Umschalter verbergen (ab Werk an)</span></label>
+        <p class="muted" style="margin-top:8px" data-i18n="set.secureNote">An: Android verweigert Screenshots und Bildschirmaufnahmen der App und zeigt im App-Umschalter eine schwarze Karte. Aus: Du kannst Screenshots deiner Notizen machen — die Vorschau im App-Umschalter zeigt dann ihren Inhalt. Gesperrt und beim Einrichten ist der Schutz immer an.</p>
+      </div>
+      <div class="card">
         <h2 data-i18n="set.cpTitle">Passphrase ändern</h2>
         <label data-i18n="set.cpCur">Aktuelle Passphrase</label><input id="cp-cur" type="password" autocomplete="off" autocapitalize="none" spellcheck="false">
         <label data-i18n="set.cpNew">Neue Passphrase</label><input id="cp1" type="password" autocomplete="new-password" autocapitalize="none" spellcheck="false" data-input="meterCp">
@@ -343,6 +397,10 @@
     <p data-i18n-html="help.p3">Jede Notiz hat einen Schalter „Markdown-Ansicht“. Bearbeitet wird immer im reinen Textfeld; die Ansicht stellt eine kleine Untermenge dar: Überschriften (<code>#</code> bis <code>###</code>), <strong>fett</strong> (<code>**…**</code>), <em>kursiv</em> (<code>*…*</code>), Listen (<code>-</code>, <code>1.</code>), Kästchen (<code>- [ ]</code>, <code>- [x]</code>), Code (<code>`…`</code> oder ```-Blöcke), Trennlinien (<code>---</code>). Links werden bewusst nur als Text gezeigt, nie anklickbar — die App hat ohnehin kein Netz.</p>
     <h2 data-i18n="help.h4">Sperren</h2>
     <p data-i18n-html="help.p4">Anders als ein Passwort-Manager bleiben die Notizen ab Werk offen: keine Sperre nach Inaktivität, im Hintergrund erst nach 30 Minuten. Beides lässt sich in den Einstellungen wählen, bis hin zu „nie“ — das heißt ehrlich: Der Schlüssel bleibt im Arbeitsspeicher, bis Android den Prozess beendet. Die Datei auf dem Gerät ist immer verschlüsselt, egal was du wählst. „Jetzt sperren“ löscht Schlüssel und alles Angezeigte sofort. Die Android-App verbietet Screenshots und zeigt im App-Umschalter keine Vorschau.</p>
+    <h2 data-i18n="help.hAegis">Aegis-Hürde beim Entsperren</h2>
+    <p data-i18n-html="help.pAegis">Optional verlangt die App nach der Passphrase einen Aegis-Code (Einstellungen → Aegis-Hürde). <strong>Was sie leistet:</strong> Wer deine Passphrase abgeschaut hat und dein entsperrtes Handy hält, kommt ohne deine Aegis-App nicht hinein. <strong>Was sie nicht leistet:</strong> Der TOTP-Schlüssel liegt in der Notizen-Datei selbst. Wer die Datei <em>und</em> die Passphrase besitzt, entschlüsselt sie außerhalb der App — das Format ist offen dokumentiert. Ein echter zweiter Faktor braucht eine Stelle, die ihn erzwingt. Für eine lokale Datei bleibt die Passphrase der einzige kryptografische Schutz; mach sie lang.</p>
+    <h2 class="no-desk" data-i18n="help.hBio">Fingerabdruck-Entsperren</h2>
+    <p class="no-desk" data-i18n-html="help.pBio">Optional entsperrt der Fingerabdruck des Geräts die Notizen (Einstellungen → Fingerabdruck, nur Android-App). <strong>Wie es funktioniert:</strong> Der Datenschlüssel wird zusätzlich unter einem Zufallsschlüssel verpackt; den verwahrt der Android-Keystore und gibt ihn nur nach einem starken Fingerabdruck heraus, jedes Mal frisch. Die Notizen-Datei selbst bleibt unverändert, Backups tragen nichts davon. <strong>Was es kostet:</strong> Ein Fingerabdruck ist kein Geheimnis. Er lässt sich erzwingen — von jemandem, der deine Hand führt, oder an einer Grenze; die Passphrase im Kopf nicht. Deshalb verlangt die App die Passphrase nach jedem Neustart des Handys (außer du hast beim Aktivieren „auch nach Neustart“ angehakt), nach einem Passphrase-Wechsel und sobald ein neuer Fingerabdruck im System eingerichtet wird. Wurde ein Fingerabdruck neu registriert, richtet die App den Zugang nicht von selbst wieder ein, sondern zeigt eine Warnung, bis du sie liest oder bewusst neu aktivierst. Die Neustart-Regel ist eine Regel im Code, keine kryptografische Garantie. <strong>Der bewusste Riegel:</strong> „Jetzt sperren“ in den Einstellungen bedeutet, dass der nächste Start die Passphrase verlangt — kein Fingerabdruck-Knopf, kein Prompt; danach gilt der Fingerabdruck wieder, ohne Neu-Aktivierung. Nutze ihn vor einer Grenze, bevor du das Handy aus der Hand gibst, immer wenn ein Finger erzwungen werden könnte.</p>
     <h2 data-i18n="help.hTrash">Papierkorb</h2>
     <p data-i18n-html="help.pTrash">Gelöschte Notizen wandern für <strong>30 Tage</strong> in den Papierkorb — das Symbol rechts neben dem <strong>+</strong> in der Suchzeile; die Zahl daneben sagt, wie viel drinliegt. Er zeigt nur <strong>Titel, Typ und Löschdatum</strong>. <strong>Der Papierkorb fasst 200 Notizen</strong>; ist er voll, vernichtet die nächste Löschung die älteste sofort und endgültig, und die Rückfrage nennt sie. <strong>Ehrlich:</strong> Solange eine Notiz im Papierkorb liegt, steht sie auch in jedem Backup dieses Geräts. Wer etwas sofort loswerden will, nutzt „Endgültig löschen“ oder „Papierkorb leeren“. <strong>Der Papierkorb ist gerätelokal:</strong> Eine Löschung wandert beim Zusammenführen auf deine anderen Geräte, der <em>Inhalt</em> nicht. Wiederherstellen geht also nur auf dem Gerät, auf dem du gelöscht hast.</p>
     <h2 data-i18n="help.h7">Backup &amp; Sync</h2>
