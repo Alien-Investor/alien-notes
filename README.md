@@ -20,6 +20,18 @@ Schwester-App von [Alien Pass](https://codeberg.org/Alien-Investor/alien-pass) u
 - Backup als verschlüsselte `.notes`-Datei; Import = Zusammenführen (pro Eintrag gewinnt die neuere Änderung)
 - Papierkorb (30 Tage, gerätelokal), Sperre lockerer als beim Passwort-Manager und einstellbar
 
+## Signatur-Fingerprint
+
+SHA-256 des Signatur-Zertifikats der Android-APK — über alle Versionen gleich, mit
+[AppVerifier](https://github.com/soupslurpr/AppVerifier) prüfen:
+```
+AppVerifier (mit Doppelpunkten):
+F3:68:F9:0B:F8:DF:8C:55:BB:6C:28:6D:32:25:BA:8A:F4:45:22:7B:A6:9B:36:00:DF:BB:F6:A1:44:09:BA:7C
+
+Plain SHA-256 (apksigner):
+f368f90bf8df8c55bb6c286d3225ba8af445227ba69b3600dfbbf6a14409ba7c
+```
+
 ## Dateiformat
 
 Dieselbe Formatfamilie wie Alien Pass, aber eine **eigene Datei**: Kennung `AINV1` statt `AIPV1`, Endung `.notes`.
