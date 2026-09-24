@@ -139,6 +139,8 @@ const T = {
   "err.fileNewer":{de:"Die Datei stammt aus einer neueren App-Version. Bitte App aktualisieren.",en:"The file comes from a newer app version. Please update the app."},
   "err.fileBounds":{de:"Die Datei verlangt unzulässige Argon2-Parameter — Import abgelehnt.",en:"The file demands out-of-bounds Argon2 parameters — import refused."},
   "err.fileLarge":{de:"Datei zu groß.",en:"File too large."},
+  "err.fileFull":{de:"⚠ Notizen-Datei würde über {m} MB wachsen — Änderung verworfen. Notizen kürzen oder Papierkorb leeren.",en:"⚠ Notes file would grow beyond {m} MB — change discarded. Shorten notes or empty the trash."},
+  "toast.fileOver":{de:"Notizen-Datei über {m} MB: bis zum Aufräumen werden nur Änderungen gespeichert, die sie verkleinern.",en:"Notes file over {m} MB: until you tidy up, only changes that shrink it are saved."},
   "err.tooMany":{de:"Zu viele Notizen (max. 5.000).",en:"Too many notes (max. 5,000)."},
   "err.saveFailed":{de:"⚠ Speichern fehlgeschlagen — Änderung verworfen (Speicher voll?).",en:"⚠ Save failed — change discarded (storage full?)."},
   "err.storeRead":{de:"Notizen-Datei nicht lesbar — es wurde nichts überschrieben. Rechte und Datenträger prüfen, dann neu starten.",en:"Notes file not readable — nothing was overwritten. Check permissions and disk, then restart."},
@@ -332,6 +334,9 @@ const KDF_CONFIRM_M=131072;
 // MAX_ENTRIES 5.000 statt 10.000 (Alien Pass): ein Eintrag darf bis zu 100 KB Text tragen; die tragende Grenze ist die
 // Dateigröße (MAX_FILE_BYTES) und die localStorage-Quota des Geräts — persist() muss das Schreiben nachprüfen.
 const MAX_FILE_BYTES=20*1024*1024, MAX_ENTRIES=5000;
+// Lesegrenze doppelt so hoch wie die Schreibgrenze: eine Datei, die über 20 MB geraten ist, lässt sich noch öffnen und durch Löschen schrumpfen
+// (Gerätetest 24.09.2026: 200 × 100 KB wurden geschrieben, dann „Datei zu groß“ beim Entsperren). Wachstum über MAX_FILE_BYTES lehnt persist() ab.
+const MAX_READ_BYTES=2*MAX_FILE_BYTES;
 function kdfOk(k){ const B=KDF_BOUNDS; return !!k && Number.isInteger(k.m)&&Number.isInteger(k.t)&&Number.isInteger(k.p)
   && k.m>=B.mMin&&k.m<=B.mMax && k.t>=B.tMin&&k.t<=B.tMax && k.p>=B.pMin&&k.p<=B.pMax && k.m*k.t<=B.budget; }
 function aad(kdf, role){ return enc.encode(`${MAGIC}|${FILE_VER}|argon2id|${kdf.m}|${kdf.t}|${kdf.p}|${bufToB64(kdf.salt)}|${role}`); }
@@ -377,7 +382,7 @@ function serializeFile(kdf, wrap, body){
 // Prüft Struktur + Grenzen VOR jeder KDF-Arbeit. Wirft Error('format'|'newer'|'kdfbounds'|'toolarge').
 function parseFile(raw){
   if(typeof raw!=='string') throw new Error('format');
-  if(raw.length>MAX_FILE_BYTES) throw new Error('toolarge');
+  if(raw.length>MAX_READ_BYTES) throw new Error('toolarge');
   let f; try{ f=JSON.parse(raw); }catch(_){ throw new Error('format'); }
   if(!f||typeof f!=='object'||f.magic!==MAGIC) throw new Error('format');
   if(f.ver!==FILE_VER) throw new Error((Number.isInteger(f.ver)&&f.ver>FILE_VER)?'newer':'format');
@@ -679,9 +684,10 @@ const App = (function(){
   // localStorage-Quota der WebView (gemessen 24.09.2026: ~5 MB gespeicherte Datei = ~3,9 MB Notiztext). Browser: localStorage (Tests).
   const _CAP0=window.Capacitor||null;
   const NSTORE=(_CAP0&&_CAP0.isNativePlatform&&_CAP0.isNativePlatform()&&_CAP0.Plugins&&_CAP0.Plugins.VaultStore)?_CAP0.Plugins.VaultStore:null;
-  async function vaultGet(){ if(DESK) return DESK.store.read(); if(NSTORE){ const r=await NSTORE.read(); return (r&&typeof r.data==='string')?r.data:null; } return localStorage.getItem(LS_KEY); }
-  async function vaultSet(s){ if(DESK){ DESK.store.write(s); return; } if(NSTORE){ const r=await NSTORE.write({data:s}); if(!r||r.ok!==true) throw new Error('store'); return; } localStorage.setItem(LS_KEY, s); }
-  async function vaultDel(){ if(DESK){ DESK.store.del(); return; } if(NSTORE){ await NSTORE.del(); return; } localStorage.removeItem(LS_KEY); }
+  let storedLen=0;   // Größe der zuletzt gelesenen/geschriebenen Datei: persist() lässt Wachstum über MAX_FILE_BYTES nicht zu, Schrumpfen immer
+  async function vaultGet(){ let r; if(DESK) r=DESK.store.read(); else if(NSTORE){ const x=await NSTORE.read(); r=(x&&typeof x.data==='string')?x.data:null; } else r=localStorage.getItem(LS_KEY); storedLen=r?r.length:0; return r; }
+  async function vaultSet(s){ if(DESK){ DESK.store.write(s); } else if(NSTORE){ const r=await NSTORE.write({data:s}); if(!r||r.ok!==true) throw new Error('store'); } else localStorage.setItem(LS_KEY, s); storedLen=s.length; }
+  async function vaultDel(){ if(DESK){ DESK.store.del(); } else if(NSTORE){ await NSTORE.del(); } else localStorage.removeItem(LS_KEY); storedLen=0; }
   // Ein Stand aus dem Browser-Speicher (z.B. Web-Test in der Hülle) wird einmalig in die Datei übernommen, erst nach Gegenlesen gelöscht
   async function migrateStore(){ if(!DESK&&!NSTORE) return; let ls=null; try{ ls=localStorage.getItem(LS_KEY); }catch(_){} if(!ls) return;
     const cur=await vaultGet(); if(cur===null){ await vaultSet(ls); if((await vaultGet())!==ls) throw new Error('store'); } else if(cur!==ls) return;
@@ -725,6 +731,7 @@ const App = (function(){
     if(DEK!==dek||KDF!==kdf||WRAP!==wrap) return persistOnce();    // Passphrase gewechselt → mit dem neuen Schlüssel neu verschlüsseln,
                                                                // sonst überschriebe dieser alte Blob den frischen von changePass
     const s=serializeFile(kdf, wrap, body);
+    if(s.length>MAX_FILE_BYTES&&s.length>storedLen+4096){ const e=new Error('filefull'); e.fileFull=true; toast(tr('err.fileFull',{m:MAX_FILE_BYTES/1048576})); throw e; }   // Wachstum über die Grenze verhindern; Schrumpfen und Kleinkram (Papierkorb-Marke, Haken) gehen immer, damit man aufräumen kann
     try{ await vaultSet(s); }
     catch(e){ toast(tr('err.saveFailed')); throw e; }
     if(VAULT===vault) vault.entries=entries;
@@ -848,6 +855,7 @@ const App = (function(){
   // bei „sofort“ jetzt nachholen statt die Notizen offen zu lassen (Audit run-7, Härtung)
   function leaveGate(){ if(DESK&&clipOwnedAt) clearClip(); if(bgAway&&settings().bgLock===0){ lock(); toast(tr('toast.autolocked')); return true; } return false; }
   function enterApp(){ if(leaveGate()) return; applySecure(settings().secure!==0); screen('app'); tab('list'); renderAll(); resetIdle();
+    if(storedLen>MAX_FILE_BYTES) toast(tr('toast.fileOver',{m:MAX_FILE_BYTES/1048576}));   // Datei über der Schreibgrenze (nur mit älterem Build möglich): ehrlich sagen, was noch gespeichert wird
     if(bioRearmDek){ const d=bioRearmDek; bioRearmDek=null; bioArm(d, KDF, WRAP, true).then(ok=>{ if(ok) toast(tr('bio.rearmed')); if(VAULT) renderSettings(); }); } }   // nach Neustart: Slot mit frischem Zufall neu bewaffnen; if(VAULT): während der Neu-Einrichtung gesperrt → sonst TypeError
   function lock(){
     clearIdle(); clearClip(); clearTimeout(autosaveTimer); autosaveTimer=null; applySecure(true);
@@ -1273,7 +1281,7 @@ const App = (function(){
       if(liveCount(m.entries)>MAX_ENTRIES){ $('import-msg').textContent=tr('err.tooMany'); return; }
       VAULT.entries=m.entries;
       try{ await persist(); if(!VAULT) return; $('import-msg').textContent=tr('bk.merged',{a:m.added,u:m.updated,d:m.deleted,t:m.tombstonesIn})+(m.wiped?' '+tr('bk.wiped',{n:m.wiped}):''); cancelImport(); renderList(); }
-      catch(e){ if(!(e&&e.locked)&&VAULT) VAULT.entries=before; }
+      catch(e){ if(!(e&&e.locked)&&VAULT){ VAULT.entries=before; $('import-msg').textContent=e&&e.fileFull?tr('err.fileFull',{m:MAX_FILE_BYTES/1048576}):tr('err.saveFailed'); } }
     }finally{ doImportVault._busy=false; btn.disabled=false; btn.textContent=orig; }
   }
 

@@ -21,7 +21,7 @@ const region = src.slice(a, z);
 if(/\b(document|window|localStorage)\s*[.\[]/.test(region)) throw new Error('Sentinel-Region enthält DOM-Code');
 const V = new Function(region + `
   return {bufToB64,b64ToBuf,base32Encode,base32Decode,rand,randInt,cryptoId,passBytes,aad,deriveKek,newDek,wrapDek,unwrapDek,
-    encryptBody,decryptBody,serializeFile,parseFile,kdfOk,KDF_DEFAULT,KDF_BOUNDS,MAX_ENTRIES,MAX_FILE_BYTES,emptyVault,sanitizeEntry,sanitizeEntries,sanitizeVault,sanitizeSettings,
+    encryptBody,decryptBody,serializeFile,parseFile,kdfOk,KDF_DEFAULT,KDF_BOUNDS,MAX_ENTRIES,MAX_FILE_BYTES,MAX_READ_BYTES,emptyVault,sanitizeEntry,sanitizeEntries,sanitizeVault,sanitizeSettings,
     SETTINGS_DEFAULT,SETTINGS_ALLOWED,BG_NEVER,normalizeTotp,otpauthUri,sanitizeItems,ITEMS_MAX,ENTRY_TYPES,CAPS,mergeEntries,winner,canon,purgeTombstones,tombstone,
     totpCode,totpRemaining,genWords,passStrength,passCheck,MAX_TOMBSTONES,liveCount,tombFrom,isWiped,wipeTrash,shapeIncoming,TRASH_DAYS,MAX_TRASH,TOMBSTONE_DAYS,ts,
     dupKey,entryType,line,bioKey,parseBioBlob,serializeBioBlob,bioWrapOk,wrapTag,mdParse,mdInline,noteText,linesToItems,itemsToBody};`)();
@@ -78,7 +78,8 @@ console.log('\n[2] AAD / Manipulation / Rollentrennung');
   await throwsWith(()=>Promise.resolve(V.parseFile(tamper(f=>{ f.kdf.t=0; }))),'kdfbounds','t=0 abgelehnt');
   await throwsWith(()=>Promise.resolve(V.parseFile(tamper(f=>{ f.magic='AISV1'; }))),'format','falsches magic abgelehnt');
   await throwsWith(()=>Promise.resolve(V.parseFile(tamper(f=>{ f.magic='AIPV1'; }))),'format','Alien-Pass-Datei (AIPV1) abgelehnt — kein Vermischen der Tresore');
-  await throwsWith(()=>Promise.resolve(V.parseFile('x'.repeat(21*1024*1024))),'toolarge','Übergröße vor JSON.parse abgelehnt');
+  await throwsWith(()=>Promise.resolve(V.parseFile('x'.repeat(41*1024*1024))),'toolarge','Übergröße (> 2 × 20 MB) vor JSON.parse abgelehnt');
+  await throwsWith(()=>Promise.resolve(V.parseFile('x'.repeat(21*1024*1024))),'format','21 MB lesbar (Lesegrenze 2 × Schreibgrenze: übergroße Datei bleibt zu öffnen und schrumpfbar)');
   await throwsWith(()=>Promise.resolve(V.parseFile(tamper(f=>{ f.wrap.ct=f.wrap.ct.slice(0,10); }))),'format','wrap.ct falsche Länge abgelehnt');
   await throwsWith(()=>Promise.resolve(V.parseFile(tamper(f=>{ f.kdf.salt='!!!'; }))),'format','Salt kein Base64 abgelehnt');
   // Ein mit Alien-Pass-AAD verschlüsselter Body ist unter AINV1 nicht lesbar, selbst mit richtigem DEK
@@ -146,7 +147,7 @@ console.log('\n[4] Sanitizer (Whitelist, Zeitstempel, Settings, Aegis-Hürde)');
   ok(JSON.stringify(V.SETTINGS_ALLOWED.bgLock)==='[0,60,300,1800,-1]'&&JSON.stringify(V.SETTINGS_ALLOWED.autolock)==='[0,1,2,5,15]','Auswahl Hintergrund: sofort / 1 / 5 / 30 min / nie');
   ok(V.emptyVault().settings.autolock===0&&V.emptyVault().totp===null,'emptyVault: Idle aus, keine Hürde');
   let threw=false; try{ V.sanitizeEntries(Array.from({length:V.MAX_ENTRIES+1},()=>E({})),now); }catch(e){ threw=e.message==='toomany'; } ok(threw,'>'+V.MAX_ENTRIES+' Einträge → toomany');
-  ok(V.MAX_ENTRIES===5000&&V.MAX_FILE_BYTES===20*1024*1024,'MAX_ENTRIES 5.000, Datei ≤ 20 MB');
+  ok(V.MAX_ENTRIES===5000&&V.MAX_FILE_BYTES===20*1024*1024&&V.MAX_READ_BYTES===40*1024*1024,'MAX_ENTRIES 5.000, Datei ≤ 20 MB (Schreiben), Lesen bis 40 MB');
 }
 
 console.log('\n[5] Merge (LWW, Tombstones, Kommutativität, Idempotenz)');
