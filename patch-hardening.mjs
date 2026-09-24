@@ -66,6 +66,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(SecureClipPlugin.class);
         registerPlugin(BiometricPlugin.class);
         registerPlugin(SecureScreenPlugin.class);
+        registerPlugin(VaultStorePlugin.class);
         super.onCreate(savedInstanceState);
         // Kein Screenshot/Screen-Recording, keine Vorschau im App-Switcher (Recents) — ab Werk und auf dem Sperrbildschirm IMMER;
         // eine entsperrte Sitzung darf die Flagge über SecureScreenPlugin.set(false) aufheben (Einstellung, Entscheidung 24.09.2026)
@@ -432,15 +433,80 @@ public class SecureScreenPlugin extends Plugin {
     }
 }
 `;
+//   7) VaultStore-Plugin (Alien Notes, 24.09.2026): die Notizen-Datei liegt im privaten App-Ordner (files/alien-notes/notes.ainv) statt im
+//      localStorage der WebView — dessen Quota (~5 MB) kappte die Notizen bei ~3,9 MB Text. Atomar: Temp + fsync + rename, Größe nachgeprüft.
+//      Keine Berechtigung, kein Netz; der Ordner fällt unter allowBackup=false + dataExtractionRules (kein Cloud-/Geräte-Backup).
+const VS = JAVA_DIR + '/VaultStorePlugin.java';
+const VS_SRC = `package org.alieninvestor.notes;
+
+import com.getcapacitor.JSObject;
+import com.getcapacitor.Plugin;
+import com.getcapacitor.PluginCall;
+import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.CapacitorPlugin;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
+/** Notizen-Datei im privaten App-Ordner: read() -> {data: string|null}, write({data}) -> {ok}, del() -> {ok}.
+ *  Schreiben atomar (Temp-Datei, fsync, rename ueber die alte Datei), Groesse nach dem Schreiben geprueft — nie eine halbe Datei. */
+@CapacitorPlugin(name = "VaultStore")
+public class VaultStorePlugin extends Plugin {
+    private static final long MAX = 64L * 1024 * 1024;   // Lesegrenze; die App selbst erlaubt 20 MB (MAX_FILE_BYTES)
+
+    private File dir() { File d = new File(getContext().getFilesDir(), "alien-notes"); if (!d.isDirectory()) d.mkdirs(); return d; }
+    private File file() { return new File(dir(), "notes.ainv"); }
+    private File tmp() { return new File(dir(), ".notes.ainv.tmp"); }
+
+    @PluginMethod
+    public void read(PluginCall call) {
+        try {
+            File f = file(); JSObject o = new JSObject();
+            if (!f.exists()) { o.put("data", JSObject.NULL); call.resolve(o); return; }
+            long n = f.length(); if (n > MAX) { call.reject("toolarge"); return; }
+            byte[] b = new byte[(int) n]; int off = 0;
+            try (InputStream in = new FileInputStream(f)) { while (off < b.length) { int r = in.read(b, off, b.length - off); if (r < 0) break; off += r; } }
+            if (off != b.length) { call.reject("short"); return; }
+            o.put("data", new String(b, StandardCharsets.UTF_8)); call.resolve(o);
+        } catch (Exception e) { call.reject("error"); }
+    }
+
+    @PluginMethod
+    public void write(PluginCall call) {
+        String s = call.getString("data"); if (s == null) { call.reject("nodata"); return; }
+        byte[] b = s.getBytes(StandardCharsets.UTF_8); File f = file(), t = tmp();
+        try {
+            try (FileOutputStream out = new FileOutputStream(t, false)) { out.write(b); out.flush(); out.getFD().sync(); }
+            if (t.length() != b.length) { t.delete(); call.reject("short"); return; }
+            if (!t.renameTo(f)) { t.delete(); call.reject("rename"); return; }
+            if (f.length() != b.length) { call.reject("verify"); return; }
+            JSObject o = new JSObject(); o.put("ok", true); call.resolve(o);
+        } catch (Exception e) { t.delete(); call.reject("error"); }
+    }
+
+    @PluginMethod
+    public void del(PluginCall call) {
+        try {
+            File f = file(); if (f.exists() && !f.delete()) { call.reject("error"); return; }
+            tmp().delete();
+            JSObject o = new JSObject(); o.put("ok", true); call.resolve(o);
+        } catch (Exception e) { call.reject("error"); }
+    }
+}
+`;
 let changed = false;
-for (const [file, src, label] of [[MAIN, MAIN_SRC, 'MainActivity (FLAG_SECURE + Plugin-Registrierung)'], [CLIP, CLIP_SRC, 'SecureClipPlugin'], [BIO, BIO_SRC, 'BiometricPlugin'], [SEC, SEC_SRC, 'SecureScreenPlugin']]) {
+for (const [file, src, label] of [[MAIN, MAIN_SRC, 'MainActivity (FLAG_SECURE + Plugin-Registrierung)'], [CLIP, CLIP_SRC, 'SecureClipPlugin'], [BIO, BIO_SRC, 'BiometricPlugin'], [SEC, SEC_SRC, 'SecureScreenPlugin'], [VS, VS_SRC, 'VaultStorePlugin']]) {
   const cur = existsSync(file) ? readFileSync(file, 'utf8') : '';
   if (cur !== src) { writeFileSync(file, src); changed = true; console.log(label + ': geschrieben.'); }
 }
-if (!changed) console.log('MainActivity + SecureClipPlugin + BiometricPlugin + SecureScreenPlugin bereits aktuell.');
+if (!changed) console.log('MainActivity + SecureClipPlugin + BiometricPlugin + SecureScreenPlugin + VaultStorePlugin bereits aktuell.');
 const jm = readFileSync(MAIN, 'utf8'), jb = readFileSync(BIO, 'utf8');
-const js = readFileSync(SEC, 'utf8');
-if (!jm.includes('getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE)') || !jm.includes('registerPlugin(SecureClipPlugin.class)') || !jm.includes('registerPlugin(BiometricPlugin.class)') || !jm.includes('registerPlugin(SecureScreenPlugin.class)')
+const js = readFileSync(SEC, 'utf8'), jv = readFileSync(VS, 'utf8');
+if (!jm.includes('getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE)') || !jm.includes('registerPlugin(SecureClipPlugin.class)') || !jm.includes('registerPlugin(BiometricPlugin.class)') || !jm.includes('registerPlugin(SecureScreenPlugin.class)') || !jm.includes('registerPlugin(VaultStorePlugin.class)')
+  // VaultStore: atomar (fsync + rename), Groesse geprueft, privater App-Ordner, genau drei Methoden
+  || !jv.includes('getFD().sync()') || !jv.includes('renameTo(f)') || !jv.includes('f.length() != b.length') || !jv.includes('getFilesDir()') || (jv.match(/@PluginMethod/g) || []).length !== 3
   // SecureScreen: beide Richtungen vorhanden, Default AN, kein anderer Weg als set()
   || !js.includes('addFlags(WindowManager.LayoutParams.FLAG_SECURE)') || !js.includes('clearFlags(WindowManager.LayoutParams.FLAG_SECURE)') || !js.includes('call.getBoolean("on", true)') || (js.match(/@PluginMethod/g) || []).length !== 1
   || !readFileSync(CLIP, 'utf8').includes('EXTRA_IS_SENSITIVE')

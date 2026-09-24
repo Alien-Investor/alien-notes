@@ -675,12 +675,16 @@ const App = (function(){
   const DESK = window.AlienDesktop || null;   // Desktop-Hülle (Schritt 5), sonst null
   // Notizen-Speicher: Desktop = eigene Datei über die Hülle (synchron, wirft bei Lesefehlern), sonst localStorage.
   // Ein Lesefehler ist NIE „keine Notizen“ — sonst böte boot() „Einrichten“ an und überschriebe die echte Datei.
-  function vaultGet(){ return DESK ? DESK.store.read() : localStorage.getItem(LS_KEY); }
-  function vaultSet(s){ if(DESK) DESK.store.write(s); else localStorage.setItem(LS_KEY, s); }
-  function vaultDel(){ if(DESK) DESK.store.del(); else localStorage.removeItem(LS_KEY); }
+  // Android: eigenes VaultStore-Plugin (patch-hardening.mjs) — Datei files/alien-notes/notes.ainv, atomar (Temp + fsync + rename), OHNE die
+  // localStorage-Quota der WebView (gemessen 24.09.2026: ~5 MB gespeicherte Datei = ~3,9 MB Notiztext). Browser: localStorage (Tests).
+  const _CAP0=window.Capacitor||null;
+  const NSTORE=(_CAP0&&_CAP0.isNativePlatform&&_CAP0.isNativePlatform()&&_CAP0.Plugins&&_CAP0.Plugins.VaultStore)?_CAP0.Plugins.VaultStore:null;
+  async function vaultGet(){ if(DESK) return DESK.store.read(); if(NSTORE){ const r=await NSTORE.read(); return (r&&typeof r.data==='string')?r.data:null; } return localStorage.getItem(LS_KEY); }
+  async function vaultSet(s){ if(DESK){ DESK.store.write(s); return; } if(NSTORE){ const r=await NSTORE.write({data:s}); if(!r||r.ok!==true) throw new Error('store'); return; } localStorage.setItem(LS_KEY, s); }
+  async function vaultDel(){ if(DESK){ DESK.store.del(); return; } if(NSTORE){ await NSTORE.del(); return; } localStorage.removeItem(LS_KEY); }
   // Ein Stand aus dem Browser-Speicher (z.B. Web-Test in der Hülle) wird einmalig in die Datei übernommen, erst nach Gegenlesen gelöscht
-  function migrateDesk(){ if(!DESK) return; let ls=null; try{ ls=localStorage.getItem(LS_KEY); }catch(_){} if(!ls) return;
-    const cur=DESK.store.read(); if(cur===null){ DESK.store.write(ls); if(DESK.store.read()!==ls) throw new Error('store'); } else if(cur!==ls) return;
+  async function migrateStore(){ if(!DESK&&!NSTORE) return; let ls=null; try{ ls=localStorage.getItem(LS_KEY); }catch(_){} if(!ls) return;
+    const cur=await vaultGet(); if(cur===null){ await vaultSet(ls); if((await vaultGet())!==ls) throw new Error('store'); } else if(cur!==ls) return;
     localStorage.removeItem(LS_KEY); }
 
   /* ===== KIT: Helfer ===== */
@@ -721,16 +725,16 @@ const App = (function(){
     if(DEK!==dek||KDF!==kdf||WRAP!==wrap) return persistOnce();    // Passphrase gewechselt → mit dem neuen Schlüssel neu verschlüsseln,
                                                                // sonst überschriebe dieser alte Blob den frischen von changePass
     const s=serializeFile(kdf, wrap, body);
-    try{ vaultSet(s); }
+    try{ await vaultSet(s); }
     catch(e){ toast(tr('err.saveFailed')); throw e; }
     if(VAULT===vault) vault.entries=entries;
   }
   function fileErrMsg(e){ const c=e&&e.message; return tr(c==='newer'?'err.fileNewer':c==='kdfbounds'?'err.fileBounds':c==='toolarge'?'err.fileLarge':c==='toomany'?'err.tooMany':'err.fileFormat'); }
 
   /* ---------- boot / setup / unlock / lock ---------- */
-  function boot(){
+  async function boot(){
     loadLockState(); syncCombos();
-    let raw; try{ migrateDesk(); raw=vaultGet(); }catch(_){ screen('lock'); renderPinGate(); renderBioGate(); err('lock-err',tr('err.storeRead')); return; }   // auch hier Riegel und Slots rendern (Audit run-8 #11)
+    let raw; try{ await migrateStore(); raw=await vaultGet(); }catch(_){ screen('lock'); renderPinGate(); renderBioGate(); err('lock-err',tr('err.storeRead')); return; }   // auch hier Riegel und Slots rendern (Audit run-8 #11)
     if(!raw){ screen('setup'); setTimeout(()=>$('setup-pass1').focus(),100); benchKdf(); bioDrop(true); pinDrop(); }   // ohne Datei weder Fingerabdruck-Slot noch PIN-Slot
     else { screen('lock'); renderPinGate(); setTimeout(()=>$((PIN&&!pinHold)?'lock-pin':'lock-pass').focus(),100); bioProbe(bioAuto); }   // bioAuto wird erst von afterGate() wieder gesetzt (nach „Jetzt sperren“ kein Auto-Prompt bis zur nächsten Entsperrung, Audit run-3)
     const soft=document.documentElement.getAttribute('data-theme')==='soft';
@@ -773,9 +777,11 @@ const App = (function(){
     if(doUnlock._busy||doPin._busy) return; err('lock-err');                         // nicht neben einem PIN-Argon2 (Audit run-8); ein hängender Fingerabdruck-Prompt darf die Passphrase NICHT blockieren
     loadLockState();                                                                   // Stand eines anderen Tabs übernehmen
     const now=Date.now(); if(now<lockedUntil) return err('lock-err',tr('err.wait',{s:Math.ceil((lockedUntil-now)/1000)}));
-    let raw; try{ raw=vaultGet(); }catch(_){ $('lock-pass').value=''; maskInputs('#screen-lock'); return err('lock-err',tr('err.storeRead')); } if(!raw) return boot();
-    let f; try{ f=parseFile(raw); }catch(e){ $('lock-pass').value=''; maskInputs('#screen-lock'); return err('lock-err',fileErrMsg(e)); }
+    // Riegel SOFORT, vor dem ersten await (vaultGet ist seit dem Dateispeicher asynchron): sonst passierten zwei Pforten gleichzeitig die _busy-Prüfung
     const btn=$('unlock-btn'), orig=btn.textContent; doUnlock._busy=true; btn.disabled=true; btn.textContent=tr('busy.decrypting'); renderBioGate(); renderPinGate();   // Fingerabdruck- und PIN-Knopf solange aus
+    const release=()=>{ doUnlock._busy=false; btn.disabled=false; btn.textContent=orig; renderBioGate(); renderPinGate(); };
+    let raw; try{ raw=await vaultGet(); }catch(_){ release(); $('lock-pass').value=''; maskInputs('#screen-lock'); return err('lock-err',tr('err.storeRead')); } if(!raw){ release(); return boot(); }
+    let f; try{ f=parseFile(raw); }catch(e){ release(); $('lock-pass').value=''; maskInputs('#screen-lock'); return err('lock-err',fileErrMsg(e)); }
     const gen=bioGen;                                                                  // Generation: gewinnt zwischendurch der Fingerabdruck, verfällt dieses Ergebnis (Audit run-3 #1)
     try{
       const kek=await deriveKek(passBytes($('lock-pass').value), f.kdf);
@@ -792,7 +798,7 @@ const App = (function(){
       failCount++; if(failCount>=3) lockedUntil=Date.now()+Math.min(30,(failCount-2)*2)*1000; saveLockState();
       $('lock-pass').value=''; maskInputs('#screen-lock');                    // Fehlversuch: Eingabe nie stehen lassen (Audit run-2 #1)
       return err('lock-err', e&&e.message==='toomany'?tr('err.tooMany'):tr('err.wrongPass'));
-    }finally{ doUnlock._busy=false; btn.disabled=false; btn.textContent=orig; renderBioGate(); renderPinGate(); }
+    }finally{ release(); }
     afterGate();
   }
   // Gemeinsamer Abschluss von Passphrase- und Fingerabdruck-Pfad: Eingaben leeren, Aegis-Wartestellung oder App
@@ -848,7 +854,7 @@ const App = (function(){
     DEK=null; KDF=null; WRAP=null; VAULT=null; editId=null; editing=false; pendingImport=null; search=''; catFilter=null; favFilter=false;
     pendingUnlock=null; pendingSecret=null; pendingOtpauth='';
     bioGen++; bioRearmDek=null; bioArmed=false; bioNeedsRearm=false;   // laufende Fingerabdruck-Vorgänge verfallen (Generation)
-    clearRendered(); boot();
+    clearRendered(); screen('lock'); boot();   // Sperrbildschirm sofort; boot() liest die Datei asynchron nach (Android-Plugin)
   }
   // Nach dem Sperren darf nichts Entschlüsseltes im DOM oder in Formularfeldern bleiben
   function clearRendered(){
@@ -1226,7 +1232,7 @@ const App = (function(){
     try{
       // Erst persistieren, dann lesen: sonst exportiert die Datei den Stand VOR dem Aufräumen beim Entsperren (Audit run-5 #3).
       try{ await persist(); }catch(e){ if(e&&e.locked) return; if(DESK){ $('bk-msg').textContent=tr('bk.failed',{e:String(e&&e.message||e)}); return; } }
-      let raw; try{ raw=vaultGet(); }catch(_){ $('bk-msg').textContent=tr('err.storeRead'); return; }
+      let raw; try{ raw=await vaultGet(); }catch(_){ $('bk-msg').textContent=tr('err.storeRead'); return; }
       const name='alien-notes-'+new Date().toISOString().slice(0,10)+'.notes';
       // Erst die Datei schreiben — der Backup-Stempel darf nur nach Erfolg gesetzt werden
       try{ if(isNative){
@@ -1361,11 +1367,13 @@ const App = (function(){
   // Sperrbildschirm: Fingerabdruck → Keystore gibt den Zufallsschlüssel heraus → DEK auspacken → gleicher Weg wie die Passphrase
   async function doBio(){
     if(doBio._busy||doUnlock._busy||doPin._busy||!BIO||!bioArmed||bioHold()||DEK||pendingUnlock) return; err('lock-err');   // Riegel: Passphrase-Pflicht
-    let raw; try{ raw=vaultGet(); }catch(_){ return err('lock-err',tr('err.storeRead')); } if(!raw) return boot();
-    let f; try{ f=parseFile(raw); }catch(e){ return err('lock-err',fileErrMsg(e)); }
-    const blob=bioBlob(); if(!blob){ bioDrop(true); return; }
-    if(!bioWrapOk(blob,f.wrap)){ bioArmed=false; renderBioGate(); return bioMsg(tr('bio.wrapMismatch')); }   // fremder/veränderter Passphrase-Slot (ct ODER iv): nie übernehmen, Blob behalten (Backup-Restore heilt)
-    const gen=bioGen; doBio._busy=true; renderBioGate(); renderPinGate(); let secret=null;
+    doBio._busy=true; renderBioGate(); renderPinGate();   // Riegel SOFORT, vor dem ersten await (vaultGet asynchron)
+    const release=()=>{ doBio._busy=false; renderBioGate(); renderPinGate(); };
+    let raw; try{ raw=await vaultGet(); }catch(_){ release(); return err('lock-err',tr('err.storeRead')); } if(!raw){ release(); return boot(); }
+    let f; try{ f=parseFile(raw); }catch(e){ release(); return err('lock-err',fileErrMsg(e)); }
+    const blob=bioBlob(); if(!blob){ release(); bioDrop(true); return; }
+    if(!bioWrapOk(blob,f.wrap)){ bioArmed=false; release(); return bioMsg(tr('bio.wrapMismatch')); }   // fremder/veränderter Passphrase-Slot (ct ODER iv): nie übernehmen, Blob behalten (Backup-Restore heilt)
+    const gen=bioGen; let secret=null;
     try{
       const r=await BIO.unlock({title:tr('bio.promptTitle'), subtitle:tr('bio.promptUnlock'), negative:tr('bio.usePass')});
       secret=b64Bytes(r&&r.secret); if(!secret||secret.length!==32) throw new Error('invalid');
@@ -1424,12 +1432,14 @@ const App = (function(){
     if(doPin._busy||doUnlock._busy||doBio._busy||DEK||pendingUnlock) return; renderPinGate(); if(!PIN||pinHold) return; err('lock-err'); pinMsg('');
     const pin=$('lock-pin').value;
     if(!PIN_RE.test(pin)){ $('lock-pin').value=''; maskInputs('#screen-lock'); return pinMsg(tr('pin.format',{a:PIN_MIN,b:PIN_MAX})); }   // kein Fehlversuch: die Eingabe war nie eine PIN
-    let raw; try{ raw=vaultGet(); }catch(_){ $('lock-pin').value=''; maskInputs('#screen-lock'); return err('lock-err',tr('err.storeRead')); } if(!raw) return boot();
-    let f; try{ f=parseFile(raw); }catch(e){ $('lock-pin').value=''; maskInputs('#screen-lock'); return err('lock-err',fileErrMsg(e)); }
+    // Riegel SOFORT, vor dem ersten await (vaultGet asynchron): Passphrase-/Fingerabdruck-Knopf solange aus
+    const btn=$('pin-btn'), orig=btn.textContent; doPin._busy=true; btn.disabled=true; btn.textContent=tr('busy.decrypting'); renderBioGate();
+    const release=()=>{ doPin._busy=false; btn.disabled=false; btn.textContent=orig; renderPinGate(); renderBioGate(); };
+    let raw; try{ raw=await vaultGet(); }catch(_){ release(); $('lock-pin').value=''; maskInputs('#screen-lock'); return err('lock-err',tr('err.storeRead')); } if(!raw){ release(); return boot(); }
+    let f; try{ f=parseFile(raw); }catch(e){ release(); $('lock-pin').value=''; maskInputs('#screen-lock'); return err('lock-err',fileErrMsg(e)); }
     // fremder/veränderter Passphrase-Slot oder KDF-Header: der RAM-Slot passt nicht mehr — verwerfen und ehrlich „Datei geändert“ melden (Audit run-8 #1/#10)
-    if(PIN.w!==wrapTag(f.kdf,f.wrap)){ $('lock-pin').value=''; maskInputs('#screen-lock'); pinDrop(); return err('lock-err',tr('pin.fileChanged')); }
+    if(!PIN||PIN.w!==wrapTag(f.kdf,f.wrap)){ release(); $('lock-pin').value=''; maskInputs('#screen-lock'); pinDrop(); return err('lock-err',tr('pin.fileChanged')); }
     const slot=PIN, gen=bioGen;
-    const btn=$('pin-btn'), orig=btn.textContent; doPin._busy=true; btn.disabled=true; btn.textContent=tr('busy.decrypting'); renderBioGate();   // Passphrase-/Fingerabdruck-Knopf solange aus
     try{
       const pkey=await deriveKek(passBytes(pin), slot.pkdf);
       const dek=await unwrapDek(slot.blob, pkey, f.kdf, false, 'pin');
@@ -1445,7 +1455,7 @@ const App = (function(){
       PIN.tries++;   // PIN-Fehlversuche zählen NICHT in die Passphrase-Bremse — sie sagen nichts über die Passphrase aus
       if(PIN.tries>=PIN_TRIES){ pinDrop(); return err('lock-err',tr('pin.dropped')); }
       return pinMsg(tr('pin.wrong',{n:PIN_TRIES-PIN.tries}));
-    }finally{ doPin._busy=false; btn.disabled=false; btn.textContent=orig; if(PIN!==slot) wipeSlot(slot); renderPinGate(); renderBioGate(); }
+    }finally{ doPin._busy=false; if(PIN!==slot) wipeSlot(slot); release(); }
     afterGate();
   }
   // Einstellungen: einrichten (Passphrase bestätigen → EINZIGER extrahierbarer DEK-Handle, nur zum Verpacken). Alle Prüfungen IM try,
@@ -1537,7 +1547,7 @@ const App = (function(){
   }
   function wipeLocal(){ if(!confirm(tr('confirm.wipe'))) return; bioDrop(true); pinDrop(); try{ localStorage.removeItem(BIO_ALERT_KEY); }catch(_){}
     if(DESK){ try{ localStorage.removeItem(LS_KEY); }catch(_){} }
-    try{ vaultDel(); }catch(_){ toast(tr('err.saveFailed')); return; } editing=false; editId=null; lock(); }
+    vaultDel().then(()=>{ editing=false; editId=null; lock(); }).catch(()=>toast(tr('err.saveFailed'))); }
 
   /* ---------- misc ---------- */
   function openHelp(){ show('help-overlay'); $('help-overlay').scrollTop=0; }
