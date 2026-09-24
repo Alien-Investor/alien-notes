@@ -122,7 +122,7 @@ console.log('\n[4] Sanitizer (Whitelist, Zeitstempel, Settings, Aegis-Hürde)');
   ok(t.deleted&&t.title==='geheim'&&t.body==='geheim'&&Object.keys(t).length===FIELDS,'Papierkorb: Inhalt überlebt das Laden, '+FIELDS+' Felder');
   { const w=V.tombFrom(t); ok(w.title===''&&w.body===''&&w.items.length===0&&w.deleted===t.deleted&&V.isWiped(w),'tombFrom() ist inhaltsleer, behält die Zeitstempel und gilt als gewipt'); }
   const t2=V.sanitizeEntry({id:'0123456789abcdef',title:'x',deleted:true,updated:'2026-02-01T00:00:00.000Z'},now); ok(t2.deleted==='2026-02-01T00:00:00.000Z','deleted=true ohne Datum → updated');
-  const nl=V.sanitizeEntry(E({body:'Zeile 1\r\n\tZeile 2\n\nZeile 4'}),now); ok(nl.body==='Zeile 1\r\n\tZeile 2\n\nZeile 4','body behält Zeilenumbrüche und Tabs (roh, nur gekappt)');
+  const nl=V.sanitizeEntry(E({body:'Zeile 1\r\n\tZeile 2\n\nZeile 4\rEnde'}),now); ok(nl.body==='Zeile 1\n\tZeile 2\n\nZeile 4\nEnde','body behält Zeilenumbrüche und Tabs (roh, nur gekappt); CRLF/CR → LF kanonisch (Audit run-1 #8)');
   // TOTP (Aegis-Hürde)
   ok(V.normalizeTotp('JBSWY3DPEHPK3PXP').secret==='JBSWY3DPEHPK3PXP','Base32 normalisiert');
   ok(V.normalizeTotp('jbsw y3dp ehpk 3pxp').secret==='JBSWY3DPEHPK3PXP','Base32 mit Leerzeichen/klein');
@@ -477,8 +477,13 @@ console.log('\n[14] Markdown-Zerlegung (mdParse/mdInline), Kopiertext, Zeilen �
   ok(P('a\r\nb\rc')[0].inline[0].s==='a\nb\nc','CRLF/CR normalisiert');
   { const big='- x\n'.repeat(5000); const t0=Date.now(); const out=P(big); ok(out.length===1&&out[0].items.length===5000&&Date.now()-t0<2000,'5.000 Listenzeilen zügig zerlegt'); }
   ok(P('#NoSpace').length===1&&P('#NoSpace')[0].type==='p','Raute ohne Leerzeichen ist keine Überschrift');
+  { const hh=P('## Titel ##\n### a #\n# a#\n# a # b\n   # x\n    # code\n# Titel   '); ok(hh[0].inline[0].s==='Titel'&&hh[1].inline[0].s==='a'&&hh[2].inline[0].s==='a#'&&hh[3].inline[0].s==='a # b'&&hh[4].type==='h'&&hh[4].inline[0].s==='x'&&hh[5].type==='code'&&hh[6].inline[0].s==='Titel','Überschriften: schließende # nur nach Leerraum abgeschnitten, Einrückung ≤ 3, Leerraum am Ende weg'); }
+  // Audit run-1 #5: die alte Überschriften-Regex war kubisch bei langem Leerraum vor einem Zeichen — jetzt linear
+  { const t0=Date.now(); const hb=P('# a'+' '.repeat(100000)+'x'); const t1=Date.now()-t0; ok(hb.length===1&&hb[0].type==='h'&&t1<200,'ReDoS-Wächter: 100.000 Leerzeichen in einer Überschrift in '+t1+' ms (< 200)');
+    const t2=Date.now(); P('# a'+'\t'.repeat(100000)+'x\n'+'# '+'#'.repeat(100000)+'\n'+' #'.repeat(50000)); ok(Date.now()-t2<300,'ReDoS-Wächter: Tabs, Rauten, Raute-Ketten linear'); }
   // Kopiertext
   ok(V.noteText({type:'text',title:'T',body:'a\nb'})==='T\n\na\nb'&&V.noteText({type:'text',title:'',body:'nur'})==='nur','noteText: Titel + Leerzeile + Text, ohne Titel nur Text');
+  ok(V.noteText({type:'text',title:'a',body:'a\nb'})==='a\nb'&&V.noteText({type:'text',title:'Erste Zeile',body:'\n  Erste Zeile \nb'})==='\n  Erste Zeile \nb','noteText: Titel aus der ersten Zeile steht nicht doppelt (Faktencheck help.l8)');
   ok(V.noteText({type:'list',title:'Einkauf',items:[{text:'Milch',done:true},{text:'Brot',done:false}]})==='Einkauf\n\n- [x] Milch\n- [ ] Brot','noteText: Checkliste als - [x]-Zeilen');
   // Text ↔ Checkliste
   const li=V.linesToItems('Milch\n- [x] Brot\n\n* [ ] Eier\n1. nicht nummeriert weg? \n   ');

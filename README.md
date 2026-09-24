@@ -2,7 +2,7 @@
 
 Lokale, verschlüsselte **Notizen- und Checklisten-App** für Android / GrapheneOS und den **Linux-Desktop** (Flatpak).
 Läuft komplett **offline** — keine Cloud, kein Server, kein Konto, keine Telemetrie.
-Die Android-App fordert **keine Internet-Berechtigung** an — nur die Berechtigung für den Fingerabdrucksensor.
+Die Android-App fordert **keine Internet-Berechtigung** an — nur die beiden Berechtigungen für den Fingerabdrucksensor.
 Deine Notizen verlassen das Gerät nie im Klartext.
 
 Schwester-App von [Alien Pass](https://codeberg.org/Alien-Investor/alien-pass) und dem
@@ -16,7 +16,7 @@ Schwester-App von [Alien Pass](https://codeberg.org/Alien-Investor/alien-pass) u
 - Umschaltbare Markdown-Ansicht je Notiz (kleine eigene Untermenge, kein Fremd-Renderer)
 - Verschlüsselt mit demselben Schlüsselbau wie Alien Pass: Argon2id leitet aus der Passphrase einen Schlüssel ab, der den
   eigentlichen Datenschlüssel verpackt; alles AES-256-GCM mit gebundenem Kopf
-- Entsperren per Passphrase, Fingerabdruck (Android, auch nach Neustart) oder PIN (Desktop), optionale Aegis-Hürde
+- Entsperren per Passphrase, Fingerabdruck (Android; wahlweise auch über einen Neustart hinaus, ab Werk aus) oder PIN (Desktop), optionale Aegis-Hürde
 - Backup als verschlüsselte `.notes`-Datei; Import = Zusammenführen (pro Eintrag gewinnt die neuere Änderung)
 - Papierkorb (30 Tage, gerätelokal), Sperre lockerer als beim Passwort-Manager und einstellbar
 

@@ -26,7 +26,7 @@ const js=fs.readFileSync("vendor/eff/eff-wordlist.js","utf8");
 if(!js.includes("window.EFF_WORDS="+JSON.stringify(words)+";")){console.error("FEHLER: eff-wordlist.js passt nicht zur .txt");process.exit(1);}'
 # Eigener Code: kein Netz, kein eval, kein innerHTML mit Nutzerdaten (nur die i18n-Übersetzung statischer Texte darf innerHTML nutzen)
 if grep -nE 'fetch\(|XMLHttpRequest|WebSocket|importScripts|new Function\(|\beval\(' app.js; then echo >&2 "FEHLER: app.js enthält Netz-/Eval-Aufrufe — Build abgebrochen!"; exit 1; fi
-if grep -nE '\.innerHTML\s*=' app.js; then echo >&2 "FEHLER: innerHTML-Zuweisung in app.js (nur applyI18n darf über el[prop] statische Übersetzungen setzen) — Build abgebrochen!"; exit 1; fi
+if grep -nE '\.(innerHTML|outerHTML)\s*=|insertAdjacentHTML|document\.write|DOMParser|createContextualFragment|setTimeout\(\s*["'\'']|setInterval\(\s*["'\'']' app.js; then echo >&2 "FEHLER: HTML-Senke in app.js (nur applyI18n darf über el[prop] statische Übersetzungen setzen) — Build abgebrochen!"; exit 1; fi
 echo "Vendor-Integrität OK."
 
 rm -rf www && mkdir -p www/vendor

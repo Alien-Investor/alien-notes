@@ -62,9 +62,9 @@ const I18N = {
   "set.secTitle":"Locking","set.autolock":"Lock after inactivity","set.off":"Off",
   "set.al1":"1 minute","set.al2":"2 minutes","set.al5":"5 minutes","set.al15":"15 minutes",
   "set.bgLock":"Lock in background after","set.bg0":"immediately","set.bg60":"1 minute","set.bg300":"5 minutes","set.bg1800":"30 minutes","set.bgNever":"never",
-  "set.lockNote":"Off by default: the notes stay open until you lock them yourself or the app is closed. “Never” in the background means honestly: the key stays in memory until Android ends the process; the file on the device is always encrypted anyway. Changes in the editor are saved as you type, before locking.",
+  "set.lockNote":"By default the app does not lock after inactivity, and in the background only after 30 minutes. The background lock applies when you return after the chosen time; until then the key stays in memory. “Never” honestly means: no lock on return either — the key stays until the system ends the process or you quit the app; the file on the device is always encrypted anyway. Changes in the editor are saved as you type, before locking.",
   "set.clip":"Clear clipboard after","set.c15":"15 seconds","set.c30":"30 seconds","set.c60":"1 minute","set.cOff":"only on lock (off)",
-  "set.clipNote":"Notes are not always secret, so this can be switched off. In the Android app copied text is flagged as “sensitive” — the system preview then hides it (Android 13+). From Android 13 the system additionally clears the clipboard after about an hour.",
+  "set.clipNote":"Notes are not always secret, so this can be switched off. In the Android app copied text is flagged as “sensitive” — the system preview then hides it (Android 13+). The app clears the clipboard after the chosen time — also in the background, as long as Android has not frozen the app (usually after the second app switch); at the latest when you return to the app and when it locks. From Android 13 the system additionally clears the clipboard after about an hour, older versions do not.",
   "set.lockNow":"Lock now",
   "set.totpTitle":"Aegis hurdle (TOTP on unlock)",
   "set.totpOffIntro":"Extra hurdle on unlock: after the passphrase a 6-digit code from <strong>Aegis</strong> is required. <strong>Honestly:</strong> the key lives inside the notes file itself — whoever has the file <em>and</em> the passphrase does not need the code. The hurdle helps against someone who peeked at your passphrase and holds your unlocked phone.",
@@ -82,7 +82,7 @@ const I18N = {
   "set.pinDisable":"Discard PIN",
   "d.pick":"Select a note on the left or create a new one",
   "help.hDesk":"Desktop version (Linux)",
-  "help.lDesk":"<li><strong>No network — enforced by the system:</strong> the desktop app runs as a Flatpak without network permission; inside the sandbox there is no connection to the outside. On top of that the app itself blocks every connection. Check: <code>flatpak info --show-permissions org.alieninvestor.notes</code> — there is no <code>network</code>.</li><li><strong>Notes file:</strong> <code>~/.var/app/org.alieninvestor.notes/data/alien-notes/notes.ainv</code> — encrypted, readable only by you, rewritten completely on every change (never half-written). The app sees no other files: backup and import go through the system file dialog, which only grants the chosen file.</li><li><strong>Clipboard:</strong> copied notes are marked as a password for KDE — Klipper keeps them out of its history. Other clipboard managers may ignore the mark. The app clears the clipboard after the set time, also in the background and on quit, but only if its own copy is still there. The same applies to text you select with the mouse in the app (on Linux instantly pasteable with a middle click); Ctrl+C and Ctrl+X in the app copy like the copy button.</li><li><strong>Syncing with the phone:</strong> on the phone “Create backup” into a Syncthing folder, on the desktop import it under Backup — and the other way round. See “Backup &amp; Sync”.</li><li><strong>Locking:</strong> after inactivity and when the window is minimised or hidden (setting “Lock in background” — “background” here means minimised or hidden; switching to another window does not count, but it clears typed passphrases and PINs). On <strong>screen lock and suspend the desktop app does not lock by itself</strong> — inside the Flatpak it is not told. So use the system lock and, if you want, a short inactivity lock; Ctrl+L locks immediately.</li><li><strong>Keyboard:</strong> Ctrl+F search, Ctrl+N new note, Ctrl+S finish the note (save and close), Ctrl+L lock, Esc closes. From about 1000 pixels window width, list and note sit side by side.</li><li><strong>Honest limits:</strong> the desktop app ships its own browser engine (Electron) — security updates for it only arrive with a new app version, not through the system. No protection against screenshots (Linux has no way to block them). Under X11 every running program can read keyboard and clipboard; Wayland separates programs better. No fingerprint.</li>",
+  "help.lDesk":"<li><strong>No network — enforced by the system:</strong> the desktop app runs as a Flatpak without network permission; inside the sandbox there is no connection to the outside. On top of that the app itself blocks every connection. Check: <code>flatpak info --show-permissions org.alieninvestor.notes</code> — there is no <code>network</code>.</li><li><strong>Notes file:</strong> <code>~/.var/app/org.alieninvestor.notes/data/alien-notes/notes.ainv</code> — encrypted, readable only by you, rewritten completely on every change (never half-written). The app sees no other files: backup and import go through the system file dialog, which only grants the chosen file.</li><li><strong>Clipboard:</strong> copied notes are marked as a password for KDE — Klipper keeps them out of its history. Other clipboard managers may ignore the mark. The app clears the clipboard after the set time, also in the background and on quit, but only if its own copy is still there. The same applies to text you select with the mouse in the app (on Linux instantly pasteable with a middle click); Ctrl+C and Ctrl+X in the app copy like the copy button.</li><li><strong>Syncing with the phone:</strong> on the phone “Create backup” into a Syncthing folder, on the desktop import it under Backup — and the other way round. See “Backup &amp; Sync”.</li><li><strong>Locking:</strong> after inactivity and when the window has been minimised or hidden for longer than the chosen time — with “immediately” right when minimising (setting “Lock in background”; “background” here means minimised or hidden; switching to another window does not count, but it clears typed passphrases and PINs). On <strong>screen lock and suspend the desktop app does not lock by itself</strong> — inside the Flatpak it is not told. So use the system lock and, if you want, a short inactivity lock; Ctrl+L locks immediately.</li><li><strong>Keyboard:</strong> Ctrl+F search, Ctrl+N new note, Ctrl+S finish the note (save and close), Ctrl+L lock, Esc closes. From about 1000 pixels window width, list and note sit side by side.</li><li><strong>Honest limits:</strong> the desktop app ships its own browser engine (Electron) — security updates for it only arrive with a new app version, not through the system. No protection against screenshots (Linux has no way to block them). Under X11 every running program can read keyboard and clipboard; Wayland separates programs better. No fingerprint.</li>",
   "help.hPin":"Quick unlock with a PIN (desktop)",
   "help.pPin":"Optionally a PIN replaces the passphrase after a lock (Settings → Quick unlock with a PIN). <strong>How it works:</strong> when you set it up, the app wraps a copy of the data key under a key derived from your PIN (Argon2id, same parameters as the notes file) and keeps that copy <em>in memory only</em>. A lock through inactivity or the background clears the session as before, but that wrapped copy stays; the PIN opens it again. Nothing of it is written to disk, the notes file stays unchanged and backups carry none of it. Quitting the app removes the copy, and after 24 hours at the latest the app discards it itself: the next start asks for the passphrase. <strong>What it costs:</strong> six digits are a tiny search space. With the file's Argon2 parameters an ordinary CPU tries them all in a few hours, a single graphics card in roughly ten minutes — never enough to protect the file, each extra digit only multiplies the effort by ten. The PIN only protects that copy in memory. With a PIN, “locked” therefore no longer means “key wiped from memory”: whoever can read the memory of the running program holds the wrapped key and can try PINs offline — the three attempts are a rule in the code, not a cryptographic limit. <strong>What discards the PIN:</strong> three wrong attempts, a passphrase change, deleting the notes, an altered or swapped notes file, the end of the 24 hours, and quitting the app. <strong>The deliberate bolt:</strong> “Lock now” (Ctrl+L) keeps the PIN but demands the passphrase once — afterwards the PIN applies again. If you share the computer with others or have unencrypted swap, leave the PIN off.",
   "set.bioTitle":"Fingerprint unlock (Android)",
@@ -96,7 +96,7 @@ const I18N = {
   "set.bioDisable":"Disable fingerprint",
   "set.secureTitle":"Screenshots and app switcher",
   "set.secure":"Block screenshots and hide the preview in the app switcher (on by default)",
-  "set.secureNote":"On: Android refuses screenshots and screen recording of the app and shows a black card in the app switcher. Off: you can take screenshots of your notes — the preview in the app switcher then shows their content. Locked and during setup the protection is always on.",
+  "set.secureNote":"On: Android refuses screenshots of the app; in screen recordings and when casting it stays black, and the app switcher shows an empty card without content. Off: you can take screenshots of your notes — the preview in the app switcher then shows their content; a preview captured when leaving stays until you return to the app, even if it has locked meanwhile. Locked and during setup the protection is always on. No protection against accessibility apps, root or a camera.",
   "help.hAegis":"Aegis hurdle on unlock",
   "help.pAegis":"Optionally the app asks for an Aegis code after the passphrase (Settings → Aegis hurdle). <strong>What it does:</strong> someone who peeked at your passphrase and holds your unlocked phone cannot get in without your Aegis app. <strong>What it does not do:</strong> the TOTP key lives inside the notes file itself. Whoever owns the file <em>and</em> the passphrase decrypts it outside the app — the format is openly documented. A real second factor needs a party that enforces it. For a local file the passphrase remains the only cryptographic protection; make it long.",
   "help.hBio":"Fingerprint unlock",
@@ -115,11 +115,11 @@ const I18N = {
   "help.p1":"A <strong>local, encrypted notes app</strong> for notes and checklists. Runs fully <strong>offline</strong> — no cloud, no server, no telemetry, no account. The Android app does not even have an internet permission. Your notes never leave the device in plaintext.",
   "help.warn":"⚠ There is no reset and no backdoor. Forget your passphrase and the notes are gone for good. Make regular backups and keep the passphrase safe.",
   "help.h2":"First steps",
-  "help.l2":"<li><strong>Choose a passphrase</strong> — at least 12 characters, better six dice words (the suggest button builds them from the EFF list). Write it down and store it safely.</li><li><strong>+</strong> creates a note. The title may stay empty — the first line of the text serves as the title. There is no save button: the app saves while you type and when you leave the note.</li><li><strong>Checklists:</strong> switch a note to “Checklist” — every line becomes an entry with a box; “Done to the bottom” sorts ticked entries down. Switching back turns the entries into “- [x] …” lines.</li><li><strong>Categories</strong> work like folders: type one freely (suggestions from existing ones). The list filters via the chips at the top; the ★ chip shows favourites only. Pinned notes always sit at the top.</li><li>The search covers title, text, checklist entries and category.</li>",
+  "help.l2":"<li><strong>Choose a passphrase</strong> — at least 12 characters, better six dice words (the suggest button builds them from the EFF list). Write it down and store it safely.</li><li><strong>+</strong> creates a note. The title may stay empty — the first line of the text serves as the title. There is no save button: the app saves while you type and when you leave the note.</li><li><strong>Checklists:</strong> switch a note to “Checklist” — every line becomes an entry with a box; “Done to the bottom” sorts ticked entries down. Switching back turns the entries into “- [ ] …” or “- [x] …” lines.</li><li><strong>Categories</strong> work like folders: type one freely (suggestions from existing ones). The list filters via the chips at the top; the ★ chip shows favourites only. Pinned notes always sit at the top.</li><li>The search covers title, text, checklist entries and category.</li>",
   "help.h3":"Markdown preview",
-  "help.p3":"Every note has a “Markdown preview” switch. Editing always stays the plain text field; the preview renders a small subset: headings (<code>#</code> to <code>###</code>), <strong>bold</strong> (<code>**…**</code>), <em>italic</em> (<code>*…*</code>), lists (<code>-</code>, <code>1.</code>), boxes (<code>- [ ]</code>, <code>- [x]</code>), code (<code>`…`</code> or ``` blocks), rules (<code>---</code>). Links are deliberately shown as text, never clickable — the app has no network anyway.",
+  "help.p3":"Every text note (not checklists) has a “Markdown preview” switch. Editing always stays the plain text field; the preview renders a small subset: headings (<code>#</code> to <code>###</code>), <strong>bold</strong> (<code>**…**</code>), <em>italic</em> (<code>*…*</code>), lists (<code>-</code>, <code>1.</code> — numbered ones always start at 1), boxes (<code>- [ ]</code>, <code>- [x]</code>), code (<code>`…`</code>, ``` blocks or 4 spaces of indentation — so no indented sub-items), rules (<code>---</code>). Links are deliberately shown as text, never clickable — the app has no network anyway.",
   "help.h4":"Locking",
-  "help.p4":"Unlike a password manager, the notes stay open by default: no lock after inactivity, and in the background only after 30 minutes. Both can be set under Settings, up to “never” — which honestly means: the key stays in memory until Android ends the process. The file on the device is always encrypted, whatever you choose. “Lock now” clears the key and everything on screen immediately. The Android app forbids screenshots and hides the preview in the app switcher.",
+  "help.p4":"Unlike a password manager, the notes stay open by default: no lock after inactivity, and in the background only after 30 minutes. Both can be set under Settings, up to “never”. The background lock applies when you return after the chosen time; until then the key stays in memory. “Never” honestly means: no lock on return either — the key stays until the system ends the process or you quit the app. The file on the device is always encrypted, whatever you choose. “Lock now” clears the key and everything on screen immediately. The Android app forbids screenshots by default and hides the preview in the app switcher (can be switched off in Settings).",
   "help.hTrash":"Trash",
   "help.pTrash":"Deleted notes go to the trash for <strong>30 days</strong> — the icon right of the <strong>+</strong> in the search row; the number next to it says how much is in there. It shows only <strong>title, type and date of deletion</strong>. <strong>The trash holds 200 notes</strong>; once it is full the next deletion destroys the oldest one immediately and for good, and the confirmation tells you which one. <strong>Honestly:</strong> while a note sits in the trash it is also part of every backup of this device. To get rid of something right away use “Delete permanently” or “Empty trash”. <strong>The trash is device-local:</strong> a deletion travels to your other devices when merging, the <em>content</em> does not. So you can only restore on the device where you deleted.",
   "help.h7":"Backup & sync",
@@ -127,7 +127,7 @@ const I18N = {
   "help.h8":"Clipboard",
   "help.l8":"<li>“Copy” puts the whole note into the clipboard (title, text or checklist as “- [x] …” lines).</li><li>The app clears the clipboard after the chosen time (default 30 s) and when it locks. Notes are not always secret, so this can be switched off in Settings.</li><li>The Android app flags copied content as <strong>sensitive</strong>: the system preview shown when copying hides the content (Android 13+).</li>",
   "help.h9":"Security in detail",
-  "help.l9":"<li><strong>Key derivation:</strong> Argon2id (default 64 MiB, 3 passes) from your passphrase — memory-hard, so expensive for GPU attacks on a stolen file.</li><li><strong>Encryption:</strong> AES-256-GCM (WebCrypto). A random data key encrypts the notes; the passphrase only wraps that key. The file header is authenticated too — tampering is detected.</li><li><strong>Device:</strong> the Android app requests no internet permission, only the fingerprint permissions. It forbids screenshots (FLAG_SECURE, can be switched off) and excludes itself from cloud, adb and device-to-device backups.</li><li><strong>Third-party code:</strong> only the Argon2 library hash-wasm (MIT) and the EFF word list, both bundled and hash-checked in the build. No CDN, no tracker.</li><li><strong>Limits:</strong> no images or attachments, no sharing of plaintext, no per-note passwords. A passphrase cannot be recovered.</li>"
+  "help.l9":"<li><strong>Key derivation:</strong> Argon2id (default 64 MiB, 3 passes) from your passphrase — memory-hard, so expensive for GPU attacks on a stolen file.</li><li><strong>Encryption:</strong> AES-256-GCM (WebCrypto). A random data key encrypts the notes; the passphrase only wraps that key. The file header is authenticated too — tampering is detected.</li><li><strong>Device:</strong> the Android app requests exactly two normal permissions, both for the fingerprint sensor: USE_BIOMETRIC and USE_FINGERPRINT (the latter only up to Android 8.1, brought in by the AndroidX biometric library). No internet, no storage, no contacts. Besides these the APK only carries the AndroidX-generated signature permission DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION, which grants nothing. It forbids screenshots and app-switcher preview (FLAG_SECURE, can be switched off) and excludes itself from cloud, adb and device-to-device backups.</li><li><strong>Third-party code:</strong> only the Argon2 library hash-wasm (MIT) and the EFF word list, both bundled and hash-checked in the build. No CDN, no tracker.</li><li><strong>Limits:</strong> no images or attachments, no sharing of plaintext, no per-note passwords. A passphrase cannot be recovered.</li>"
 };
 const T = {
   "err.setupShort":{de:"Mindestens 12 Zeichen.",en:"At least 12 characters."},
@@ -245,8 +245,8 @@ const T = {
   "ed.items":{de:"{d} von {n} erledigt",en:"{d} of {n} done"},
   "ed.meta":{de:"Angelegt {c} · Geändert {u}",en:"Created {c} · Updated {u}"},
   "ed.itemPh":{de:"Eintrag",en:"Entry"},"ed.itemDel":{de:"Eintrag entfernen",en:"Remove entry"},
-  "confirm.toList":{de:"In eine Checkliste umwandeln? Jede Zeile des Textes wird ein Eintrag (leere Zeilen fallen weg, mehr als {n} Zeilen werden abgeschnitten). Überschriften, Fett und andere Auszeichnung gehen verloren.",en:"Convert to a checklist? Every line of the text becomes an entry (empty lines are dropped, more than {n} lines are cut). Headings, bold and other formatting are lost."},
-  "confirm.toText":{de:"In eine Textnotiz umwandeln? Die Einträge werden Zeilen mit „- [x]“-Kästchen; erledigte Haken bleiben nur als Text.",en:"Convert to a text note? The entries become lines with “- [x]” boxes; ticks survive only as text."},
+  "confirm.toList":{de:"In eine Checkliste umwandeln? Jede Zeile des Textes wird ein Eintrag (leere Zeilen fallen weg, Zeilen über {c} Zeichen werden gekürzt, mehr als {n} Zeilen werden abgeschnitten). Einrückung und mehrfache Leerzeichen fallen weg; Überschriften, Fett und andere Auszeichnung bleiben nur als Zeichen stehen.",en:"Convert to a checklist? Every line of the text becomes an entry (empty lines are dropped, lines over {c} characters are shortened, more than {n} lines are cut). Indentation and repeated spaces are lost; headings, bold and other markup remain only as plain characters."},
+  "confirm.toText":{de:"In eine Textnotiz umwandeln? Die Einträge werden Zeilen mit „- [ ]“- bzw. „- [x]“-Kästchen; erledigte Haken bleiben nur als Text.",en:"Convert to a text note? The entries become lines with “- [x]” boxes; ticks survive only as text."},
   "confirm.delete":{de:"„{t}“ in den Papierkorb legen? {d} Tage wiederherstellbar, danach endgültig. (Wird beim Sync auf andere Geräte übernommen.)",en:"Move “{t}” to the trash? Restorable for {d} days, then gone for good. (Deletion syncs to other devices.)"},
   "confirm.deleteFull":{de:"„{t}“ in den Papierkorb legen? Der Papierkorb ist voll ({m}) — dabei wird „{o}“ (gelöscht am {od}) sofort und endgültig vernichtet. (Die Löschung wird beim Sync übernommen, der Papierkorb-Inhalt bleibt auf diesem Gerät.)",en:"Move “{t}” to the trash? The trash is full ({m}) — doing so destroys “{o}” (deleted on {od}) immediately and for good. (The deletion syncs to other devices, the trash content stays on this one.)"},
   "confirm.purge":{de:"„{t}“ endgültig löschen? Das lässt sich nicht rückgängig machen.",en:"Delete “{t}” permanently? This cannot be undone."},
@@ -471,7 +471,7 @@ function sanitizeEntry(e, now){
   const type=entryType(e.type);
   const o={id, type, cat:line(e.cat,CAPS.cat), title:line(e.title,CAPS.title), body:'', items:[],
            fav:e.fav===true, pinned:e.pinned===true, md:type==='text'&&e.md===true, created, updated, deleted};
-  if(type==='text') o.body=str(e.body,CAPS.body);
+  if(type==='text') o.body=str(e.body,CAPS.body).replace(/\r\n?/g,'\n');   // Zeilenumbrüche kanonisch (Audit run-1 #8: textarea liefert nie CR)
   else o.items=sanitizeItems(e.items);
   return o;
 }
@@ -642,7 +642,9 @@ function mdParse(text){
   while(i<lines.length){ const l=lines[i];
     if(/^\s{0,3}```/.test(l)){ flushP(); flushL(); const buf=[]; i++; while(i<lines.length&&!/^\s{0,3}```/.test(lines[i])) buf.push(lines[i++]); i++; out.push({type:'code',text:buf.join('\n')}); continue; }
     if(/^\s{0,3}(?:-{3,}|\*{3,}|_{3,})\s*$/.test(l)){ flushP(); flushL(); out.push({type:'hr'}); i++; continue; }
-    if((m=/^\s{0,3}(#{1,3})\s+(.*?)\s*#*\s*$/.exec(l))){ flushP(); flushL(); out.push({type:'h',level:m[1].length,inline:mdInline(m[2])}); i++; continue; }
+    // Überschrift: lineare Erkennung, schließende # per Schleife — die frühere Regex mit lazy Gruppe vor zwei \s* war kubisch (Audit run-1 #5)
+    if((m=/^\s{0,3}(#{1,3})[ \t]+(.*)$/.exec(l))){ let t=m[2].trimEnd(); let k=t.length; while(k>0&&t[k-1]==='#') k--; if(k<t.length&&(k===0||/\s/.test(t[k-1]))) t=t.slice(0,k).trimEnd();
+      flushP(); flushL(); out.push({type:'h',level:m[1].length,inline:mdInline(t)}); i++; continue; }
     if((m=/^\s{0,3}(?:([-*+])|(\d{1,9})[.)])\s+(?:\[([ xX])\]\s+)?(.*)$/.exec(l))){ flushP(); const ordered=!!m[2];
       if(!list||list.ordered!==ordered){ flushL(); list={type:'list',ordered,items:[]}; }
       list.items.push({inline:mdInline(m[4]), check:m[3]===undefined?null:m[3]!==' '}); i++; continue; }
@@ -652,7 +654,7 @@ function mdParse(text){
   flushP(); flushL(); return out;
 }
 // Klartext einer Notiz fürs Kopieren (SecureClip): Titel, dann Text bzw. Checkliste als „- [x] …“-Zeilen
-function noteText(e){ const head=e.title?e.title+'\n\n':''; if(e.type==='list') return head+(e.items||[]).map(x=>'- ['+(x.done?'x':' ')+'] '+x.text).join('\n'); return head+(e.body||''); }
+function noteText(e){ const first=e.type==='text'?(String(e.body||'').split('\n').map(l=>line(l,CAPS.title)).find(Boolean)||''):''; const head=e.title&&e.title!==first?e.title+'\n\n':''; if(e.type==='list') return head+(e.items||[]).map(x=>'- ['+(x.done?'x':' ')+'] '+x.text).join('\n'); return head+(e.body||''); }
 // Checkliste ↔ Text: Zeilen werden Einträge (Kästchen-Marker verstanden), Einträge werden „- [x] …“-Zeilen
 function linesToItems(body){ return sanitizeItems(String(body||'').split(/\r?\n/).map(l=>{ const m=/^\s*(?:[-*+]\s+)?(?:\[([ xX])\]\s*)?(.*)$/.exec(l); return {text:m?m[2]:l, done:!!(m&&m[1]&&m[1]!==' ')}; })); }
 function itemsToBody(items){ return (items||[]).map(x=>'- ['+(x.done?'x':' ')+'] '+x.text).join('\n'); }
@@ -704,7 +706,10 @@ const App = (function(){
   function lockedErr(){ const e=new Error('locked'); e.locked=true; return e; }
   // Rollback-Helfer für die Aufrufer: Snapshot zurückspielen, außer die Sitzung ist zwischendurch gesperrt worden.
   const rollback=snap=>e=>{ if(e&&e.locked) return; if(VAULT) VAULT.entries=snap; };
-  async function persist(){
+  // Laufende Schreibvorgänge als Kette (Audit run-1 #1): lockSaving wartet darauf, bevor lock() die Sitzung für tot erklärt.
+  let inflight=Promise.resolve();
+  function persist(){ const run=persistOnce(); inflight=inflight.then(()=>run,()=>run).then(()=>{},()=>{}); return run; }
+  async function persistOnce(){
     const dek=DEK, kdf=KDF, wrap=WRAP, vault=VAULT;          // Schlüssel-Generation pinnen (lock/changePass während des await)
     if(!dek||!vault) throw lockedErr();
     const list=vault.entries;                                  // Eintragsstand mitpinnen (Audit run-5 #6)
@@ -712,8 +717,8 @@ const App = (function(){
     const body=await encryptBody(Object.assign({},vault,{entries}), dek, kdf);
     // Nachprüfen: das Pinnen allein genügt nicht, der Stand kann während des await veraltet sein (Querfund Sachwert-Tresor v2.9.1).
     if(!DEK||VAULT!==vault) throw lockedErr();                 // zwischenzeitlich gesperrt → NICHT mehr schreiben
-    if(vault.entries!==list) return persist();                 // Eintragsstand veraltet → neu rechnen statt den alten committen
-    if(DEK!==dek||KDF!==kdf||WRAP!==wrap) return persist();    // Passphrase gewechselt → mit dem neuen Schlüssel neu verschlüsseln,
+    if(vault.entries!==list) return persistOnce();             // Eintragsstand veraltet → neu rechnen statt den alten committen (Schreiber setzen IMMER ein neues Array, Audit run-1 #2)
+    if(DEK!==dek||KDF!==kdf||WRAP!==wrap) return persistOnce();    // Passphrase gewechselt → mit dem neuen Schlüssel neu verschlüsseln,
                                                                // sonst überschriebe dieser alte Blob den frischen von changePass
     const s=serializeFile(kdf, wrap, body);
     try{ vaultSet(s); }
@@ -865,7 +870,9 @@ const App = (function(){
   function resetIdle(){ clearIdle(); if(!DEK&&!pendingUnlock) return; const mins=settings().autolock; if(!mins) return; idleTimer=setTimeout(()=>{ clearIdle(); lockSaving('toast.autolocked'); }, mins*60000); }
   // Sperren mit Editor-Sicherung: erst den Autosave-Persist zu Ende laufen lassen (AES-GCM, Millisekunden), DANN sperren — sonst
   // verwirft persist() den Stand als „tote Sitzung“ und die letzte Änderung wäre weg. Ohne offenen Editor sperrt es im nächsten Mikrotask.
-  function lockSaving(toastKey){ const p=commitEditor(true); (p&&p.then?p:Promise.resolve()).then(()=>{},()=>{}).then(()=>{ if(!DEK&&!pendingUnlock) return; lock(); if(toastKey) toast(tr(toastKey)); }); }
+  // Sperre wartet den eigenen Commit UND alle laufenden Persists ab (Kette inflight), höchstens 5 s — sonst verwarf lock() einen laufenden Autosave still (Audit run-1 #1).
+  function lockSaving(toastKey){ const p=commitEditor(true); const all=Promise.all([p&&p.then?p:Promise.resolve(), inflight]).then(()=>{},()=>{});
+    Promise.race([all, new Promise(r=>setTimeout(r,5000))]).then(()=>{ if(!DEK&&!pendingUnlock) return; lock(); if(toastKey) toast(tr(toastKey)); }); }
   function activity(){ if(!DEK&&!pendingUnlock) return; const n=Date.now(); if(n-lastActivity<5000) return; lastActivity=n; resetIdle(); }
   ['click','keydown','touchstart','scroll','mousemove'].forEach(ev=>document.addEventListener(ev, activity, {passive:true}));
   let bgAway=false;
@@ -1020,13 +1027,14 @@ const App = (function(){
   /* ---------- Editor: Notiz / Checkliste, Autosave (Konzept 3: kein Speichern-Knopf) ----------
      Verlassen (Fertig, Tab, Zurück, Hintergrund, Sperre) speichert; beim Tippen zusätzlich nach AUTOSAVE_MS Ruhe.
      Schreiben folgt dem Persist-Muster von Alien Pass: Snapshot, VAULT ändern, persist(), bei Fehler Rollback (nie bei .locked). */
-  const AUTOSAVE_MS=1500; let autosaveTimer=null, itemSeq=0;
+  const AUTOSAVE_MS=1500; let autosaveTimer=null, itemSeq=0, editBase=null;   // editBase: Signatur des Formularstands direkt nach dem Öffnen (Audit run-1 #3/#8)
   function setEntryType(t){ formType=entryType(t); closeMenus(); ENTRY_TYPES.forEach(x=>$('ft-'+x).classList.toggle('on',x===formType)); $('grp-text').classList.toggle('hidden',formType!=='text'); $('grp-list').classList.toggle('hidden',formType!=='list'); $('f-md-wrap').classList.toggle('hidden',formType!=='text'); hide('md-cheat'); renderAddTitle(); }
   function renderAddTitle(){ $('add-title').textContent=tr(editId?(formType==='list'?'add.titleEditList':'add.titleEdit'):(formType==='list'?'add.titleNewList':'add.titleNew')); }
   // Typwechsel per Segment: Inhalt wird umgewandelt (Zeilen ↔ Einträge), nach Rückfrage — nichts geht still verloren
   function changeEntryType(t){ t=entryType(t); if(t===formType) return;
-    if(t==='list'){ const body=$('f-body').value; if(body.trim()&&!confirm(tr('confirm.toList',{n:ITEMS_MAX}))) return; setItemRows(linesToItems(body)); if(!itemRows().length) pushItemRow('',false); $('f-body').value=''; $('f-md').checked=false; $('md-seg').classList.add('hidden'); setMdMode('edit'); }
-    else { const items=readItemRows(); if(items.length&&!confirm(tr('confirm.toText'))) return; $('f-body').value=itemsToBody(items); clearItemRows(); }
+    if(t==='list'){ const body=$('f-body').value; if(body.trim()&&!confirm(tr('confirm.toList',{n:ITEMS_MAX,c:CAPS.item}))) return; setItemRows(linesToItems(body)); if(!itemRows().length) pushItemRow('',false); $('f-body').value=''; $('f-md').checked=false; $('md-seg').classList.add('hidden'); setMdMode('edit'); }
+    else { const items=readItemRows(); const body=itemsToBody(items); if(body.length>CAPS.body) return toast(tr('toast.bodyFull',{n:CAPS.body}));   // sonst kappte sanitizeEntry still (Audit run-1 #6)
+      if(items.length&&!confirm(tr('confirm.toText'))) return; $('f-body').value=body; clearItemRows(); }
     setEntryType(t); editorChanged(); renderCounter(); }
   function setMdMode(m){ mdMode=m==='view'?'view':'edit'; const on=mdMode==='view'; $('mm-edit').classList.toggle('on',!on); $('mm-view').classList.toggle('on',on);
     $('f-body').classList.toggle('hidden',on); $('md-view').classList.toggle('hidden',!on); if(on) renderMd($('f-body').value); else $('md-view').replaceChildren(); }
@@ -1075,12 +1083,14 @@ const App = (function(){
     rows.forEach(r=>{ $(r.dataset.c).checked=false; r.classList.remove('done'); }); editorChanged(); renderCounter(); }
   function relabelItemRows(){ itemRows().forEach(r=>{ $(r.dataset.t).placeholder=tr('ed.itemPh'); const b=r.querySelector('.idel'); b.title=tr('ed.itemDel'); b.setAttribute('aria-label',tr('ed.itemDel')); }); }
   function resetForm(){ ['f-title','f-cat','f-body'].forEach(id=>$(id).value=''); ['f-fav','f-pinned','f-md'].forEach(id=>$(id).checked=false); clearItemRows(); $('md-seg').classList.add('hidden'); hide('md-cheat'); setMdMode('edit'); closeMenus(); err('add-err'); setEntryType('text'); $('ed-count').textContent=''; $('ed-meta').textContent=''; $('ed-del').classList.add('hidden'); }
-  function newEntry(t){ if(editing) closeEditor(); editId=null; editing=true; resetForm(); if(t==='list') setEntryType('list'); if(catFilter) $('f-cat').value=catFilter; tab('add'); setTimeout(()=>$(formType==='list'?'f-title':'f-body').focus(),80); if(formType==='list') addItemRow(); }
+  function newEntry(t){ if(editing) closeEditor(); editId=null; editBase=null; editing=true; resetForm(); if(t==='list') setEntryType('list'); if(catFilter) $('f-cat').value=catFilter; tab('add'); setTimeout(()=>$(formType==='list'?'f-title':'f-body').focus(),80); if(formType==='list') addItemRow(); }
   function openEditor(id){ const e=byId(id); if(!e) return toast(tr('toast.noEntry')); if(editing) closeEditor(); editId=e.id; editing=true; resetForm(); setEntryType(e.type);
     $('f-title').value=e.title; $('f-cat').value=e.cat; $('f-fav').checked=e.fav; $('f-pinned').checked=e.pinned;
     if(e.type==='text'){ $('f-body').value=e.body; $('f-md').checked=e.md; $('md-seg').classList.toggle('hidden',!e.md); setMdMode(e.md?'view':'edit'); }
     else setItemRows(e.items);
-    $('ed-meta').textContent=tr('ed.meta',{c:fmtDate(e.created),u:fmtDate(e.updated)}); $('ed-del').classList.remove('hidden'); renderCounter(); tab('add'); markSel(); }
+    $('ed-meta').textContent=tr('ed.meta',{c:fmtDate(e.created),u:fmtDate(e.updated)}); $('ed-del').classList.remove('hidden'); renderCounter(); tab('add'); markSel();
+    // Fixpunkt merken: was das Formular unverändert liefert (textarea normalisiert CRLF, Titel aus erster Zeile) — nur echte Änderungen werden geschrieben
+    const base=sanitizeEntry(Object.assign({},e,readDraft())); editBase=base?sig(base):null; }
   // Entwurf aus dem Formular; leerer Titel → erste Zeile des Textes (Konzept: Easy-Notes-Bedienung)
   function readDraft(){ const t=formType, body=t==='text'?$('f-body').value:'', items=t==='list'?readItemRows():[];
     let title=line($('f-title').value,CAPS.title); if(!title&&t==='text'){ const first=body.split('\n').map(l=>line(l,CAPS.title)).find(Boolean); title=first||''; }
@@ -1098,15 +1108,17 @@ const App = (function(){
     if(!entry) return Promise.resolve(false);
     if(!before&&isBlank(entry)) return Promise.resolve(false);            // leere neue Notiz: nichts anlegen
     if(before&&sig(entry)===sig(before)) return Promise.resolve(false);    // unverändert: updated nicht anheben (sonst gewänne der Stand überall)
+    if(editBase&&sig(entry)===editBase) return Promise.resolve(false);     // unverändert gegenüber dem Öffnen (fremder Stand mit CRLF/leerem Titel, Import währenddessen) — nicht zurückschreiben
+    if(editId&&idx<0){ toast(tr('toast.noEntry')); return Promise.resolve(false); }   // inzwischen gelöscht (nur per Import möglich): nie mit derselben ID neu anlegen
     if(idx<0&&liveCount(VAULT.entries)>=MAX_ENTRIES){ err('add-err',tr('err.tooMany')); return Promise.resolve(false); }
     const snapshot=VAULT.entries.slice(), wasNew=!before;
-    if(idx>=0) VAULT.entries[idx]=entry; else VAULT.entries.push(entry);
+    VAULT.entries = idx>=0 ? VAULT.entries.map((x,i)=>i===idx?entry:x) : VAULT.entries.concat([entry]);   // neues Array: persist erkennt den zweiten Schreiber (Audit run-1 #2)
     if(wasNew){ editId=entry.id; renderAddTitle(); $('ed-del').classList.remove('hidden'); }
-    return persist().then(()=>{ if(stay&&editing&&editId===entry.id){ $('ed-meta').textContent=tr('ed.meta',{c:fmtDate(entry.created),u:fmtDate(entry.updated)}); if(DESK){ renderList(); } } return true; })
-      .catch(e=>{ rollback(snapshot)(e); if(!(e&&e.locked)&&wasNew&&editing){ editId=null; renderAddTitle(); $('ed-del').classList.add('hidden'); } return false; });
+    return persist().then(()=>{ if(editing&&editId===entry.id) editBase=sig(entry); if(stay&&editing&&editId===entry.id){ $('ed-meta').textContent=tr('ed.meta',{c:fmtDate(entry.created),u:fmtDate(entry.updated)}); if(DESK){ renderList(); } } return true; })
+      .catch(e=>{ rollback(snapshot)(e); if(!(e&&e.locked)&&wasNew&&editing&&editId===entry.id){ editId=null; renderAddTitle(); $('ed-del').classList.add('hidden'); } return false; });   // editId===entry.id: nur die eigene Notiz zurücksetzen (Audit run-1 #4)
   }
   // Editor verlassen: speichern, dann Formular leeren. Eine leere neue Notiz wird verworfen (mit Hinweis).
-  function closeEditor(){ if(!editing) return; const blankNew=!editId&&isBlank(readDraft()); commitEditor(false); editing=false; editId=null; resetForm(); renderDeskPane(); markSel(); if(blankNew) toast(tr('toast.discarded')); }
+  function closeEditor(){ if(!editing) return; const blankNew=!editId&&isBlank(readDraft()); commitEditor(false); editing=false; editId=null; editBase=null; resetForm(); renderDeskPane(); markSel(); if(blankNew) toast(tr('toast.discarded')); }
   function doneEditor(){ closeEditor(); tab('list'); }
   function copyCurrent(){ if(!editing) return; copyText(noteText(readDraft()),'what.note'); }
   function deleteCurrent(){ if(!editing||!editId) return; const e=byId(editId); if(!e) return;
@@ -1115,8 +1127,8 @@ const App = (function(){
     if(!confirm(full?tr('confirm.deleteFull',{t:titleOf(e),m:MAX_TRASH,o:titleOf(oldest),od:fmtDate(oldest.deleted)})
                     :tr('confirm.delete',{t:titleOf(e),d:TRASH_DAYS}))) return;
     clearTimeout(autosaveTimer); autosaveTimer=null;
-    const idx=VAULT.entries.indexOf(e), snapshot=VAULT.entries.slice(), iso=nowIso();
-    VAULT.entries[idx]=Object.assign({},e,{updated:iso, deleted:iso});     // in den Papierkorb — der Inhalt bleibt TRASH_DAYS erhalten
+    const snapshot=VAULT.entries.slice(), iso=nowIso();
+    VAULT.entries=VAULT.entries.map(x=>x===e?Object.assign({},e,{updated:iso, deleted:iso}):x);   // neues Array (Audit run-1 #2)     // in den Papierkorb — der Inhalt bleibt TRASH_DAYS erhalten
     editing=false; editId=null; resetForm();
     persist().then(()=>{ tab('list'); toast(tr('toast.trashed',{d:TRASH_DAYS})); }).catch(e2=>{ rollback(snapshot)(e2); if(VAULT) openEditor(e.id); }); }
 
@@ -1150,12 +1162,12 @@ const App = (function(){
   }
   function restoreEntry(id){ const e=trashById(id); if(!e) return toast(tr('toast.noEntry'));
     if(liveCount(VAULT.entries)>=MAX_ENTRIES) return toast(tr('err.tooMany'));
-    const idx=VAULT.entries.indexOf(e), snapshot=VAULT.entries.slice();
-    VAULT.entries[idx]=Object.assign({},e,{updated:nowIso(), deleted:null});   // neueres updated ⇒ schlägt die Löschmarke auf anderen Geräten
+    const snapshot=VAULT.entries.slice();
+    VAULT.entries=VAULT.entries.map(x=>x===e?Object.assign({},e,{updated:nowIso(), deleted:null}):x);   // neues Array (Audit run-1 #2)   // neueres updated ⇒ schlägt die Löschmarke auf anderen Geräten
     persist().then(()=>{ renderTrash(); renderList(); toast(tr('toast.restored')); }).catch(rollback(snapshot)); }
   function purgeEntry(id){ const e=trashById(id); if(!e) return; if(!confirm(tr('confirm.purge',{t:titleOf(e)}))) return;
-    const idx=VAULT.entries.indexOf(e), snapshot=VAULT.entries.slice();
-    VAULT.entries[idx]=tombstone(e, nowIso());                                 // updated=jetzt ⇒ der leere Stand gewinnt überall
+    const snapshot=VAULT.entries.slice();
+    VAULT.entries=VAULT.entries.map(x=>x===e?tombstone(e, nowIso()):x);   // neues Array (Audit run-1 #2)                                 // updated=jetzt ⇒ der leere Stand gewinnt überall
     persist().then(()=>{ renderTrash(); renderList(); toast(tr('toast.purged')); }).catch(rollback(snapshot)); }
   function emptyTrash(){ if(!VAULT) return; const t=trash(); if(!t.length) return;
     if(!confirm(tr('confirm.emptyTrash',{n:t.length}))) return;
@@ -1249,6 +1261,7 @@ const App = (function(){
       try{ const kek=await deriveKek(passBytes($('import-pass').value), f.kdf); const dek=await unwrapDek(f.wrap,kek,f.kdf,false); const obj=await decryptBody(f.body,dek,f.kdf); incoming=sanitizeVault(obj).entries; }
       catch(e){ $('import-pass').value=''; if(VAULT) $('import-msg').textContent=e&&e.message==='toomany'?tr('err.tooMany'):tr('bk.mergeFail'); return; }
       if(!VAULT||!DEK) return;                                   // während des Argon2-Laufs gesperrt → sauber abbrechen
+      if(editing) doneEditor();                                  // offener Editor (Nutzer war während Argon2 unterwegs) würde nach dem Merge den alten Stand zurückschreiben (Audit run-1 #3)
       incoming=shapeIncoming(VAULT.entries, incoming);          // Papierkorb-Inhalt bleibt gerätelokal, fremde Marken verdrängen keine eigenen (Audit run-5)
       const before=VAULT.entries.slice(); const m=mergeEntries(VAULT.entries, incoming);
       if(liveCount(m.entries)>MAX_ENTRIES){ $('import-msg').textContent=tr('err.tooMany'); return; }
@@ -1488,13 +1501,14 @@ const App = (function(){
     const sc=$('secure-card'); if(sc){ sc.classList.toggle('hidden',!SEC); $('set-secure').checked=s.secure!==0; }
     const soft=document.documentElement.getAttribute('data-theme')==='soft'; $('th-dark').classList.toggle('on',!soft); $('th-soft').classList.toggle('on',soft);
     $('about-line').textContent=tr('about',{v:APP_VERSION,m:Math.round(KDF.m/1024),t:KDF.t,p:KDF.p}); }
-  function setSetting(key, v){ if(!VAULT) return; const n=Number(v); if(!SETTINGS_ALLOWED[key].includes(n)) return; const before=VAULT.settings[key]; VAULT.settings[key]=n; persist().then(()=>{ resetIdle(); }).catch(e=>{ if(e&&e.locked) return; if(VAULT){ VAULT.settings[key]=before; renderSettings(); } }); }
-  const setAutolock=v=>setSetting('autolock',v), setBgLock=v=>setSetting('bgLock',v), setClipClear=v=>setSetting('clipClear',v);
+  function setSetting(key, v){ if(!VAULT) return; const n=Number(v); if(!SETTINGS_ALLOWED[key].includes(n)) return; const before=VAULT.settings[key]; VAULT.settings[key]=n; return persist().then(()=>{ resetIdle(); return true; }).catch(e=>{ if(e&&e.locked) return false; if(VAULT){ VAULT.settings[key]=before; renderSettings(); } return false; }); }
+  const setAutolock=v=>{ setSetting('autolock',v); }, setBgLock=v=>{ setSetting('bgLock',v); }, setClipClear=v=>{ setSetting('clipClear',v); };   // ohne Rückgabe (Tests warten sonst auf den Persist); setSecure nutzt das Promise
   /* ---------- FLAG_SECURE (kein Screenshot, schwarze Vorschau im App-Umschalter): ab Werk an, abschaltbar (Entscheidung 24.09.2026) ----------
      Die Wahl liegt in settings.secure (nie importiert). Gesperrt und beim Einrichten ist der Schutz IMMER an — nur eine entsperrte Sitzung
      hebt ihn auf Wunsch auf; lock() schaltet ihn wieder ein, bevor der Sperrbildschirm erscheint. Nativ setzt/löscht das Plugin die Flagge. */
   function applySecure(on){ if(!SEC) return; try{ const p=SEC.set({on:!!on}); if(p&&p.catch) p.catch(()=>{}); }catch(_){} }
-  function setSecure(_, elx){ if(!VAULT||!elx) return; const on=!!elx.checked; setSetting('secure', on?1:0); applySecure(on); }
+  // Flagge folgt der gespeicherten Einstellung: erst nach erfolgreichem Persist umschalten, bei Fehler bleibt der Schutz an (Audit run-1 Hardening)
+  function setSecure(_, elx){ if(!VAULT||!elx) return; const on=!!elx.checked; const p=setSetting('secure', on?1:0); if(p&&p.then) p.then(okk=>{ if(okk&&VAULT) applySecure(on); }); }
   function theme(t){ try{ if(t==='soft'){ document.documentElement.setAttribute('data-theme','soft'); localStorage.setItem('alien-theme','soft'); } else { document.documentElement.removeAttribute('data-theme'); localStorage.setItem('alien-theme','dark'); } }catch(_){} if(VAULT) renderSettings(); else { const soft=t==='soft'; $('th-dark').classList.toggle('on',!soft); $('th-soft').classList.toggle('on',soft); } }
   async function changePass(){
     if(changePass._busy||!VAULT) return; err('cp-err');

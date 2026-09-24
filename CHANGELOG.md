@@ -13,3 +13,6 @@ Linux-Desktop: Electron im Flatpak ohne Netz und Dateisystem (wie Alien Pass), N
 mit KDE-Hinweis, zweispaltig Liste und Notiz ab 1000 px, Strg+N/F/L, Schnell-Entsperren per PIN bis zum Beenden. Jede Sperre sichert vorher den
 Editor-Stand.
 Kleine Helfer im Editor: Markdown-Spickzettel mit „Beispiel einfügen“, „Datum einfügen“, „Haken zurücksetzen“, Strg+S am Desktop.
+Interner Audit run-1 (24.09.2026, sieben LOW, ein INFO, alle behoben): Sperre wartet laufende Speichervorgänge ab, gleichzeitige Schreibvorgänge
+gehen nicht mehr verloren, Import schließt einen offenen Editor, Öffnen ohne Änderung schreibt nichts, Markdown-Überschriften ohne
+Laufzeitfalle, Typwechsel warnt vor Kürzung. Faktencheck der Texte: Sperr-Hinweis, FLAG_SECURE-Karte, Berechtigungen, Zwischenablage präzisiert.
