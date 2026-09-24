@@ -45,6 +45,19 @@ html.desk .no-desk{display:none;}
 .ed-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
 .ed-actions .btn{flex:1;min-width:110px;}
 .seg.md-seg{max-width:260px;margin:0 0 8px;}
+/* Markdown-Spickzettel: ?-Knopf neben dem Kästchen, Kärtchen „so tippen → so sieht es aus“ (nur statischer Text) */
+.cheat-wrap{display:inline-flex;gap:8px;align-items:center;}
+.cheat-btn{width:26px;height:26px;padding:0;border-radius:50%;font-family:'Orbitron',sans-serif;font-weight:700;line-height:1;}
+.cheat{margin-top:10px;background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:3px;padding:10px 12px;font-size:.85rem;color:var(--text-mid);}
+.cheat-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:1px;text-transform:uppercase;color:var(--neon);margin-bottom:6px;}
+.cheat-hint{font-family:inherit;text-transform:none;letter-spacing:0;color:var(--text-dim);font-size:.72rem;}
+.cheat-row{display:flex;gap:12px;align-items:center;padding:4px 0;border-top:1px dashed var(--border);}
+.cheat-row>code:first-child{flex:0 0 46%;min-width:0;font-family:'Share Tech Mono',monospace;color:var(--yellow);white-space:pre-wrap;word-break:break-all;}
+.cheat-row .cheat-h{font-family:'Orbitron',sans-serif;color:var(--neon);font-weight:700;letter-spacing:1px;text-transform:uppercase;font-size:.8rem;}
+.cheat-row strong{color:var(--neon);font-weight:700;}
+.cheat-row .cheat-done{text-decoration:line-through;color:var(--text-dim);}
+.cheat-row .cheat-code{background:rgba(0,255,204,.1);padding:1px 5px;border-radius:3px;font-size:.88em;}
+.cheat-row .cheat-hr{flex:1;border-top:1px solid var(--neon-mid);}
 /* Checkliste im Editor: Kästchen (Kit) + Textfeld + Entfernen */
 .crow{display:flex;gap:8px;margin-bottom:6px;align-items:center;}
 .crow label.chk{margin:0;flex:none;}
@@ -225,6 +238,9 @@ html.desk .no-desk{display:none;}
           <label data-i18n="f.body">Text</label>
           <textarea id="f-body" maxlength="100000" autocomplete="off" autocapitalize="sentences" spellcheck="false" placeholder="Hier schreiben …" data-i18n-ph="f.bodyPh" data-input="editorChanged"></textarea>
           <div id="md-view" class="md hidden"></div>
+          <div class="row" style="margin-top:6px">
+            <button id="f-date" class="btn sm ghost" type="button" data-action="insertDate" data-i18n="f.date">Datum einfügen</button>
+          </div>
         </div>
         <div id="grp-list" class="hidden">
           <label data-i18n="f.items">Einträge</label>
@@ -232,13 +248,31 @@ html.desk .no-desk{display:none;}
           <div class="row" style="margin-top:6px">
             <button id="f-iadd" class="btn sm ghost" type="button" data-action="addItemRow" data-i18n="f.itemAdd">+ Zeile</button>
             <button class="btn sm ghost" type="button" data-action="sortDone" data-i18n="f.sortDone">Erledigte nach unten</button>
+            <button id="f-reset" class="btn sm ghost" type="button" data-action="resetDone" data-i18n="f.resetDone">Haken zurücksetzen</button>
           </div>
         </div>
         <div class="ed-foot"><span id="ed-count"></span><span id="ed-meta"></span></div>
         <div class="ed-opts">
           <label class="chk"><input type="checkbox" id="f-pinned" data-change="editorChanged"> <span data-i18n="f.pinned">Oben anheften</span></label>
           <label class="chk"><input type="checkbox" id="f-fav" data-change="editorChanged"> <span data-i18n="f.fav">Favorit</span></label>
-          <label class="chk" id="f-md-wrap"><input type="checkbox" id="f-md" data-change="mdToggle"> <span data-i18n="f.md">Markdown-Ansicht</span></label>
+          <span id="f-md-wrap" class="cheat-wrap"><label class="chk"><input type="checkbox" id="f-md" data-change="mdToggle"> <span data-i18n="f.md">Markdown-Ansicht</span></label>
+            <button id="md-cheat-btn" class="btn sm ghost icon cheat-btn" type="button" data-action="mdCheat" aria-label="Markdown-Spickzettel" title="Markdown-Spickzettel">?</button></span>
+        </div>
+        <!-- Markdown-Spickzettel: nur statischer Text (data-i18n → textContent), keine Auszeichnung aus Daten -->
+        <div id="md-cheat" class="cheat hidden">
+          <div class="cheat-head"><span data-i18n="cheat.title">Markdown-Spickzettel</span><span class="cheat-hint" data-i18n="cheat.hint">so tippen → so sieht es aus</span></div>
+          <div class="cheat-row"><code data-i18n="cheat.hSrc"># Überschrift</code><span class="cheat-h" data-i18n="cheat.h">Überschrift</span></div>
+          <div class="cheat-row"><code data-i18n="cheat.bSrc">**fett**</code><strong data-i18n="cheat.b">fett</strong></div>
+          <div class="cheat-row"><code data-i18n="cheat.iSrc">*kursiv*</code><em data-i18n="cheat.i">kursiv</em></div>
+          <div class="cheat-row"><code data-i18n="cheat.lSrc">- Punkt</code><span data-i18n="cheat.l">• Punkt</span></div>
+          <div class="cheat-row"><code data-i18n="cheat.nSrc">1. Erster</code><span data-i18n="cheat.n">1. Erster</span></div>
+          <div class="cheat-row"><code data-i18n="cheat.cSrc">- [ ] offen</code><span data-i18n="cheat.c">☐ offen</span></div>
+          <div class="cheat-row"><code data-i18n="cheat.dSrc">- [x] erledigt</code><span class="cheat-done" data-i18n="cheat.d">☑ erledigt</span></div>
+          <div class="cheat-row"><code data-i18n="cheat.codeSrc">`Code`</code><code class="cheat-code" data-i18n="cheat.code">Code</code></div>
+          <div class="cheat-row"><code>---</code><span class="cheat-hr"></span></div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn sm ghost" type="button" data-action="mdExample" data-i18n="cheat.example">Beispiel einfügen</button>
+          </div>
         </div>
         <div id="add-err" class="warn hidden" style="margin-top:10px"></div>
         <div class="ed-actions">
@@ -431,7 +465,7 @@ html.desk .no-desk{display:none;}
       <li><strong>Zwischenablage:</strong> Kopierte Notizen sind für KDE als Passwort markiert — Klipper nimmt sie nicht in den Verlauf. Andere Zwischenablage-Verwalter beachten die Markierung nicht unbedingt. Die App leert die Zwischenablage nach der eingestellten Zeit auch im Hintergrund und beim Beenden, aber nur, wenn noch ihre eigene Kopie drin ist. Dasselbe gilt für Text, den du in der App mit der Maus markierst (unter Linux sofort per Mittelklick einfügbar); Strg+C und Strg+X in der App kopieren wie der Kopier-Knopf.</li>
       <li><strong>Abgleich mit dem Handy:</strong> auf dem Handy „Backup erstellen“ in einen Syncthing-Ordner, am Desktop unter Sicherung importieren — und umgekehrt. Siehe „Backup &amp; Sync“.</li>
       <li><strong>Sperren:</strong> nach Inaktivität und beim Minimieren oder Verstecken des Fensters (Einstellung „Sperren im Hintergrund“ — „Hintergrund“ heißt hier minimiert oder versteckt; ein Wechsel zu einem anderen Fenster zählt nicht, leert aber getippte Passphrasen und PINs). Bei <strong>Bildschirmsperre und Ruhezustand sperrt die Desktop-App nicht von selbst</strong> — im Flatpak erfährt sie davon nichts. Deshalb die Sperre des Systems nutzen und bei Bedarf eine kurze Inaktivitäts-Sperre einstellen; Strg+L sperrt sofort.</li>
-      <li><strong>Tastatur:</strong> Strg+F Suche, Strg+N neue Notiz, Strg+L sperren, Esc schließt. Ab etwa 1000 Pixel Fensterbreite stehen Liste und Notiz nebeneinander.</li>
+      <li><strong>Tastatur:</strong> Strg+F Suche, Strg+N neue Notiz, Strg+S Notiz fertig (speichern und schließen), Strg+L sperren, Esc schließt. Ab etwa 1000 Pixel Fensterbreite stehen Liste und Notiz nebeneinander.</li>
       <li><strong>Ehrliche Grenzen:</strong> Die Desktop-App bringt ihre Browser-Engine (Electron) selbst mit — Sicherheits-Updates dafür kommen nur mit einer neuen Version der App, nicht über das System. Kein Schutz vor Bildschirmfotos (Linux kennt keine Sperre dafür). Unter X11 kann jedes laufende Programm Tastatur und Zwischenablage mitlesen; Wayland trennt Programme besser. Kein Fingerabdruck.</li>
     </ul>
     <h2 data-i18n="help.h2">Erste Schritte</h2>

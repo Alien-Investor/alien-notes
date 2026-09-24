@@ -46,7 +46,11 @@ const I18N = {
   "f.cat":"Category","f.catPh":"e.g. Private, Work, Ideas — empty = none",
   "md.edit":"Text","md.view":"Preview",
   "f.body":"Text","f.bodyPh":"Write here …",
-  "f.items":"Entries","f.itemAdd":"+ Line","f.sortDone":"Done to the bottom",
+  "f.items":"Entries","f.itemAdd":"+ Line","f.sortDone":"Done to the bottom","f.resetDone":"Clear ticks","f.date":"Insert date",
+  "cheat.title":"Markdown cheat sheet","cheat.hint":"type this → looks like this","cheat.hSrc":"# Heading","cheat.h":"Heading",
+  "cheat.bSrc":"**bold**","cheat.b":"bold","cheat.iSrc":"*italic*","cheat.i":"italic","cheat.lSrc":"- item","cheat.l":"• item",
+  "cheat.nSrc":"1. first","cheat.n":"1. first","cheat.cSrc":"- [ ] open","cheat.c":"☐ open","cheat.dSrc":"- [x] done","cheat.d":"☑ done",
+  "cheat.codeSrc":"`code`","cheat.code":"code","cheat.example":"Insert example",
   "f.fav":"Favourite","f.pinned":"Pin to the top","f.md":"Markdown preview",
   "ed.done":"Done","ed.copy":"Copy","ed.delete":"Delete",
   "bk.title":"Encrypted backup",
@@ -78,7 +82,7 @@ const I18N = {
   "set.pinDisable":"Discard PIN",
   "d.pick":"Select a note on the left or create a new one",
   "help.hDesk":"Desktop version (Linux)",
-  "help.lDesk":"<li><strong>No network — enforced by the system:</strong> the desktop app runs as a Flatpak without network permission; inside the sandbox there is no connection to the outside. On top of that the app itself blocks every connection. Check: <code>flatpak info --show-permissions org.alieninvestor.notes</code> — there is no <code>network</code>.</li><li><strong>Notes file:</strong> <code>~/.var/app/org.alieninvestor.notes/data/alien-notes/notes.ainv</code> — encrypted, readable only by you, rewritten completely on every change (never half-written). The app sees no other files: backup and import go through the system file dialog, which only grants the chosen file.</li><li><strong>Clipboard:</strong> copied notes are marked as a password for KDE — Klipper keeps them out of its history. Other clipboard managers may ignore the mark. The app clears the clipboard after the set time, also in the background and on quit, but only if its own copy is still there. The same applies to text you select with the mouse in the app (on Linux instantly pasteable with a middle click); Ctrl+C and Ctrl+X in the app copy like the copy button.</li><li><strong>Syncing with the phone:</strong> on the phone “Create backup” into a Syncthing folder, on the desktop import it under Backup — and the other way round. See “Backup &amp; Sync”.</li><li><strong>Locking:</strong> after inactivity and when the window is minimised or hidden (setting “Lock in background” — “background” here means minimised or hidden; switching to another window does not count, but it clears typed passphrases and PINs). On <strong>screen lock and suspend the desktop app does not lock by itself</strong> — inside the Flatpak it is not told. So use the system lock and, if you want, a short inactivity lock; Ctrl+L locks immediately.</li><li><strong>Keyboard:</strong> Ctrl+F search, Ctrl+N new note, Ctrl+L lock, Esc closes. From about 1000 pixels window width, list and note sit side by side.</li><li><strong>Honest limits:</strong> the desktop app ships its own browser engine (Electron) — security updates for it only arrive with a new app version, not through the system. No protection against screenshots (Linux has no way to block them). Under X11 every running program can read keyboard and clipboard; Wayland separates programs better. No fingerprint.</li>",
+  "help.lDesk":"<li><strong>No network — enforced by the system:</strong> the desktop app runs as a Flatpak without network permission; inside the sandbox there is no connection to the outside. On top of that the app itself blocks every connection. Check: <code>flatpak info --show-permissions org.alieninvestor.notes</code> — there is no <code>network</code>.</li><li><strong>Notes file:</strong> <code>~/.var/app/org.alieninvestor.notes/data/alien-notes/notes.ainv</code> — encrypted, readable only by you, rewritten completely on every change (never half-written). The app sees no other files: backup and import go through the system file dialog, which only grants the chosen file.</li><li><strong>Clipboard:</strong> copied notes are marked as a password for KDE — Klipper keeps them out of its history. Other clipboard managers may ignore the mark. The app clears the clipboard after the set time, also in the background and on quit, but only if its own copy is still there. The same applies to text you select with the mouse in the app (on Linux instantly pasteable with a middle click); Ctrl+C and Ctrl+X in the app copy like the copy button.</li><li><strong>Syncing with the phone:</strong> on the phone “Create backup” into a Syncthing folder, on the desktop import it under Backup — and the other way round. See “Backup &amp; Sync”.</li><li><strong>Locking:</strong> after inactivity and when the window is minimised or hidden (setting “Lock in background” — “background” here means minimised or hidden; switching to another window does not count, but it clears typed passphrases and PINs). On <strong>screen lock and suspend the desktop app does not lock by itself</strong> — inside the Flatpak it is not told. So use the system lock and, if you want, a short inactivity lock; Ctrl+L locks immediately.</li><li><strong>Keyboard:</strong> Ctrl+F search, Ctrl+N new note, Ctrl+S finish the note (save and close), Ctrl+L lock, Esc closes. From about 1000 pixels window width, list and note sit side by side.</li><li><strong>Honest limits:</strong> the desktop app ships its own browser engine (Electron) — security updates for it only arrive with a new app version, not through the system. No protection against screenshots (Linux has no way to block them). Under X11 every running program can read keyboard and clipboard; Wayland separates programs better. No fingerprint.</li>",
   "help.hPin":"Quick unlock with a PIN (desktop)",
   "help.pPin":"Optionally a PIN replaces the passphrase after a lock (Settings → Quick unlock with a PIN). <strong>How it works:</strong> when you set it up, the app wraps a copy of the data key under a key derived from your PIN (Argon2id, same parameters as the notes file) and keeps that copy <em>in memory only</em>. A lock through inactivity or the background clears the session as before, but that wrapped copy stays; the PIN opens it again. Nothing of it is written to disk, the notes file stays unchanged and backups carry none of it. Quitting the app removes the copy, and after 24 hours at the latest the app discards it itself: the next start asks for the passphrase. <strong>What it costs:</strong> six digits are a tiny search space. With the file's Argon2 parameters an ordinary CPU tries them all in a few hours, a single graphics card in roughly ten minutes — never enough to protect the file, each extra digit only multiplies the effort by ten. The PIN only protects that copy in memory. With a PIN, “locked” therefore no longer means “key wiped from memory”: whoever can read the memory of the running program holds the wrapped key and can try PINs offline — the three attempts are a rule in the code, not a cryptographic limit. <strong>What discards the PIN:</strong> three wrong attempts, a passphrase change, deleting the notes, an altered or swapped notes file, the end of the 24 hours, and quitting the app. <strong>The deliberate bolt:</strong> “Lock now” (Ctrl+L) keeps the PIN but demands the passphrase once — afterwards the PIN applies again. If you share the computer with others or have unencrypted swap, leave the PIN off.",
   "set.bioTitle":"Fingerprint unlock (Android)",
@@ -202,6 +206,11 @@ const T = {
   "toast.purged":{de:"Notiz endgültig gelöscht",en:"Note permanently deleted"},
   "toast.trashEmptied":{de:"Papierkorb geleert",en:"Trash emptied"},
   "toast.discarded":{de:"Leere Notiz verworfen",en:"Empty note discarded"},
+  "toast.exampleBusy":{de:"Das Beispiel passt nur in eine leere Notiz",en:"The example only fits into an empty note"},
+  "toast.bodyFull":{de:"Die Notiz ist voll ({n} Zeichen)",en:"The note is full ({n} characters)"},
+  "confirm.resetDone":{de:"Alle {n} Haken entfernen?",en:"Remove all {n} ticks?"},
+  "cheat.exampleTitle":{de:"Markdown-Beispiel",en:"Markdown example"},
+  "cheat.exampleText":{de:"# Markdown-Beispiel\n\nDas ist **fett**, das *kursiv* und das `Code`.\n\n## Liste\n\n- ein Punkt\n- noch ein Punkt\n\n1. erster\n2. zweiter\n\n## Kästchen\n\n- [ ] offen\n- [x] erledigt\n\n---\n\n```\nCode-Block\nzweite Zeile\n```\n\nLinks bleiben Text: https://alien-investor.org\nÜber „Text“ siehst du die Quelle dieser Notiz.",en:"# Markdown example\n\nThis is **bold**, this *italic* and this `code`.\n\n## List\n\n- one item\n- another item\n\n1. first\n2. second\n\n## Boxes\n\n- [ ] open\n- [x] done\n\n---\n\n```\ncode block\nsecond line\n```\n\nLinks stay text: https://alien-investor.org\nUse “Text” to see the source of this note."},
   "toast.suggest":{de:"Vorschlag eingetragen — jetzt aufschreiben!",en:"Suggestion filled in — write it down now!"},
   "toast.wordsMissing":{de:"Wortliste fehlt — Würfelwörter nicht verfügbar",en:"Word list missing — dice words unavailable"},
   "toast.noEntry":{de:"Keine Notiz gewählt",en:"No note selected"},
@@ -1012,7 +1021,7 @@ const App = (function(){
      Verlassen (Fertig, Tab, Zurück, Hintergrund, Sperre) speichert; beim Tippen zusätzlich nach AUTOSAVE_MS Ruhe.
      Schreiben folgt dem Persist-Muster von Alien Pass: Snapshot, VAULT ändern, persist(), bei Fehler Rollback (nie bei .locked). */
   const AUTOSAVE_MS=1500; let autosaveTimer=null, itemSeq=0;
-  function setEntryType(t){ formType=entryType(t); closeMenus(); ENTRY_TYPES.forEach(x=>$('ft-'+x).classList.toggle('on',x===formType)); $('grp-text').classList.toggle('hidden',formType!=='text'); $('grp-list').classList.toggle('hidden',formType!=='list'); $('f-md-wrap').classList.toggle('hidden',formType!=='text'); renderAddTitle(); }
+  function setEntryType(t){ formType=entryType(t); closeMenus(); ENTRY_TYPES.forEach(x=>$('ft-'+x).classList.toggle('on',x===formType)); $('grp-text').classList.toggle('hidden',formType!=='text'); $('grp-list').classList.toggle('hidden',formType!=='list'); $('f-md-wrap').classList.toggle('hidden',formType!=='text'); hide('md-cheat'); renderAddTitle(); }
   function renderAddTitle(){ $('add-title').textContent=tr(editId?(formType==='list'?'add.titleEditList':'add.titleEdit'):(formType==='list'?'add.titleNewList':'add.titleNew')); }
   // Typwechsel per Segment: Inhalt wird umgewandelt (Zeilen ↔ Einträge), nach Rückfrage — nichts geht still verloren
   function changeEntryType(t){ t=entryType(t); if(t===formType) return;
@@ -1024,6 +1033,15 @@ const App = (function(){
   function mdModeEdit(){ setMdMode('edit'); setTimeout(()=>$('f-body').focus(),50); }
   function mdModeView(){ commitEditor(true); setMdMode('view'); }
   function mdToggle(){ const on=$('f-md').checked; $('md-seg').classList.toggle('hidden',!on); setMdMode(on?'view':'edit'); editorChanged(); }
+  // Spickzettel: Kärtchen ein-/ausblenden (statischer Text im HTML); „Beispiel einfügen“ nur in eine LEERE Notiz, öffnet dann die Ansicht
+  function mdCheat(){ $('md-cheat').classList.toggle('hidden'); }
+  function mdExample(){ if(!editing||formType!=='text') return; if($('f-body').value.trim()) return toast(tr('toast.exampleBusy'));
+    if(!$('f-title').value.trim()) $('f-title').value=tr('cheat.exampleTitle'); $('f-body').value=tr('cheat.exampleText'); $('f-md').checked=true; $('md-seg').classList.remove('hidden'); setMdMode('view'); hide('md-cheat'); editorChanged(); renderCounter(); }
+  // Datum + Uhrzeit (lokal) an den Cursor; in der Ansicht erst zurück ins Textfeld. input-Ereignis → Delegation → editorChanged (Autosave)
+  function insertDate(){ if(!editing||formType!=='text') return; if(mdMode==='view') setMdMode('edit'); const ta=$('f-body');
+    const s=new Date().toLocaleString(LANG==='de'?'de-DE':'en-GB',{dateStyle:'medium',timeStyle:'short'});
+    if(ta.value.length+s.length>CAPS.body) return toast(tr('toast.bodyFull',{n:CAPS.body}));
+    ta.setRangeText(s,ta.selectionStart,ta.selectionEnd,'end'); ta.focus(); ta.dispatchEvent(new Event('input',{bubbles:true})); }
   // Markdown-Ansicht: reine Zerlegung (mdParse, Sentinel) → DOM ausschließlich per createElement/textContent; URLs bleiben Text
   function renderMd(text){ const box=$('md-view'); box.replaceChildren();
     const inl=(parent,parts)=>{ for(const p of parts){ if(p.t==='text') parent.appendChild(document.createTextNode(p.s)); else parent.appendChild(el(p.t==='b'?'strong':p.t==='i'?'em':'code',null,p.s)); } };
@@ -1053,8 +1071,10 @@ const App = (function(){
   function setItemRows(items){ clearItemRows(); for(const x of items) pushItemRow(x.text,x.done); }
   function readItemRows(){ return itemRows().map(r=>({text:$(r.dataset.t).value, done:$(r.dataset.c).checked})); }
   function sortDone(){ const it=readItemRows(); setItemRows(it.filter(x=>!x.done).concat(it.filter(x=>x.done))); editorChanged(); }
+  function resetDone(){ const rows=itemRows().filter(r=>$(r.dataset.c).checked); if(!rows.length) return; if(!confirm(tr('confirm.resetDone',{n:rows.length}))) return;
+    rows.forEach(r=>{ $(r.dataset.c).checked=false; r.classList.remove('done'); }); editorChanged(); renderCounter(); }
   function relabelItemRows(){ itemRows().forEach(r=>{ $(r.dataset.t).placeholder=tr('ed.itemPh'); const b=r.querySelector('.idel'); b.title=tr('ed.itemDel'); b.setAttribute('aria-label',tr('ed.itemDel')); }); }
-  function resetForm(){ ['f-title','f-cat','f-body'].forEach(id=>$(id).value=''); ['f-fav','f-pinned','f-md'].forEach(id=>$(id).checked=false); clearItemRows(); $('md-seg').classList.add('hidden'); setMdMode('edit'); closeMenus(); err('add-err'); setEntryType('text'); $('ed-count').textContent=''; $('ed-meta').textContent=''; $('ed-del').classList.add('hidden'); }
+  function resetForm(){ ['f-title','f-cat','f-body'].forEach(id=>$(id).value=''); ['f-fav','f-pinned','f-md'].forEach(id=>$(id).checked=false); clearItemRows(); $('md-seg').classList.add('hidden'); hide('md-cheat'); setMdMode('edit'); closeMenus(); err('add-err'); setEntryType('text'); $('ed-count').textContent=''; $('ed-meta').textContent=''; $('ed-del').classList.add('hidden'); }
   function newEntry(t){ if(editing) closeEditor(); editId=null; editing=true; resetForm(); if(t==='list') setEntryType('list'); if(catFilter) $('f-cat').value=catFilter; tab('add'); setTimeout(()=>$(formType==='list'?'f-title':'f-body').focus(),80); if(formType==='list') addItemRow(); }
   function openEditor(id){ const e=byId(id); if(!e) return toast(tr('toast.noEntry')); if(editing) closeEditor(); editId=e.id; editing=true; resetForm(); setEntryType(e.type);
     $('f-title').value=e.title; $('f-cat').value=e.cat; $('f-fav').checked=e.fav; $('f-pinned').checked=e.pinned;
@@ -1442,13 +1462,14 @@ const App = (function(){
       if(!done&&(gen!==bioGen||!VAULT||!DEK)) toast(tr('pin.aborted')); }
   }
   function pinDisable(){ if(!VAULT||!PIN||!confirm(tr('confirm.pinDisable'))) return; pinDrop(); toast(tr('pin.off')); }
-  // Desktop-Tastatur: Strg+L sperren, Strg+F Suche, Strg+N neue Notiz. Nur in der Hülle, nur entsperrt (Strg+L auch in der Wartestellung).
+  // Desktop-Tastatur: Strg+L sperren, Strg+F Suche, Strg+N neue Notiz, Strg+S Notiz fertig. Nur in der Hülle, nur entsperrt (Strg+L auch in der Wartestellung).
   function deskKey(ev){
     if(!DESK||!ev.ctrlKey||ev.altKey||ev.shiftKey||ev.metaKey) return false; const k=(ev.key||'').toLowerCase();
     if(k==='l'&&(DEK||pendingUnlock)){ lockNow(); return true; }
     if(!DEK) return false;
     if(k==='f'){ closeHelp(); tab('list'); const q=$('search'); q.focus(); q.select(); return true; }
     if(k==='n'){ closeHelp(); newEntry(); return true; }
+    if(k==='s'){ if(editing) doneEditor(); return true; }   // wie „Fertig“; ohne Editor nur den Browser-Dialog schlucken
     return false;
   }
 
@@ -1513,8 +1534,8 @@ const App = (function(){
   function kdfChanged(){ kdfTouched=true; }
 
   return {boot,doSetup,doUnlock,doTotp,cancelTotp,lock,lockNow,tab,
-    newEntry,openEditor,doneEditor,copyCurrent,deleteCurrent,editorChanged,changeEntryType,mdModeEdit,mdModeView,mdToggle,
-    addItemRow,itemEnter,removeItemRow,itemChanged,sortDone,
+    newEntry,openEditor,doneEditor,copyCurrent,deleteCurrent,editorChanged,changeEntryType,mdModeEdit,mdModeView,mdToggle,mdCheat,mdExample,insertDate,
+    addItemRow,itemEnter,removeItemRow,itemChanged,sortDone,resetDone,
     renderList,setCatFilter,clearCatFilter,toggleFavFilter,openCatMenu,toggleCatMenu,catInput,pickCat,
     openTrash,renderTrash,restoreEntry,purgeEntry,emptyTrash,
     closeMenus,syncCombo,syncCombos,toggleCombo,chooseOpt,
