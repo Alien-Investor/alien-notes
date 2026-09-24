@@ -18,4 +18,5 @@ gehen nicht mehr verloren, Import schließt einen offenen Editor, Öffnen ohne �
 Laufzeitfalle, Typwechsel warnt vor Kürzung. Faktencheck der Texte: Sperr-Hinweis, FLAG_SECURE-Karte, Berechtigungen, Zwischenablage präzisiert.
 Android speichert die Notizen-Datei im privaten App-Ordner statt im Browser-Speicher der WebView (dessen Grenze lag bei rund 5 MB); bestehende
 Notizen werden beim ersten Start übernommen. Die 20-MB-Grenze gilt jetzt auch beim Speichern und Zusammenführen (vorher konnte die App eine
-Datei schreiben, die sie danach nicht mehr öffnete); eine übergroße Datei lässt sich weiter öffnen und durch Löschen verkleinern.
+Datei schreiben, die sie danach nicht mehr öffnete); eine übergroße Datei lässt sich weiter öffnen und durch Löschen verkleinern. Audit-Nachlauf
+über Dateispeicher und Schreibgrenze (ein Fund, behoben: die Toleranz der Grenze gilt jetzt gegenüber der Größe beim Entsperren, nicht je Schreibvorgang).

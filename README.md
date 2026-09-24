@@ -179,7 +179,9 @@ Schlüsselableitung schafft, und schlägt eine passende Argon2-Stufe vor.
 - **Interner Audit** (24.09.2026, Skill-gestützt mit mehreren Prüfern, kein unabhängiges Audit) über die gegenüber Alien Pass neue Fläche:
   Editor und Autosave, Sanitizer und Import, Markdown-Renderer, gelockerte Sperre, FLAG_SECURE-Schalter, Android-Plugins und Build. Ergebnis:
   keine Klartext-Lecks, keine Injektion; sieben Funde niedriger Schwere (Wettläufe zwischen Autosave und Sperre, Import bei offenem Editor,
-  Laufzeitfalle im Markdown-Parser, unehrliche Rückfragen beim Typwechsel) und ein Hinweis, alle vor dem Release behoben.
+  Laufzeitfalle im Markdown-Parser, unehrliche Rückfragen beim Typwechsel) und ein Hinweis, alle vor dem Release behoben. Ein Nachlauf
+  prüfte den danach eingebauten Dateispeicher und die 20-MB-Schreibgrenze: ein Fund (die Toleranz der Grenze wanderte mit und ließ kleine
+  Schreibvorgänge die Datei schrittweise über die Lesegrenze treiben), ebenfalls vor dem Release behoben.
 - **Grenzen, ehrlich benannt**: Im Hintergrund leert die Android-App die Zwischenablage nur, solange Android sie nicht eingefroren hat
   (meist nach dem zweiten App-Wechsel); danach erst beim Zurückkehren. Ab Android 13 leert das System nach etwa 1 h selbst, davor nicht.
   Die Tastatur lernt aus dem Getippten (eine WebView kann das nicht abschalten) — wer das nicht will, nutzt eine Tastatur ohne
