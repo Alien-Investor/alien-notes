@@ -1,0 +1,73 @@
+# Zapstore publishing config — Alien Notes
+# Veröffentlichen (Signing über Amber/NIP-46-Bunker, kein nsec im Klartext):
+#   set -a; source .env; set +a        # .env enthält SIGN_WITH="bunker://…"
+#   zsp publish zapstore.yaml --quiet --skip-preview --skip-certificate-linking
+# Trockenlauf ohne Amber (unsignierte Events):
+#   SIGN_WITH=npub1cnlymdm5jz8eayycwynhze4s2zh9n0y04atce8ahxl5qfkptplls0s40hp zsp publish zapstore.yaml --offline
+
+repository: https://codeberg.org/Alien-Investor/alien-notes
+pubkey: npub1cnlymdm5jz8eayycwynhze4s2zh9n0y04atce8ahxl5qfkptplls0s40hp
+
+name: Alien Notes
+summary: Offline notes & checklists — Argon2id + AES-256-GCM, no internet permission, no cloud, Markdown preview, encrypted backup & merge.
+
+description: |
+  Alien Notes is a local, encrypted notes and checklist app. It runs fully offline — no cloud,
+  no server, no account, no telemetry. The app requests no INTERNET permission — only the two
+  normal permissions for the fingerprint sensor (USE_BIOMETRIC, USE_FINGERPRINT up to Android 8.1).
+  Your notes never leave the device in plaintext. Sister app of Alien Pass and Sachwert-Tresor.
+
+  Features:
+  - Notes (free text, up to 100,000 characters) and checklists (up to 200 entries with boxes, "done to the bottom",
+    "clear ticks"); switch a note between the two — lines become entries and back, with a warning whenever something would be shortened
+  - No save button: the app saves as you type (after 1.5 s) and when you leave the note — encrypted, the whole file every time;
+    the title may stay empty, the first line then serves as the title
+  - Markdown preview per note (off by default): headings, bold, italic, lists, boxes, code, rules — a small own subset, no third-party
+    renderer, no HTML, links stay plain text; a cheat sheet in the editor shows "type this → looks like this"
+  - Categories like folders (filter chips, suggestions), favourites, pinned notes, search across title, text, checklist entries and category,
+    "insert date"
+  - Copy puts the whole note into the clipboard; auto-clear after 15/30/60 s (default 30 s, can be switched off) and on lock; copied content
+    is flagged sensitive so the Android 13+ system preview hides it
+  - Locking, more relaxed than a password manager: by default no lock after inactivity and in the background only after 30 minutes
+    (both adjustable up to "never" / "immediately"); "Lock now" clears the key and everything on screen at once; the file is always encrypted
+  - Trash: deleted notes stay restorable for 30 days, up to 200 at a time; shows only title, type and date, never the content;
+    device-local — a deletion travels to your other devices when merging, the content does not
+  - Encrypted .notes backup and merge between devices (newer change wins, deletions carried for a year), also between phone and Linux desktop
+  - Optional Aegis hurdle: an extra TOTP code on unlock (key or otpauth link to copy, no QR; honestly documented as a hurdle, not a second factor)
+  - Optional fingerprint unlock (Android keystore, passphrase required after every restart unless "also after a restart" is ticked, off by
+    default) and optional quick unlock by PIN on the Linux desktop — both taken over from Alien Pass and documented there
+  - Screenshots and app-switcher preview blocked by default (FLAG_SECURE), can be switched off in Settings — notes are not always secret;
+    locked and during setup the protection is always on
+  - Argon2id key derivation (32/64/128 MiB, self-benchmarked at setup) + AES-256-GCM via WebCrypto; own file format AINV1 with its
+    own keys — Alien Pass rejects a notes file and vice versa
+  - Notes file in the private app folder, written atomically (temp file, fsync, rename) — never a half-written file; 20 MB file limit
+    enforced on save as well, an oversized file still opens so you can tidy up
+  - Linux desktop edition (Flatpak without network permission and without file access, GPG-signed checksum) — see the Codeberg release
+  - No INTERNET permission; only USE_BIOMETRIC and USE_FINGERPRINT (up to Android 8.1) for the fingerprint sensor
+    (plus the AndroidX-generated signature permission that grants nothing),
+    allowBackup=false + data extraction rules (no cloud, adb or D2D backup)
+  - Strict CSP: connect-src 'none', no inline script; Markdown rendered only via createElement/textContent; bundled Argon2 (hash-wasm)
+    hash-checked in the build; internal security audit of the new surface before release (no independent audit)
+  - German / English, offline in-app manual, open source (MIT)
+
+  Signing certificate SHA-256 (verify with AppVerifier), identical for every version:
+  F3:68:F9:0B:F8:DF:8C:55:BB:6C:28:6D:32:25:BA:8A:F4:45:22:7B:A6:9B:36:00:DF:BB:F6:A1:44:09:BA:7C
+  apksigner (no separators): f368f90bf8df8c55bb6c286d3225ba8af445227ba69b3600dfbbf6a14409ba7c
+
+tags:
+  - notes
+  - privacy
+  - security
+  - tools
+
+license: MIT
+website: https://alien-investor.org/alien-notes.html
+
+icon: ./assets/icon-only.png
+
+images:
+  - ./screenshots/1-list.png
+  - ./screenshots/2-editor.png
+  - ./screenshots/3-markdown.png
+
+release_notes: ./CHANGELOG.md
