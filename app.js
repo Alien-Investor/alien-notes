@@ -6,6 +6,9 @@
 
 /* ===== KIT: Theme vor dem ersten Render (Schlüssel markenweit geteilt) ===== */
 (function(){ try{ if(localStorage.getItem('alien-theme')==='soft') document.documentElement.setAttribute('data-theme','soft'); }catch(_){} })();
+// Schriftgröße (v1.1 Punkt 7): drei Stufen als Gerätevorgabe wie das Theme — html[data-font=l|xl] skaliert die Wurzelschrift (alles in rem), nie in der Datei
+const FONT_KEY='ai-notes-font', FONT_SIZES=['m','l','xl'];
+(function(){ try{ const f=localStorage.getItem(FONT_KEY); if(f==='l'||f==='xl') document.documentElement.setAttribute('data-font',f); }catch(_){} })();
 
 /* ============================================================
    Alien Notes — Offline-Notizen-App. Alles client-side,
@@ -107,7 +110,7 @@ const I18N = {
   "help.pBio":"Optionally the device fingerprint unlocks the notes (Settings → Fingerprint, Android app only). <strong>How it works:</strong> the data key is additionally wrapped under a random key; the Android keystore holds that key and releases it only after a strong fingerprint, freshly each time. The notes file itself stays unchanged and backups carry none of it. <strong>What it costs:</strong> a fingerprint is not a secret. It can be forced — by someone guiding your hand, or at a border; the passphrase in your head cannot. That is why the app demands the passphrase after every restart of the phone (unless you ticked “also after a restart” when enabling), after a passphrase change and as soon as a new fingerprint is enrolled in the system. If a fingerprint was newly enrolled, the app does not set access up again by itself but shows a warning until you read it or deliberately re-enable it. The restart rule is a rule in the code, not a cryptographic guarantee. <strong>The deliberate bolt:</strong> “Lock now” in Settings means the next start requires the passphrase — no fingerprint button, no prompt; afterwards the fingerprint works again without re-enabling. Use it before a border, before handing the phone over, whenever a finger could be forced.",
   "set.cpTitle":"Change passphrase","set.cpCur":"Current passphrase","set.cpNew":"New passphrase","set.cpRepeat":"Repeat","set.cpBtn":"Change",
   "set.cpNote":"Changing the passphrase also rotates the internal data key. Backups exported earlier keep their old passphrase.",
-  "set.themeTitle":"Appearance","set.themeDark":"Black (Neon)","set.themeSoft":"Soft (Navy)",
+  "set.themeTitle":"Appearance","set.themeDark":"Black (Neon)","set.themeSoft":"Soft (Navy)","set.fontTitle":"Font size","set.fontM":"Normal","set.fontL":"Large","set.fontXL":"Extra large",
   "set.dangerTitle":"Danger zone","set.wipe":"Delete notes on this device",
   "set.wipeNote":"Removes the encrypted notes on <em>this</em> device only. Exported <code>.notes</code> files remain. No secure wiping of storage — the encryption takes care of that.",
   "foot.line1":"Alien Investor · Alien Notes · 100 % local · no cloud · no telemetry",
@@ -119,7 +122,7 @@ const I18N = {
   "help.p1":"A <strong>local, encrypted notes app</strong> for notes and checklists. Runs fully <strong>offline</strong> — no cloud, no server, no telemetry, no account. The Android app does not even have an internet permission. Your notes never leave the device in plaintext.",
   "help.warn":"⚠ There is no reset and no backdoor. Forget your passphrase and the notes are gone for good. Make regular backups and keep the passphrase safe.",
   "help.h2":"First steps",
-  "help.l2":"<li><strong>Choose a passphrase</strong> — at least 12 characters, better six dice words (the suggest button builds them from the EFF list). Write it down and store it safely.</li><li><strong>+</strong> creates a note. The title may stay empty — the first line of the text serves as the title. There is no save button: the app saves while you type and when you leave the note.</li><li><strong>Checklists:</strong> switch a note to “Checklist” — every line becomes an entry with a box; “Done to the bottom” sorts ticked entries down. Switching back turns the entries into “- [ ] …” or “- [x] …” lines.</li><li><strong>Categories</strong> work like folders: type one freely (suggestions from existing ones). The list filters via the chips at the top; the ★ chip shows favourites only, the ☐ chip only checklists with open items (both combine with a category). Pinned notes always sit at the top. <strong>No preview:</strong> the checkbox in the editor makes the list show only the title — against onlookers. <strong>Rename:</strong> tap the category chip, then the pencil ✎ next to it — every note of that category moves (including the trash); an empty name means “no category”.</li><li>The search covers title, text, checklist entries and category.</li>",
+  "help.l2":"<li><strong>Choose a passphrase</strong> — at least 12 characters, better six dice words (the suggest button builds them from the EFF list). Write it down and store it safely.</li><li><strong>+</strong> creates a note. The title may stay empty — the first line of the text serves as the title. There is no save button: the app saves while you type and when you leave the note.</li><li><strong>Checklists:</strong> switch a note to “Checklist” — every line becomes an entry with a box; “Done to the bottom” sorts ticked entries down. Switching back turns the entries into “- [ ] …” or “- [x] …” lines.</li><li><strong>Categories</strong> work like folders: type one freely (suggestions from existing ones). The list filters via the chips at the top; the ★ chip shows favourites only, the ☐ chip only checklists with open items (both combine with a category). Pinned notes always sit at the top. <strong>No preview:</strong> the checkbox in the editor makes the list show only the title — against onlookers. <strong>Rename:</strong> tap the category chip, then the pencil ✎ next to it — every note of that category moves (including the trash); an empty name means “no category”.</li><li><strong>Appearance:</strong> Settings → Appearance offers Black/Soft and three font sizes. Both are device settings — not in the file, not in the backup.</li><li>The search covers title, text, checklist entries and category.</li>",
   "help.h3":"Markdown preview",
   "help.p3":"Every text note (not checklists) has a “Markdown preview” switch. Editing always stays the plain text field; the preview renders a small subset: headings (<code>#</code> to <code>###</code>), <strong>bold</strong> (<code>**…**</code>), <em>italic</em> (<code>*…*</code>), lists (<code>-</code>, <code>1.</code> — numbered ones always start at 1), boxes (<code>- [ ]</code>, <code>- [x]</code>), code (<code>`…`</code>, ``` blocks or 4 spaces of indentation — so no indented sub-items), rules (<code>---</code>). Links are deliberately shown as text, never clickable — the app has no network anyway.",
   "help.h4":"Locking",
@@ -1813,7 +1816,7 @@ const App = (function(){
   /* ---------- Einstellungen ---------- */
   // Bewusst gesperrt: Riegel für den Fingerabdruck — nächster Start nur mit Passphrase, danach gilt er wieder (Verwerfen würde die Gewohnheit bestrafen)
   function lockNow(){ if(BIO&&(bioArmed||bioBlob())) setBioHold(true); if(PIN) pinHold=true; bioAuto=false; lockSaving(); }
-  function renderSettings(){ if(!VAULT) return; const s=VAULT.settings; $('set-autolock').value=String(s.autolock); $('set-bglock').value=String(s.bgLock); $('set-clip').value=String(s.clipClear); syncCombos();
+  function renderSettings(){ if(!VAULT) return; const s=VAULT.settings; $('set-autolock').value=String(s.autolock); $('set-bglock').value=String(s.bgLock); $('set-clip').value=String(s.clipClear); syncCombos(); renderFontSeg();
     const on=!!VAULT.totp; $('totp-off').classList.toggle('hidden',on||!!pendingSecret); $('totp-on').classList.toggle('hidden',!on); $('totp-setup').classList.toggle('hidden',!pendingSecret);
     const bc=$('bio-card'); if(bc){ bc.classList.toggle('hidden',!BIO); $('bio-off').classList.toggle('hidden',bioArmed); $('bio-on').classList.toggle('hidden',!bioArmed);
       // zwei fertige Texte statt eines zusammengesetzten: beide tragen data-i18n, applyI18n übersetzt sie, hier wird nur umgeschaltet
@@ -1833,6 +1836,8 @@ const App = (function(){
   function applySecure(on){ if(!SEC) return; try{ const p=SEC.set({on:!!on}); if(p&&p.catch) p.catch(()=>{}); }catch(_){} }
   // Flagge folgt der gespeicherten Einstellung: erst nach erfolgreichem Persist umschalten, bei Fehler bleibt der Schutz an (Audit run-1 Hardening)
   function setSecure(_, elx){ if(!VAULT||!elx) return; const on=!!elx.checked; const p=setSetting('secure', on?1:0); if(p&&p.then) p.then(okk=>{ if(okk&&VAULT) applySecure(on); }); }
+  function fontSize(v){ v=FONT_SIZES.includes(v)?v:'m'; try{ if(v==='m'){ document.documentElement.removeAttribute('data-font'); localStorage.removeItem(FONT_KEY); } else { document.documentElement.setAttribute('data-font',v); localStorage.setItem(FONT_KEY,v); } }catch(_){} renderFontSeg(); }
+  function renderFontSeg(){ const cur=document.documentElement.getAttribute('data-font')||'m'; FONT_SIZES.forEach(k=>{ const b=$('fs-'+k); if(b) b.classList.toggle('on',k===cur); }); }
   function theme(t){ try{ if(t==='soft'){ document.documentElement.setAttribute('data-theme','soft'); localStorage.setItem('alien-theme','soft'); } else { document.documentElement.removeAttribute('data-theme'); localStorage.setItem('alien-theme','dark'); } }catch(_){} if(VAULT) renderSettings(); else { const soft=t==='soft'; $('th-dark').classList.toggle('on',!soft); $('th-soft').classList.toggle('on',soft); } }
   async function changePass(){
     if(changePass._busy||!VAULT) return; err('cp-err');
@@ -1879,7 +1884,7 @@ const App = (function(){
     closeMenus,syncCombo,syncCombos,toggleCombo,chooseOpt,
     suggestPass,meterSetup,meterCp,kdfChanged,
     exportVault,importVault,importSn,doImportVault,cancelImport,pickFile,
-    setAutolock,setBgLock,setClipClear,setSecure,theme,changePass,wipeLocal,
+    setAutolock,setBgLock,setClipClear,setSecure,theme,fontSize,changePass,wipeLocal,
     totpStart,totpConfirm,totpCancel,totpDisable,copySecret,copyOtpauth,doBio,bioEnable,bioDisable,bioAlertOk,doPin,pinEnable,pinDisable,deskKey,
     openHelp,closeHelp,toggleLang,relabel,togglePass,maskInputs,eyeWrap,enhancePassFields};
 })();

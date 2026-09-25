@@ -18,6 +18,7 @@
 <link href="app-theme.css" rel="stylesheet">
 <style>
 /* App-eigene Ergänzungen zum Kit (app-theme.css): Listenkarten, Editor, Checkliste, Markdown-Ansicht */
+html[data-font=l]{font-size:110%;} html[data-font=xl]{font-size:122%;}   /* Schriftgröße (v1.1 Punkt 7): alles in rem, also skaliert die ganze App */
 .gate{max-width:440px;margin:6vh auto 0;}
 .gate .card{padding:26px;}
 .meter{margin-top:4px;font-size:.78rem;}
@@ -442,6 +443,12 @@ html.desk .no-desk{display:none;}
           <button id="th-dark" class="on" type="button" data-action="theme" data-arg="dark" data-i18n="set.themeDark">Schwarz (Neon)</button>
           <button id="th-soft" type="button" data-action="theme" data-arg="soft" data-i18n="set.themeSoft">Soft (Marine)</button>
         </div>
+        <label data-i18n="set.fontTitle" style="margin-top:14px">Schriftgröße</label>
+        <div class="seg">
+          <button id="fs-m" class="on" type="button" data-action="fontSize" data-arg="m" data-i18n="set.fontM">Normal</button>
+          <button id="fs-l" type="button" data-action="fontSize" data-arg="l" data-i18n="set.fontL">Groß</button>
+          <button id="fs-xl" type="button" data-action="fontSize" data-arg="xl" data-i18n="set.fontXL">Sehr groß</button>
+        </div>
       </div>
       <div class="card">
         <h2 data-i18n="set.dangerTitle">Gefahrenzone</h2>
@@ -485,6 +492,7 @@ html.desk .no-desk{display:none;}
       <li><strong>+</strong> legt eine Notiz an. Der Titel darf leer bleiben — dann dient die erste Zeile des Textes als Titel. Einen Speichern-Knopf gibt es nicht: Die App speichert beim Tippen und beim Verlassen der Notiz.</li>
       <li><strong>Checklisten:</strong> Schalte eine Notiz auf „Checkliste“ — jede Zeile wird ein Eintrag mit Kästchen; „Erledigte nach unten“ sortiert abgehakte Einträge ans Ende. Zurückschalten macht aus den Einträgen „- [ ] …“- bzw. „- [x] …“-Zeilen.</li>
       <li><strong>Kategorien</strong> wirken wie Ordner: frei eintippen (Vorschläge aus vorhandenen). Die Liste filtert über die Chips oben; der ★-Chip zeigt nur Favoriten, der ☐-Chip nur Checklisten mit offenen Einträgen (beide lassen sich mit einer Kategorie kombinieren). Angeheftete Notizen stehen immer ganz oben. <strong>Keine Vorschau:</strong> das Kästchen im Editor lässt die Liste nur den Titel zeigen — gegen Mitleser über die Schulter. <strong>Umbenennen:</strong> Kategorie-Chip antippen, dann den Stift ✎ daneben — alle Notizen dieser Kategorie ziehen um (auch im Papierkorb); leerer Name heißt „ohne Kategorie“.</li>
+      <li><strong>Darstellung:</strong> Unter Einstellungen → Darstellung gibt es Schwarz/Soft und drei Schriftgrößen. Beides gilt für dieses Gerät — steht nicht in der Datei, nicht im Backup.</li>
       <li>Die Suche findet Titel, Text, Checklisten-Einträge und Kategorie.</li>
     </ul>
     <h2 data-i18n="help.h3">Markdown-Ansicht</h2>
