@@ -57,6 +57,10 @@ const I18N = {
   "bk.intro":"The <code>.notes</code> file holds all notes <strong>encrypted</strong> (Argon2id + AES-256-GCM) — it only opens with the passphrase. Sync it between devices e.g. via Syncthing; nothing is ever exported in plaintext.",
   "bk.export":"Create backup (.notes)",
   "bk.importTitle":"Import backup (merge)",
+  "sn.title":"Import from Standard Notes","sn.pick":"Choose backup file",
+  "sn.intro":"Reads a <strong>decrypted</strong> Standard Notes backup (the file <code>Standard Notes Backup and Import File.txt</code> inside the downloaded ZIP). Plain, Markdown, code, checklist, rich-text and Super notes become notes and checklists, the first tag becomes the category, the trash stays the trash. <strong>Authenticator entries are never imported</strong> (2FA secrets belong in Aegis). A confirmation shows what arrives before anything is written. <strong>Delete the decrypted file afterwards</strong> — it is plain text.",
+  "help.hSn":"Moving from Standard Notes",
+  "help.pSn":"In Standard Notes open the account menu → <strong>Backups</strong> → <strong>Download decrypted backup</strong>. Unpack the ZIP and pick <code>Standard Notes Backup and Import File.txt</code> under Backup → “Import from Standard Notes”. Plain, Markdown, code and rich-text notes become text notes (Markdown with the Markdown view on), Super notes are translated into the small Markdown subset (tables as text lines, images and files as placeholders), checklists become checklists. The first tag becomes the category (“Parent/Child” for nested tags), pinned stays pinned, starred becomes a favourite, the trash lands in the trash with a fresh 30-day period. <strong>Never imported:</strong> Authenticator entries (2FA secrets — move them to Aegis by hand), spreadsheets, files. A second import of the same backup does not create duplicates; the newer version of a note wins. <strong>Afterwards delete the decrypted backup and the ZIP</strong> — they contain all notes in plain text.",
   "bk.importIntro":"Merges a <code>.notes</code> file into these notes: per note the <strong>newer change</strong> wins, deletions are applied. The file may use a different passphrase — your local one stays unchanged.",
   "bk.pick":"Choose .notes file","bk.filePass":"Passphrase of the file","bk.doImport":"Merge",
   "set.secTitle":"Locking","set.autolock":"Lock after inactivity","set.off":"Off",
@@ -255,6 +259,28 @@ const T = {
   "confirm.purge":{de:"„{t}“ endgültig löschen? Das lässt sich nicht rückgängig machen.",en:"Delete “{t}” permanently? This cannot be undone."},
   "confirm.emptyTrash":{de:"Alle {n} Notizen im Papierkorb endgültig löschen? Das lässt sich nicht rückgängig machen.",en:"Permanently delete all {n} notes in the trash? This cannot be undone."},
   "confirm.wipe":{de:"Die Notizen auf diesem Gerät wirklich löschen? Ohne Backup ist alles weg.",en:"Really delete the notes on this device? Without a backup everything is gone."},
+  "dlg.import":{de:"Übernehmen",en:"Import"},
+  "sn.errJson":{de:"Das ist keine lesbare Backup-Datei (kein JSON).",en:"This is not a readable backup file (not JSON)."},
+  "sn.errFormat":{de:"Das ist kein Standard-Notes-Backup (keine Liste „items“).",en:"This is not a Standard Notes backup (no “items” list)."},
+  "sn.errEncrypted":{de:"Das Backup ist verschlüsselt. In Standard Notes ein entschlüsseltes Backup herunterladen (Kontomenü → Backups → „Download decrypted backup“).",en:"This backup is encrypted. Download a decrypted backup in Standard Notes (account menu → Backups → “Download decrypted backup”)."},
+  "sn.take":{de:"{n} Notizen werden übernommen, {t} davon in den Papierkorb.",en:"{n} notes will be imported, {t} of them into the trash."},
+  "sn.known":{de:"{n} bereits importierte werden abgeglichen (die neuere Fassung gewinnt).",en:"{n} previously imported ones will be reconciled (the newer version wins)."},
+  "sn.nothing":{de:"Nichts zu übernehmen.",en:"Nothing to import."},
+  "sn.skipped":{de:"Übersprungen:",en:"Skipped:"},
+  "sn.skipAuth":{de:"{n} Authenticator-Einträge (2FA-Geheimnisse werden nie übernommen)",en:"{n} Authenticator entries (2FA secrets are never imported)"},
+  "sn.skipSheet":{de:"{n} Tabellen (Spreadsheet)",en:"{n} spreadsheets"},
+  "sn.skipDupes":{de:"{n} Dubletten (Inhalt schon vorhanden)",en:"{n} duplicates (content already present)"},
+  "sn.trashOver":{de:"{n} Papierkorb-Notizen (der Papierkorb fasst {m})",en:"{n} trashed notes (the trash holds {m})"},
+  "sn.skipOther":{de:"{n} sonstige Elemente (Dateien, Erweiterungen, Leeres)",en:"{n} other items (files, extensions, empty ones)"},
+  "sn.changed":{de:"Vereinfacht:",en:"Simplified:"},
+  "sn.capBody":{de:"{n} Notizen auf {k}.000 Zeichen gekürzt",en:"{n} notes cut to {k},000 characters"},
+  "sn.capItems":{de:"{n} Checklisten gekürzt (höchstens {m} Zeilen à {c} Zeichen)",en:"{n} checklists cut (at most {m} lines of {c} characters)"},
+  "sn.lostTables":{de:"{n} Tabellen als Textzeilen",en:"{n} tables as text lines"},
+  "sn.lostImages":{de:"{n} Bilder, Dateien oder Einbettungen nur als Platzhalter",en:"{n} images, files or embeds as placeholders only"},
+  "sn.archived":{de:"{n} archivierte Notizen als normale Notizen",en:"{n} archived notes as ordinary notes"},
+  "sn.hint":{de:"Danach die entschlüsselte Backup-Datei löschen — sie ist Klartext.",en:"Afterwards delete the decrypted backup file — it is plain text."},
+  "sn.done":{de:"Übernommen: {a} neu, {u} aktualisiert, {t} in den Papierkorb. Jetzt die Backup-Datei löschen.",en:"Imported: {a} new, {u} updated, {t} into the trash. Now delete the backup file."},
+  "sn.doneToast":{de:"Standard-Notes-Import fertig",en:"Standard Notes import done"},
   "dlg.ok":{de:"OK",en:"OK"},
   "dlg.cancel":{de:"Abbrechen",en:"Cancel"},
   "dlg.useAnyway":{de:"Trotzdem verwenden",en:"Use anyway"},
@@ -674,6 +700,113 @@ function noteText(e){ const first=e.type==='text'?(String(e.body||'').split('\n'
 // Checkliste ↔ Text: Zeilen werden Einträge (Kästchen-Marker verstanden), Einträge werden „- [x] …“-Zeilen
 function linesToItems(body){ return sanitizeItems(String(body||'').split(/\r?\n/).map(l=>{ const m=/^\s*(?:[-*+]\s+)?(?:\[([ xX])\]\s*)?(.*)$/.exec(l); return {text:m?m[2]:l, done:!!(m&&m[1]&&m[1]!==' ')}; })); }
 function itemsToBody(items){ return (items||[]).map(x=>'- ['+(x.done?'x':' ')+'] '+x.text).join('\n'); }
+/* ---------- Standard-Notes-Import (v1.1, rein): entschlüsseltes Backup {version:'004', items:[…]} → fertige Einträge + Statistik ----------
+   Format belegt aus standardnotes/app (Commit 000d2d7b, 22.09.2026) und Lexical v0.49.0 — Belege und Regeln in SN-FORMAT.md.
+   Nur Notizen (content_type 'Note') und Tags (Kategorie) werden gelesen. Authenticator-Notizen (2FA-Geheimnisse) und Tabellen werden
+   am Typ erkannt und NIE übernommen; ihr Text landet nirgends. Alles andere (Dateien, Komponenten, Schlüssel …) wird gezählt und übersprungen.
+   IDs sind deterministisch aus der UUID (snId), damit ein zweiter Import dieselben Notizen trifft und der Merge entscheidet. */
+const SN_DOMAIN='org.standardnotes.sn';
+const SN_TYPES=['plain-text','markdown','code','rich-text','super','task','authentication','spreadsheet'];
+const SN_EDITORS={'com.standardnotes.plain-text':'plain-text','com.standardnotes.super-editor':'super','org.standardnotes.token-vault':'authentication',
+  'org.standardnotes.standard-sheets':'spreadsheet','org.standardnotes.code-editor':'code','org.standardnotes.plus-editor':'rich-text','org.standardnotes.bold-editor':'rich-text',
+  'org.standardnotes.advanced-markdown-editor':'markdown','org.standardnotes.simple-markdown-editor':'markdown','org.standardnotes.markdown-visual-editor':'markdown',
+  'org.standardnotes.minimal-markdown-editor':'markdown','org.standardnotes.fancy-markdown-editor':'markdown','org.standardnotes.simple-task-editor':'task'};
+// 16 Hex aus der UUID: hintere Hälfte (Versions-/Varianten-Nibbles liegen vorn); sonst zwei FNV-1a-Hashes des Strings
+function snId(uuid){ const s=String(uuid||'').toLowerCase().replace(/-/g,''); if(/^[0-9a-f]{32}$/.test(s)) return s.slice(16);
+  let h1=0x811c9dc5, h2=0x050c5d1f; for(let i=0;i<s.length;i++){ const c=s.charCodeAt(i); h1=Math.imul(h1^c,0x01000193)>>>0; h2=Math.imul(h2^c,0x01000193)>>>0; }
+  return h1.toString(16).padStart(8,'0')+h2.toString(16).padStart(8,'0'); }
+function snDate(v, fb){ if(typeof v!=='string'||!v) return fb; const t=Date.parse(v); return Number.isFinite(t)?new Date(t).toISOString():fb; }   // ISO oder „Thu Jan 01 2026 …“ (client_updated_at)
+// HTML (Rich-Text-Editor) → Klartext ohne den HTML-Parser des Browsers (Build-Schranke gegen HTML-Senken): Blockenden werden Zeilenumbrüche, Tags fallen weg, Entities werden dekodiert. Linear.
+const HTML_ENT={amp:'&',lt:'<',gt:'>',quot:'"',apos:"'",nbsp:' '};
+function htmlToText(html){ const s=String(html||''); let out='', i=0;
+  for(;;){ const a=s.indexOf('<',i); if(a<0){ out+=s.slice(i); break; } const b=s.indexOf('>',a+1); if(b<0){ out+=s.slice(i); break; }   // jedes Zeichen höchstens zweimal angefasst
+    out+=s.slice(i,a); const close=s[a+1]==='/'; const m=/^([a-z][a-z0-9]*)/i.exec(s.slice(a+(close?2:1),Math.min(b,a+16))); const n=m?m[1].toLowerCase():'';
+    if(n==='br') out+='\n'; else if(close&&/^(?:p|div|h[1-6]|li|tr|blockquote|pre|section|article|header|footer|table|ul|ol)$/.test(n)) out+='\n';
+    else if(!close&&n==='li') out+='- '; else if(close&&(n==='td'||n==='th')) out+=' | ';
+    i=b+1; }
+  out=out.replace(/&(#x[0-9a-f]{1,6}|#\d{1,7}|[a-z]{2,6});/gi,(m,e)=>{ if(e[0]==='#'){ const cp=e[1]==='x'||e[1]==='X'?parseInt(e.slice(2),16):parseInt(e.slice(1),10);
+    return Number.isFinite(cp)&&cp>0&&cp<0x110000&&!(cp>=0xd800&&cp<=0xdfff)?String.fromCodePoint(cp):m; } const k=e.toLowerCase(); return Object.prototype.hasOwnProperty.call(HTML_ENT,k)?HTML_ENT[k]:m; });
+  return out.replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim(); }
+// Lexical-EditorState (Super-Editor) → unsere Markdown-Untermenge. st zählt, was nur vereinfacht ankommt (Tabellen als „| a | b |“-Zeilen,
+// Bilder/Dateien/Einbettungen als Platzhalter). Unbekannte Knoten: Kinder weiterlesen, sonst ihren Text. Liefert null, wenn text kein Lexical-JSON ist.
+function lexToMd(text, st){ let d; try{ d=JSON.parse(text); }catch(_){ return null; } if(!d||typeof d!=='object'||!d.root||typeof d.root!=='object') return null;
+  const kids=n=>Array.isArray(n.children)?n.children.filter(c=>c&&typeof c==='object'):[];
+  let depth=0; const deep=fn=>(...a)=>{ if(depth>64){ st.lost.deep=(st.lost.deep||0)+1; return ''; } depth++; try{ return fn(...a); }finally{ depth--; } };   // Tiefenwächter (Stack)
+  const inline=deep(n=>{ const t=n.type;
+    if(t==='text'||t==='code-highlight'||t==='hashtag'||t==='tab'){ let s=String(n.text||''); if(t==='text'&&s.trim()){ const f=n.format|0; if(f&16) s='`'+s.replace(/`/g,'')+'`'; else if(f&1) s='**'+s+'**'; else if(f&2) s='*'+s+'*'; } return s; }
+    if(t==='linebreak') return '\n';
+    if(t==='link'||t==='autolink'){ const s=kids(n).map(inline).join(''), u=typeof n.url==='string'?n.url:''; return s&&u&&s!==u?s+' ('+u+')':(s||u); }
+    if(t==='unencrypted-image'||t==='inline-file'){ st.lost.images++; const name=typeof n.alt==='string'&&n.alt?n.alt:(typeof n.fileName==='string'?n.fileName:''); return '['+(t==='inline-file'?'Datei':'Bild')+(name?': '+name:'')+']'; }
+    if(t==='snfile'){ st.lost.files++; return '[Datei]'; }
+    if(t==='snbubble'){ st.lost.embeds++; return '[Verweis]'; }
+    if(t==='youtube'){ st.lost.embeds++; return '[YouTube'+(typeof n.videoID==='string'?': '+n.videoID:'')+']'; }
+    if(t==='tweet'){ st.lost.embeds++; return '[Tweet'+(typeof n.id==='string'?': '+n.id:'')+']'; }
+    return kids(n).map(inline).join('')||(typeof n.text==='string'?n.text:''); });
+  const codeText=n=>kids(n).map(c=>c.type==='linebreak'?'\n':c.type==='tab'?'\t':(typeof c.text==='string'?c.text:kids(c).length?codeText(c):'')).join('');
+  const listLines=(n, lvl, out)=>{ if(depth>64) return; depth++; try{ const ordered=n.listType==='number', check=n.listType==='check'; let k=Number.isInteger(n.start)&&n.start>0?n.start:1;
+    for(const it of kids(n)){ if(it.type!=='listitem'){ continue; }
+      const sub=kids(it).filter(c=>c.type==='list'), own=kids(it).filter(c=>c.type!=='list');
+      if(own.length){ const mark=ordered?(k++)+'. ':'- '; const box=check?'['+(it.checked===true?'x':' ')+'] ':''; out.push('  '.repeat(Math.min(lvl,1))+mark+box+own.map(inline).join('').replace(/\n/g,' ').trim()); }
+      for(const s of sub) listLines(s, lvl+1, out); } }finally{ depth--; } };
+  const blocks=[];
+  const block=deep(n=>{ const t=n.type;
+    if(t==='root'){ kids(n).forEach(block); return; }
+    if(t==='paragraph'){ const s=kids(n).map(inline).join('').trim(); if(s) blocks.push(s); return; }
+    if(t==='heading'){ const lv=Math.min(3,Math.max(1,parseInt(String(n.tag||'h1').slice(1),10)||1)); blocks.push('#'.repeat(lv)+' '+kids(n).map(inline).join('').replace(/\n/g,' ').trim()); return; }
+    if(t==='quote'){ blocks.push(kids(n).map(inline).join('').split('\n').map(l=>'> '+l).join('\n')); return; }
+    if(t==='list'){ const out=[]; listLines(n,0,out); if(out.length) blocks.push(out.join('\n')); return; }
+    if(t==='code'){ const lang=typeof n.language==='string'?n.language.replace(/[^\w+#.-]/g,''):''; blocks.push('```'+lang+'\n'+codeText(n).replace(/^(\s{0,3})```/gm,'$1` ` `')+'\n```'); return; }
+    if(t==='horizontalrule'){ blocks.push('---'); return; }
+    if(t==='table'){ st.lost.tables++; const rows=kids(n).filter(r=>r.type==='tablerow').map(r=>'| '+kids(r).filter(c=>c.type==='tablecell').map(c=>kids(c).map(inline).join(' ').replace(/\s+/g,' ').trim()).join(' | ')+' |'); if(rows.length) blocks.push(rows.join('\n')); return; }
+    if(t==='collapsible-container'){ for(const c of kids(n)){ if(c.type==='collapsible-title'){ const s=kids(c).map(inline).join('').trim(); if(s) blocks.push('**'+s+'**'); } else if(c.type==='collapsible-content') kids(c).forEach(block); else block(c); } return; }
+    if(t==='collapsible-title'||t==='collapsible-content'||t==='mark'||t==='overflow'||t==='listitem'||t==='tablerow'||t==='tablecell'){ const hasBlock=kids(n).some(c=>['paragraph','heading','list','code','quote','table'].includes(c.type)); if(hasBlock) kids(n).forEach(block); else { const s=kids(n).map(inline).join('').trim(); if(s) blocks.push(s); } return; }
+    const s=inline(n).trim(); if(s) blocks.push(s); });   // Decorator auf Blockebene (Bild, Datei, Einbettung) und Unbekanntes
+  block(d.root); return blocks.join('\n\n'); }
+function snImport(raw, opt){ opt=opt||{}; const now=opt.now||Date.now(); const trashBudget=opt.trashBudget==null?MAX_TRASH:Math.max(0,opt.trashBudget|0);
+  let d; try{ d=JSON.parse(String(raw)); }catch(_){ throw new Error('snjson'); }
+  if(!d||typeof d!=='object'||Array.isArray(d)||!Array.isArray(d.items)) throw new Error('snformat');
+  if(d.keyParams||d.auth_params) throw new Error('snencrypted');
+  const st={notes:0,lists:0,trashed:0,trashOver:0,pinned:0,fav:0,archived:0,tags:0,skipped:{encrypted:0,auth:0,sheet:0,files:0,other:0,deleted:0,empty:0},capped:{body:0,items:0,item:0},lost:{tables:0,images:0,files:0,embeds:0}};
+  const isObj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
+  // Tags: der Tag verweist auf seine Notizen ({uuid, content_type:'Note'}), der Kind-Tag auf den Eltern-Tag (reference_type 'TagToParentTag'); Altform „a.b“ im Titel
+  const tags=new Map(), noteTags=new Map();
+  for(const it of d.items){ if(!isObj(it)||it.content_type!=='Tag'||!isObj(it.content)||typeof it.uuid!=='string') continue; const c=it.content; let parent=null;
+    for(const r of (Array.isArray(c.references)?c.references:[])){ if(!isObj(r)||typeof r.uuid!=='string') continue;
+      if(r.reference_type==='TagToParentTag'){ if(!parent) parent=r.uuid; } else if(r.content_type==='Note'){ const l=noteTags.get(r.uuid)||[]; l.push(it.uuid); noteTags.set(r.uuid,l); } }
+    tags.set(it.uuid,{title:typeof c.title==='string'?c.title:'',parent}); st.tags++; }
+  const tagPath=u=>{ const parts=[], seen=new Set(); while(u&&tags.has(u)&&!seen.has(u)&&parts.length<16){ seen.add(u); const t=tags.get(u); parts.unshift(...t.title.split('.').map(s=>line(s,CAPS.cat)).filter(Boolean)); u=t.parent; } return parts; };
+  const catFor=(uuid, refs)=>{ const l=(noteTags.get(uuid)||[]).slice(); for(const r of refs){ if(isObj(r)&&r.content_type==='Tag'&&typeof r.uuid==='string'&&tags.has(r.uuid)&&!l.includes(r.uuid)) l.push(r.uuid); }
+    if(!l.length) return ''; const parts=tagPath(l[0]); if(!parts.length) return ''; const full=parts.join('/'); return full.length<=CAPS.cat?full:parts[parts.length-1]; };   // erster Tag, Pfad „Eltern/Kind“; zu lang → nur das Blatt
+  const entries=[], trashed=[], nowIso=new Date(now).toISOString();
+  for(const it of d.items){
+    if(!isObj(it)){ st.skipped.other++; continue; }
+    if(it.deleted===true||it.content==null){ st.skipped.deleted++; continue; }
+    if(typeof it.content==='string'){ st.skipped.encrypted++; continue; }
+    if(it.content_type==='Tag') continue;
+    if(it.content_type!=='Note'||!isObj(it.content)){ if(it.content_type==='SN|File') st.skipped.files++; else st.skipped.other++; continue; }
+    const c=it.content, app=isObj(c.appData)&&isObj(c.appData[SN_DOMAIN])?c.appData[SN_DOMAIN]:{};
+    const kind=SN_TYPES.includes(c.noteType)?c.noteType:(Object.prototype.hasOwnProperty.call(SN_EDITORS,c.editorIdentifier)?SN_EDITORS[c.editorIdentifier]:'plain-text');
+    if(kind==='authentication'){ st.skipped.auth++; continue; }   // 2FA-Geheimnisse: nie übernehmen, nie anfassen
+    if(kind==='spreadsheet'){ st.skipped.sheet++; continue; }
+    const text=(typeof c.text==='string'?c.text:'').replace(/\r\n?/g,'\n'); let title=line(c.title,CAPS.title);
+    let type='text', body='', items=[], md=false;
+    if(kind==='task'){ type='list'; const ls=text.split('\n').filter(l=>l.trim()); items=linesToItems(text); if(ls.length>ITEMS_MAX) st.capped.items++; if(ls.some(l=>l.length>CAPS.item+6)) st.capped.item++; }
+    else if(kind==='rich-text') body=htmlToText(text);
+    else if(kind==='super'){ const r=lexToMd(text, st); if(r===null) body=text; else { body=r; md=true; } }
+    else { body=text; md=kind==='markdown'; }
+    if(body.length>CAPS.body) st.capped.body++;
+    if(!title&&type==='text') title=body.split('\n').map(l=>line(l,CAPS.title)).find(Boolean)||'';   // wie der Editor: erste Zeile wird Titel
+    if(!title&&(type==='text'?!body.trim():!items.length)){ st.skipped.empty++; continue; }
+    const updated=snDate(app.client_updated_at, snDate(it.updated_at, nowIso)), created=snDate(it.created_at, updated);
+    const e=sanitizeEntry({id:snId(it.uuid), type, cat:catFor(typeof it.uuid==='string'?it.uuid:'', Array.isArray(c.references)?c.references:[]), title, body, items,
+      fav:c.starred===true, pinned:app.pinned===true, md, created, updated, deleted:c.trashed===true?nowIso:null}, now);   // Papierkorb: Frist läuft ab jetzt, sonst wipeTrash sofort
+    if(!e){ st.skipped.other++; continue; }
+    if(e.pinned) st.pinned++; if(e.fav) st.fav++; if(app.archived===true) st.archived++;
+    if(e.deleted) trashed.push(e); else { entries.push(e); if(type==='list') st.lists++; else st.notes++; }
+  }
+  trashed.sort((a,b)=>ts(b.updated)-ts(a.updated)); const keep=trashed.slice(0,trashBudget); st.trashed=keep.length; st.trashOver=trashed.length-keep.length;
+  return {entries:entries.concat(keep), stats:st};
+}
 /* === VAULT-FORMAT END === */
 
 /* ============================================================
@@ -899,8 +1032,8 @@ const App = (function(){
   // Nach dem Sperren darf nichts Entschlüsseltes im DOM oder in Formularfeldern bleiben
   function clearRendered(){
     ['entry-list','backup-hint','cat-chips','cat-menu','trash-list','f-items','md-view','cp-meter','setup-meter','bio-alert-list','bio-alert'].forEach(id=>{ const n=$(id); if(n) n.replaceChildren(); });
-    ['bk-msg','import-msg','about-line','trash-msg','trash-n','ed-count','ed-meta','add-title','totp-secret'].forEach(id=>{ const n=$(id); if(n) n.textContent=''; });
-    ['f-title','f-cat','f-body','search','import-pass','cp-cur','cp1','cp2','lock-pass','lock-pin','pin-new','pin-rep','pin-pass','setup-pass1','setup-pass2','totp-code','totp-verify','bio-pass','vault-file'].forEach(id=>{ const n=$(id); if(n) n.value=''; });
+    ['bk-msg','import-msg','sn-msg','about-line','trash-msg','trash-n','ed-count','ed-meta','add-title','totp-secret'].forEach(id=>{ const n=$(id); if(n) n.textContent=''; });
+    ['f-title','f-cat','f-body','search','import-pass','cp-cur','cp1','cp2','lock-pass','lock-pin','pin-new','pin-rep','pin-pass','setup-pass1','setup-pass2','totp-code','totp-verify','bio-pass','vault-file','sn-file'].forEach(id=>{ const n=$(id); if(n) n.value=''; });
     ['f-fav','f-pinned','f-md','bio-keep','set-secure'].forEach(id=>{ const n=$(id); if(n) n.checked=false; });   // „auch nach Neustart“ nie stehen lassen (ab Werk aus)
     setEntryType('text'); setMdMode('edit'); err('add-err'); err('cp-err'); err('lock-err'); err('setup-err'); err('totp-err'); err('totp-setup-err'); err('bio-err'); bioMsg(''); err('pin-err'); pinMsg('');
     maskInputs(''); closeMenus(); dialogClose(false);   // offene Rückfrage verfällt, der Aufrufer sieht false
@@ -1328,6 +1461,44 @@ const App = (function(){
   }
 
 
+  /* ---------- Standard-Notes-Import (v1.1): entschlüsseltes Backup → snImport() (rein) → Rückfrage mit Zusammenfassung → Merge wie beim Backup ---------- */
+  function snErrMsg(e){ const c=e&&e.message; return tr(c==='snencrypted'?'sn.errEncrypted':c==='snformat'?'sn.errFormat':'sn.errJson'); }
+  function importSn(ev){
+    const f=ev&&ev.target&&ev.target.files&&ev.target.files[0]; if(!f) return; const input=ev.target; $('sn-msg').textContent='';
+    if(f.size>MAX_FILE_BYTES){ $('sn-msg').textContent=tr('err.fileLarge'); input.value=''; return; }
+    const r=new FileReader(); r.onerror=()=>{ $('sn-msg').textContent=tr('bk.readErr'); input.value=''; };
+    r.onload=()=>{ input.value=''; if(!VAULT||importSn._busy) return; let res;
+      try{ res=snImport(String(r.result),{trashBudget:Math.max(0,MAX_TRASH-trash().length)}); }catch(e){ $('sn-msg').textContent=snErrMsg(e); return; }
+      snConfirm(res); };
+    r.readAsText(f);
+  }
+  async function snConfirm(res){
+    if(!VAULT||importSn._busy) return; const s=res.stats, sk=s.skipped;
+    const ids=new Set(VAULT.entries.map(e=>e.id)), live=new Set(VAULT.entries.filter(e=>!e.deleted).map(dupKey));
+    const fresh=res.entries.filter(e=>ids.has(e.id)||e.deleted||!live.has(dupKey(e)));   // gleicher Inhalt unter anderer ID = Dublette; gleiche ID = Re-Import, der Merge entscheidet
+    const dupes=res.entries.length-fresh.length, known=fresh.filter(e=>ids.has(e.id)).length;
+    const newLive=fresh.filter(e=>!e.deleted&&!ids.has(e.id)).length, newTrash=fresh.filter(e=>e.deleted&&!ids.has(e.id)).length;
+    const parts=[fresh.length?tr('sn.take',{n:newLive,t:newTrash})+(known?' '+tr('sn.known',{n:known}):''):tr('sn.nothing')];
+    const skip=[]; if(sk.auth) skip.push(tr('sn.skipAuth',{n:sk.auth})); if(sk.sheet) skip.push(tr('sn.skipSheet',{n:sk.sheet})); if(dupes) skip.push(tr('sn.skipDupes',{n:dupes}));
+    if(s.trashOver) skip.push(tr('sn.trashOver',{n:s.trashOver,m:MAX_TRASH})); const o=sk.files+sk.other+sk.encrypted+sk.deleted+sk.empty; if(o) skip.push(tr('sn.skipOther',{n:o}));
+    if(skip.length) parts.push(tr('sn.skipped')+' '+skip.join(', ')+'.');
+    const chg=[]; if(s.capped.body) chg.push(tr('sn.capBody',{n:s.capped.body,k:CAPS.body/1000})); if(s.capped.items||s.capped.item) chg.push(tr('sn.capItems',{n:s.capped.items+s.capped.item,m:ITEMS_MAX,c:CAPS.item}));
+    if(s.lost.tables) chg.push(tr('sn.lostTables',{n:s.lost.tables})); const li=s.lost.images+s.lost.files+s.lost.embeds; if(li) chg.push(tr('sn.lostImages',{n:li})); if(s.archived) chg.push(tr('sn.archived',{n:s.archived}));
+    if(chg.length) parts.push(tr('sn.changed')+' '+chg.join(', ')+'.');
+    if(!fresh.length){ $('sn-msg').textContent=parts.join(' '); return; }
+    parts.push(tr('sn.hint'));
+    const yes=await ask(parts.join('\n\n'),{ok:'dlg.import'}); if(!yes||!VAULT||!DEK||importSn._busy) return;   // während der Rückfrage gesperrt?
+    importSn._busy=true;
+    try{
+      if(editing) doneEditor();                                  // offener Editor würde nach dem Merge den alten Stand zurückschreiben (wie doImportVault)
+      const before=VAULT.entries.slice(); const m=mergeEntries(VAULT.entries, fresh);
+      if(liveCount(m.entries)>MAX_ENTRIES){ $('sn-msg').textContent=tr('err.tooMany'); return; }
+      VAULT.entries=m.entries;
+      try{ await persist(); if(!VAULT) return; $('sn-msg').textContent=tr('sn.done',{a:m.added,u:m.updated,t:newTrash}); renderList(); toast(tr('sn.doneToast')); }
+      catch(e){ if(!(e&&e.locked)&&VAULT){ VAULT.entries=before; $('sn-msg').textContent=e&&e.fileFull?tr('err.fileFull',{m:MAX_FILE_BYTES/1048576}):tr('err.saveFailed'); } }
+    }finally{ importSn._busy=false; }
+  }
+
   /* ---------- Aegis-Hürde (TOTP beim Entsperren) — Einrichtung ohne QR: Schlüssel oder otpauth-Link kopieren, Code bestätigen ---------- */
   function totpStart(){
     if(!VAULT) return; pendingSecret=base32Encode(rand(20));
@@ -1615,7 +1786,7 @@ const App = (function(){
     openTrash,renderTrash,restoreEntry,purgeEntry,emptyTrash,
     closeMenus,syncCombo,syncCombos,toggleCombo,chooseOpt,
     suggestPass,meterSetup,meterCp,kdfChanged,
-    exportVault,importVault,doImportVault,cancelImport,pickFile,
+    exportVault,importVault,importSn,doImportVault,cancelImport,pickFile,
     setAutolock,setBgLock,setClipClear,setSecure,theme,changePass,wipeLocal,
     totpStart,totpConfirm,totpCancel,totpDisable,copySecret,copyOtpauth,doBio,bioEnable,bioDisable,bioAlertOk,doPin,pinEnable,pinDisable,deskKey,
     openHelp,closeHelp,toggleLang,relabel,togglePass,maskInputs,eyeWrap,enhancePassFields};
@@ -1634,7 +1805,7 @@ document.addEventListener('mousedown',ev=>{ if(ev.target.closest('.pw-eye')) ev.
 document.addEventListener('change',ev=>{
   const elx=ev.target.closest('[data-change]'); if(!elx) return;
   const a=elx.dataset.change; const fn=App[a]; if(typeof fn!=='function') return;
-  if(a==='importVault') return fn(ev);
+  if(a==='importVault'||a==='importSn') return fn(ev);
   fn(elx.value, elx);
 });
 document.addEventListener('input',ev=>{

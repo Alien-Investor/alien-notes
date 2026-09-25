@@ -306,6 +306,13 @@ html.desk .no-desk{display:none;}
         </div>
         <div id="import-msg" class="muted" style="margin-top:10px"></div>
       </div>
+      <div class="card">
+        <h2 data-i18n="sn.title">Aus Standard Notes übernehmen</h2>
+        <p class="muted" data-i18n-html="sn.intro">Liest ein <strong>entschlüsseltes</strong> Standard-Notes-Backup (die Datei <code>Standard Notes Backup and Import File.txt</code> aus dem heruntergeladenen ZIP). Notizen, Markdown, Code, Checklisten, Rich-Text und Super-Notizen werden Notizen und Checklisten, der erste Tag wird die Kategorie, Papierkorb bleibt Papierkorb. <strong>Authenticator-Einträge werden nie übernommen</strong> (2FA-Geheimnisse gehören in Aegis). Vor dem Übernehmen zeigt eine Rückfrage, was ankommt. <strong>Danach die entschlüsselte Datei löschen</strong> — sie ist Klartext.</p>
+        <input type="file" id="sn-file" accept=".txt,.json,text/plain,application/json" class="hidden" data-change="importSn">
+        <button class="btn ghost" style="margin-top:8px" data-action="pickFile" data-arg="sn-file" data-i18n="sn.pick">Backup-Datei wählen</button>
+        <div id="sn-msg" class="muted" style="margin-top:10px"></div>
+      </div>
     </div>
 
     <!-- EINSTELLUNGEN -->
@@ -495,6 +502,8 @@ html.desk .no-desk{display:none;}
       <li>Mit zwei Geräten: auf beiden regelmäßig exportieren und das Backup des jeweils anderen importieren. Beide Seiten landen beim selben Stand.</li>
       <li>Alien Pass und Alien Notes nutzen dieselbe Format-Familie, aber getrennte Dateien: Eine <code>.vault</code>-Datei wird hier abgewiesen, eine <code>.notes</code>-Datei dort — sie teilen nie Schlüssel.</li>
     </ul>
+    <h2 data-i18n="help.hSn">Umzug von Standard Notes</h2>
+    <p data-i18n-html="help.pSn">In Standard Notes das Kontomenü öffnen → <strong>Backups</strong> → <strong>Download decrypted backup</strong>. Das ZIP entpacken und unter Sicherung → „Aus Standard Notes übernehmen“ die Datei <code>Standard Notes Backup and Import File.txt</code> wählen. Klartext-, Markdown-, Code- und Rich-Text-Notizen werden Textnotizen (Markdown mit eingeschalteter Markdown-Ansicht), Super-Notizen werden in die kleine Markdown-Untermenge übersetzt (Tabellen als Textzeilen, Bilder und Dateien als Platzhalter), Checklisten werden Checklisten. Der erste Tag wird die Kategorie („Eltern/Kind“ bei verschachtelten Tags), Angeheftetes bleibt angeheftet, Sterne werden Favoriten, der Papierkorb landet im Papierkorb mit frischer 30-Tage-Frist. <strong>Nie übernommen:</strong> Authenticator-Einträge (2FA-Geheimnisse — von Hand nach Aegis), Tabellen (Spreadsheet), Dateien. Ein zweiter Import desselben Backups legt keine Dubletten an, die neuere Fassung einer Notiz gewinnt. <strong>Danach das entschlüsselte Backup und das ZIP löschen</strong> — sie enthalten alle Notizen im Klartext.</p>
     <h2 data-i18n="help.h8">Zwischenablage</h2>
     <ul data-i18n-html="help.l8">
       <li>„Kopieren“ legt die ganze Notiz in die Zwischenablage (Titel, Text oder Checkliste als „- [x] …“-Zeilen).</li>

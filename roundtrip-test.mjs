@@ -24,7 +24,7 @@ const V = new Function(region + `
     encryptBody,decryptBody,serializeFile,parseFile,kdfOk,KDF_DEFAULT,KDF_BOUNDS,MAX_ENTRIES,MAX_FILE_BYTES,MAX_READ_BYTES,emptyVault,sanitizeEntry,sanitizeEntries,sanitizeVault,sanitizeSettings,
     SETTINGS_DEFAULT,SETTINGS_ALLOWED,BG_NEVER,normalizeTotp,otpauthUri,sanitizeItems,ITEMS_MAX,ENTRY_TYPES,CAPS,mergeEntries,winner,canon,purgeTombstones,tombstone,
     totpCode,totpRemaining,genWords,passStrength,passCheck,MAX_TOMBSTONES,liveCount,tombFrom,isWiped,wipeTrash,shapeIncoming,TRASH_DAYS,MAX_TRASH,TOMBSTONE_DAYS,ts,
-    dupKey,entryType,line,bioKey,parseBioBlob,serializeBioBlob,bioWrapOk,wrapTag,mdParse,mdInline,noteText,linesToItems,itemsToBody};`)();
+    dupKey,entryType,line,bioKey,parseBioBlob,serializeBioBlob,bioWrapOk,wrapTag,mdParse,mdInline,noteText,linesToItems,itemsToBody,snImport,snId,htmlToText,lexToMd};`)();
 
 let pass=0, fail=0; const ok=(c,m)=>{ if(c){pass++;console.log('  ✓',m);} else {fail++;console.log('  ✗ FEHLER:',m);} };
 const throwsWith=async(fn,code,m)=>{ try{ await fn(); ok(false,m+' (kein Fehler)'); }catch(e){ ok(e&&e.message===code,m+' → '+(e&&e.message)); } };
@@ -492,6 +492,74 @@ console.log('\n[14] Markdown-Zerlegung (mdParse/mdInline), Kopiertext, Zeilen �
   ok(V.linesToItems('x\n'.repeat(300)).length===V.ITEMS_MAX,'linesToItems kappt auf ITEMS_MAX');
   ok(V.itemsToBody([{text:'a',done:true},{text:'b',done:false}])==='- [x] a\n- [ ] b','itemsToBody: Einträge → Zeilen');
   ok(V.canon(V.linesToItems(V.itemsToBody(li)))===V.canon(li),'Zeilen ↔ Einträge ist ein Roundtrip');
+}
+
+console.log('\n[15] Standard-Notes-Import (snImport: Typen, Tags, Papierkorb, Super → Markdown, Grenzen, Abwehr)');
+{ const NOW=Date.parse('2026-09-25T12:00:00Z'), NOWISO='2026-09-25T12:00:00.000Z'; const raw=readFileSync('test-data/sn-sample.json','utf8');
+  const r=V.snImport(raw,{now:NOW}); const s=r.stats, by=t=>r.entries.find(e=>e.title===t);
+  ok(r.entries.length===9&&s.notes===7&&s.lists===1&&s.trashed===1&&s.tags===2,'Beispiel-Backup: 7 Notizen, 1 Checkliste, 1 im Papierkorb, 2 Tags');
+  ok(s.skipped.auth===1&&s.skipped.sheet===1&&s.skipped.other===2&&s.skipped.files===0&&s.skipped.encrypted===0&&s.skipped.deleted===0&&s.skipped.empty===0,'übersprungen: 1 Authenticator, 1 Tabelle, 2 sonstige (ItemsKey, Component)');
+  ok(s.lost.tables===1&&s.lost.images===1&&s.lost.files===1&&s.lost.embeds===0&&s.pinned===1&&s.archived===1&&s.fav===0,'gezählt: 1 Tabelle, 1 Bild, 1 Datei, 1 angeheftet, 1 archiviert');
+  ok(r.entries.every(e=>Object.keys(e).length===FIELDS&&V.canon(V.sanitizeEntry(e,NOW))===V.canon(e)),'alle Einträge: '+FIELDS+' Felder, sanitizer-stabil');
+  const out=JSON.stringify(r); ok(!/JBSWY3DPEHPK3PXP|token-vault|Authenticator|standard-sheets|Tabelle"/.test(out)&&!/"cells"/.test(out),'Authenticator-Geheimnis und Tabellen-JSON kommen nirgends an');
+  ok(by('Plain').md===false&&by('Markdown').md===true&&by('Code').md===false&&by('Code').body.includes('\n')&&by('Super').md===true,'md: Markdown und Super an, Klartext/Code aus');
+  ok(by('Rich Text').body==='Überschrift\nfett kursiv\n- eins','Rich Text → Klartext ohne Tags, Blöcke als Zeilen');
+  const sb=by('Super').body; const need=['# Einkauf Werkstatt','**fett**','*kursiv*','`code`','- Punkt A','1. Erstens','2. Zweitens','- [ ] Offen','- [x] Erledigt','```javascript\nlet x = 1\n```','> Ein erfundenes Zitat.','Siehe Beispiel (https://example.org)','| Kopf 1 | Kopf 2 |\n| a | b |','[Bild: Beispielbild]','[Datei]','---'];
+  ok(need.every(x=>sb.includes(x)),'Super → Markdown-Untermenge: Überschrift, Inline-Formate, drei Listenarten, Zaun, Zitat, Link als Text, Tabelle als Zeilen, Platzhalter, Linie'+(need.filter(x=>!sb.includes(x)).length?' FEHLT: '+need.filter(x=>!sb.includes(x)).join(' | '):''));
+  const P=V.mdParse(sb); ok(P[0].type==='h'&&P[0].level===1&&P.find(b=>b.type==='code'&&b.text==='let x = 1')&&P.find(b=>b.type==='list'&&b.items.some(i=>i.check===true))&&P[P.length-1].type==='hr','das erzeugte Markdown zerlegt unser mdParse wie erwartet');
+  const cl=by('Checkliste'); ok(cl.type==='list'&&cl.items.length===3&&cl.items[1].text==='Reifen prüfen'&&cl.items[1].done&&!cl.items[0].done&&cl.body==='','Task-Editor („- [x] …“-Zeilen) → Checkliste mit Haken');
+  ok(by('Plain').cat==='Projekte'&&by('Super').cat==='Projekte'&&by('Checkliste').cat==='Projekte/Werkstatt'&&by('Code').cat==='','Kategorie: erster Tag, verschachtelt „Eltern/Kind“, ohne Tag leer');
+  ok(by('Angeheftet').pinned===true&&by('Plain').pinned===false&&by('Archiviert').deleted===null,'pinned aus appData; archiviert bleibt normale Notiz');
+  const tr=by('Im Papierkorb'); ok(tr.deleted===NOWISO&&tr.updated==='2026-01-09T10:00:00.000Z'&&tr.created==='2026-01-09T10:00:00.000Z'&&tr.body==='Weg damit','Papierkorb: Inhalt bleibt, Löschdatum = Importzeit (frische Frist), updated/created aus der Datei');
+  ok(by('Plain').updated==='2026-01-01T10:00:00.000Z'&&by('Plain').id==='8000000000000001'&&/^[0-9a-f]{16}$/.test(by('Super').id),'Datum aus client_updated_at, ID = hintere 16 Hex der UUID');
+  const r0=V.snImport(raw,{now:NOW,trashBudget:0}); ok(r0.entries.length===8&&r0.stats.trashed===0&&r0.stats.trashOver===1&&!r0.entries.some(e=>e.deleted),'Papierkorb-Budget 0: Papierkorb-Notiz zurückgehalten und gezählt');
+  ok(V.snId('00000000-0000-4000-8000-0000000000a1')==='80000000000000a1'&&V.snId('kein-uuid')===V.snId('kein-uuid')&&V.snId('kein-uuid')!==V.snId('kein-uuid2')&&/^[0-9a-f]{16}$/.test(V.snId('kein-uuid'))&&V.snId('')!==V.snId('x'),'snId: deterministisch, 16 Hex, Fremdformat gehasht');
+  // Re-Import: gleiche IDs → der Merge legt nichts doppelt an
+  const m=V.mergeEntries(r.entries, V.snImport(raw,{now:NOW+1000}).entries); ok(m.added===0&&m.updated===0&&m.entries.length===9,'zweiter Import derselben Datei: Merge fügt nichts hinzu');
+  // Fehlerfälle
+  const th=(fn,code,msg)=>{ try{ fn(); ok(false,msg+' (kein Fehler)'); }catch(e){ ok(e&&e.message===code,msg+' → '+(e&&e.message)); } };
+  th(()=>V.snImport('{kein json'),'snjson','kaputtes JSON'); th(()=>V.snImport('[1,2]'),'snformat','Array statt Objekt'); th(()=>V.snImport('{"items":"x"}'),'snformat','items kein Array');
+  th(()=>V.snImport('{"items":[],"keyParams":{"version":"004"}}'),'snencrypted','keyParams = verschlüsseltes Backup'); th(()=>V.snImport('{"items":[],"auth_params":{}}'),'snencrypted','auth_params = verschlüsseltes Backup');
+  ok(V.snImport('{"version":"004","items":[]}',{now:NOW}).entries.length===0,'leeres Backup: keine Einträge, kein Fehler');
+  // Einzelfälle: verschlüsseltes Item, gelöscht, Datei, leer, starred, unbekannter Typ, Notiz→Tag-Richtung, Punkt-Ordner, Kreis, Überlänge
+  const N=(uuid,c,extra)=>Object.assign({uuid,content_type:'Note',content:Object.assign({title:'',text:'',references:[]},c),created_at:'2026-02-01T00:00:00.000Z',updated_at:'2026-02-02T00:00:00.000Z'},extra||{});
+  const items=[
+    {uuid:'e1',content_type:'Note',content:'004:abc:def'}, {uuid:'e2',content_type:'Note',content:{title:'x'},deleted:true}, {uuid:'e3',content_type:'Note',content:null},
+    {uuid:'f1',content_type:'SN|File',content:{name:'a.pdf'}}, N('n0',{title:'',text:'   \n  '}), N('n1',{title:'Stern',text:'a',starred:true,noteType:'unknown',editorIdentifier:'org.standardnotes.fancy-markdown-editor'}),
+    N('n2',{title:'Fremd',text:'roh',noteType:'was-auch-immer',editorIdentifier:'com.example.editor'}), N('n3',{title:'Zu Tag',text:'b',references:[{uuid:'t1',content_type:'Tag'}]}),
+    N('n4',{title:'Ohne Titel',text:'',noteType:'super'}), N('n5',{title:'',text:'  erste Zeile  \nzweite',noteType:'plain-text',appData:{'org.standardnotes.sn':{client_updated_at:'Thu Jan 01 2026 10:00:00 GMT+0000 (UTC)'}}},{created_at:'2025-12-01T00:00:00.000Z'}),
+    N('n6',{title:'Kaputt',text:'kein json',noteType:'super'}), N('n7',{title:'Lang',text:'x'.repeat(150000),noteType:'plain-text'}), N('n8',{title:'Liste lang',text:Array.from({length:300},(_,i)=>'- [ ] '+i).join('\n')+'\n- [ ] '+'y'.repeat(600),noteType:'task'}),
+    N('n9',{title:'Datum kaputt',text:'d',appData:{'org.standardnotes.sn':{client_updated_at:'irgendwann',pinned:'true'}}}), N('na',{title:'Zyklus',text:'z',references:[{uuid:'c1',content_type:'Tag'}]}),
+    N('nb',{title:'Punkt',text:'p',references:[{uuid:'t2',content_type:'Tag'}]}), N('nc',{title:'Langer Pfad',text:'q',references:[{uuid:'t3',content_type:'Tag'}]}),
+    {uuid:'t1',content_type:'Tag',content:{title:'Arbeit',references:[]}}, {uuid:'t2',content_type:'Tag',content:{title:'Arbeit.Projekt.X',references:[]}},
+    {uuid:'c1',content_type:'Tag',content:{title:'A',references:[{uuid:'c2',content_type:'Tag',reference_type:'TagToParentTag'}]}}, {uuid:'c2',content_type:'Tag',content:{title:'B',references:[{uuid:'c1',content_type:'Tag',reference_type:'TagToParentTag'}]}},
+    {uuid:'t3',content_type:'Tag',content:{title:'Blatt',references:[{uuid:'t4',content_type:'Tag',reference_type:'TagToParentTag'}]}}, {uuid:'t4',content_type:'Tag',content:{title:'E'.repeat(45),references:[]}},
+    {uuid:'x1',content_type:'SN|SmartTag',content:{title:'Alle'}}, 42, null, 'string'
+  ];
+  const q=V.snImport(JSON.stringify({version:'004',items}),{now:NOW}); const qs=q.stats, qb=t=>q.entries.find(e=>e.title===t);
+  ok(qs.skipped.encrypted===1&&qs.skipped.deleted===2&&qs.skipped.files===1&&qs.skipped.empty===1&&qs.skipped.other===4,'gezählt: 1 verschlüsselt, 2 gelöscht, 1 Datei, 1 leer, 4 sonstige (SmartTag + 3 Müll)');
+  ok(qb('Stern').fav===true&&qb('Stern').md===true,'starred → Favorit; noteType unknown → Editor-Kennung entscheidet (Markdown)');
+  ok(qb('Fremd').type==='text'&&qb('Fremd').body==='roh'&&qb('Fremd').md===false,'unbekannter Typ/Editor → Klartext');
+  ok(qb('Zu Tag').cat==='Arbeit','Notiz→Tag-Referenz (Gegenrichtung) wird auch verstanden');
+  ok(qb('Ohne Titel')&&qb('Ohne Titel').body===''&&qs.skipped.empty===1,'Super ohne Text, aber mit Titel: bleibt (Titel zählt)');
+  ok(qb('erste Zeile')&&qb('erste Zeile').body==='  erste Zeile  \nzweite'&&qb('erste Zeile').updated==='2026-01-01T10:00:00.000Z','leerer Titel → erste Zeile; client_updated_at im Textformat gelesen');
+  ok(qb('Kaputt').body==='kein json'&&qb('Kaputt').md===false,'Super mit kaputtem JSON → Text so wie er ist');
+  ok(qb('Lang').body.length===V.CAPS.body&&qs.capped.body===1,'150.000 Zeichen → auf CAPS.body gekürzt und gezählt');
+  ok(qb('Liste lang').items.length===V.ITEMS_MAX&&qs.capped.items===1&&qs.capped.item===1,'300 Zeilen → ITEMS_MAX, überlange Zeile gezählt');
+  ok(qb('Datum kaputt').updated==='2026-02-02T00:00:00.000Z'&&qb('Datum kaputt').pinned===false,'unlesbares client_updated_at → updated_at; pinned nur bei echtem true');
+  ok(qb('Zyklus').cat==='B/A'||qb('Zyklus').cat==='A','Tag-Kreis A↔B endet (Pfad „'+qb('Zyklus').cat+'“)');
+  ok(qb('Punkt').cat==='Arbeit/Projekt/X','Altform „a.b.c“ im Tag-Titel → Pfad');
+  ok(qb('Langer Pfad').cat==='Blatt','Pfad über 40 Zeichen → nur das Blatt');
+  ok(!Object.prototype.hasOwnProperty.call(Object.prototype,'pinned')&&!('polluted' in {}),'keine Prototyp-Verschmutzung');
+  // Abwehr: Titel/HTML/Super-Müll bleiben Text, Prototype-Schlüssel wirkungslos, ReDoS/Stack-Wächter
+  const evil=JSON.stringify({version:'004',items:[N('v1',{title:'<img src=x onerror=alert(1)>',text:'<script>alert(1)</script>&lt;b&gt;&amp;&#65;&#x42;&bogus;',noteType:'rich-text'}),
+    N('v2',{title:'Proto',text:'{"root":{"type":"root","children":[{"type":"paragraph","children":[{"type":"text","text":"ok","format":1}]},{"type":"paragraph","__proto__":{"polluted":1},"children":[{"type":"text","text":"x"}]}]}}',noteType:'super',appData:{'org.standardnotes.sn':{'__proto__':{polluted:1},pinned:true}}}),
+    N('v3',{title:'Tief',text:'{"root":{"type":"root","children":['+'{"type":"paragraph","children":['.repeat(5000)+'{"type":"text","text":"tief"}'+']}'.repeat(5000)+']}}',noteType:'super'})]});
+  const ev=V.snImport(evil,{now:NOW}); const e1=ev.entries.find(e=>e.title.startsWith('<img')); ok(e1&&e1.title==='<img src=x onerror=alert(1)>'&&e1.body==='alert(1)<b>&AB&bogus;','XSS-Titel bleibt Text; HTML → Text, Entities dekodiert, Unbekanntes bleibt');
+  ok(ev.entries.find(e=>e.title==='Proto').body==='**ok**\n\nx'&&!('polluted' in {})&&ev.entries.find(e=>e.title==='Proto').pinned===true,'Super mit __proto__-Schlüsseln: Text kommt an, nichts verschmutzt');
+  { const tf=ev.entries.find(e=>e.title==='Tief'); ok(tf&&((ev.stats.lost.deep||0)>0||tf.body.startsWith('{"root"')),'5.000-fach verschachtelter Super-Baum: Tiefenwächter (oder Rohtext), kein Stack-Überlauf ('+(ev.stats.lost.deep||0)+' abgeschnitten)'); }
+  { const t0=Date.now(); V.htmlToText('<'.repeat(100000)+'&'.repeat(100000)+'<p'.repeat(50000)); V.htmlToText('&#'.repeat(100000)); const t1=Date.now()-t0; ok(t1<400,'ReDoS-Wächter htmlToText: 100.000 spitze Klammern/Ampersands in '+t1+' ms'); }
+  { const t0=Date.now(); V.snImport(JSON.stringify({version:'004',items:Array.from({length:3000},(_,i)=>N('u'+i,{title:'N'+i,text:'t'.repeat(200),noteType:'markdown'}))}),{now:NOW}); const t1=Date.now()-t0; ok(t1<3000,'3.000 Notizen in '+t1+' ms'); }
 }
 
 console.log(`\n${pass} ok, ${fail} Fehler`); process.exit(fail?1:0);

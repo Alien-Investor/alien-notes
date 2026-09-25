@@ -16,6 +16,9 @@ async function until(code,ms=40000){ const t0=Date.now(); while(Date.now()-t0<ms
 const visible=id=>`(()=>{const n=document.getElementById(${JSON.stringify(id)});return !!n&&!n.classList.contains('hidden');})()`;
 const fill=(id,v)=>js(`(()=>{const n=document.getElementById(${JSON.stringify(id)});n.value=${JSON.stringify(v)};n.dispatchEvent(new Event('input',{bubbles:true}));})()`);
 const click=sel=>js(`document.querySelector(${JSON.stringify(sel)}).click()`);
+// Wiederherstellen und WARTEN, bis das Fenster den Fokus wieder hat (KDE gibt ihn nach restore() erst verzögert, teils mit blur/focus-Pendeln):
+// ein spätes blur leerte sonst die gerade getippte Test-PIN (Gate-Hygiene) — Flake 25.09.2026, nur in der echten Hülle.
+async function restoreFocused(){ win.restore(); for(let i=0;i<30&&!win.isFocused();i++) await sleep(100); if(!win.isFocused()){ win.focus(); for(let i=0;i<30&&!win.isFocused();i++) await sleep(100); } await sleep(300); }
 const DATA=path.join(process.env.XDG_DATA_HOME,'alien-notes'), VAULT=path.join(DATA,'notes.ainv');
 
 async function fresh(){
@@ -132,7 +135,7 @@ async function restart(){
   R('PIN eingerichtet', await until(visible('pin-on'),40000));
   await js(`App.setBgLock('0')`); await sleep(600);
   const h0=fs.readFileSync(VAULT,'utf8');   // nach der Einstellung lesen: die Datei darf sich durch PIN-Einrichtung + Sperre nicht mehr ändern
-  win.minimize(); R('Hintergrund-Sperre', await until(visible('screen-lock'),5000)); win.restore(); await sleep(400);
+  win.minimize(); R('Hintergrund-Sperre', await until(visible('screen-lock'),5000)); await restoreFocused(); await sleep(400);
   R('PIN-Block auf dem Sperrbildschirm', await js(visible('pin-box')));
   R('Notizen-Datei durch PIN-Einrichtung und Sperre unverändert (nichts auf der Platte)', fs.readFileSync(VAULT,'utf8')===h0&&fs.readdirSync(DATA).every(n=>n==='notes.ainv'));
   await fill('lock-pin','246810'); await click('#pin-btn');
@@ -145,10 +148,10 @@ async function background(){
   await js(`App.setAutolock('0')`); await js(`App.setBgLock('0')`); await sleep(600);
   win.minimize(); const locked=await until(visible('screen-lock'),5000);
   R('Minimieren sperrt bei „sofort“ (Inaktivität aus)', locked);
-  win.restore(); await sleep(400);
+  await restoreFocused(); await sleep(400);
   await fill('lock-pass',PP); await click('#unlock-btn'); await until(visible('screen-app'));
   await js(`App.setBgLock('60')`); await sleep(600);
-  win.minimize(); await sleep(1200); win.restore(); await sleep(600);
+  win.minimize(); await sleep(1200); await restoreFocused(); await sleep(600);
   R('kurz minimiert bei 1 min: bleibt entsperrt', await js(visible('screen-app')));
   await fill('lock-pass','x'); win.hide(); await sleep(600); win.show(); await sleep(400);
   R('Verstecken leert getippte Eingaben', await js(`document.getElementById('lock-pass').value===''`));
@@ -158,13 +161,13 @@ async function background(){
   await js(`App.tab('list')`);
   await fill('lock-pass',PP); await click('#unlock-btn'); await until(visible('screen-app'));
   await js(`App.setBgLock('0')`); await sleep(600); await js(`App.lockNow()`); await until(visible('screen-lock'),5000);
-  await fill('lock-pass',PP); await click('#unlock-btn'); win.minimize(); await sleep(4000); win.restore(); await sleep(600);
+  await fill('lock-pass',PP); await click('#unlock-btn'); win.minimize(); await sleep(4000); await restoreFocused(); await sleep(600);
   R('während des Entsperrens minimiert: bleibt gesperrt', await js(visible('screen-lock'))&&!(await js(visible('screen-app'))));
   await fill('lock-pass',PP); await click('#unlock-btn'); await until(visible('screen-app'));
   // Editor-Stand wird vor der Hintergrund-Sperre gesichert (Autosave, Alien Notes)
   await js(`App.setBgLock('60')`); await sleep(400);
   await click('button[data-action="newEntry"]'); await sleep(300); await fill('f-body','hintergrund-gesichert-'+process.pid);
-  win.minimize(); await sleep(800); win.restore(); await sleep(800);
+  win.minimize(); await sleep(800); await restoreFocused(); await sleep(800);
   R('Editor-Stand vor dem Minimieren gespeichert', await until(`(()=>{ try{ return true; }catch(_){ return false; } })()`)&&fs.readFileSync(VAULT,'utf8').length>0);
   await js(`App.doneEditor()`); await sleep(600);
   R('Notiz aus dem Hintergrund-Autosave in der Liste', await js(`[...document.querySelectorAll('#entry-list .entry .t')].some(n=>n.textContent.startsWith('hintergrund-gesichert'))`));
