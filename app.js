@@ -210,6 +210,8 @@ const T = {
   "toast.saved":{de:"Gespeichert",en:"Saved"},
   "toast.trashed":{de:"In den Papierkorb gelegt — {d} Tage wiederherstellbar",en:"Moved to the trash — restorable for {d} days"},
   "toast.restored":{de:"Notiz wiederhergestellt",en:"Note restored"},
+  "toast.undo":{de:"Rückgängig",en:"Undo"},
+  "toast.undoGone":{de:"Die Notiz ist nicht mehr im Papierkorb.",en:"The note is no longer in the trash."},
   "toast.purged":{de:"Notiz endgültig gelöscht",en:"Note permanently deleted"},
   "toast.trashEmptied":{de:"Papierkorb geleert",en:"Trash emptied"},
   "toast.discarded":{de:"Leere Notiz verworfen",en:"Empty note discarded"},
@@ -454,6 +456,7 @@ const TOMBSTONE_DAYS=365, MAX_TOMBSTONES=2000;   // Löschmarken zählen NICHT z
 // MAX_TRASH ist die tragende Grenze, nicht Kosmetik: eine Notiz kann bis zu 100 KB tragen — der Papierkorb kann damit
 // mehr wiegen als alle lebenden Einträge; die localStorage-Quota des Geräts ist die eigentliche Schranke (persist() prüft nach).
 const TRASH_DAYS=30, MAX_TRASH=200;
+const UNDO_MS=6000;   // so lange steht „Rückgängig“ nach dem Löschen im Toast
 function emptyVault(){ return {version:VAULT_VERSION, entries:[], settings:Object.assign({},SETTINGS_DEFAULT), totp:null, meta:{lastBackup:null, lastBackupCount:0}}; }
 const ID_RE=/^[0-9a-f]{16}$/;
 // Eintrag = Notiz ('text': body mit Zeilenumbrüchen) oder Checkliste ('list': items). issuer/label gehören zur Aegis-Hürde (TOTP).
@@ -870,7 +873,14 @@ const App = (function(){
   const show = id => $(id).classList.remove('hidden');
   const hide = id => $(id).classList.add('hidden');
   function screen(name){ ['setup','lock','totp','app'].forEach(s=>$('screen-'+s).classList.add('hidden')); $('screen-'+name).classList.remove('hidden'); }
-  function toast(msg){ const t=$('toast'); if(!t) return; t.textContent=msg; t.classList.remove('hidden'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.add('hidden'),2600); }
+  // Toast, optional mit einem Knopf (v1.1 Punkt 3: „Rückgängig“ nach dem Löschen): toast(msg,{action:{label,fn},ms}). Der Knopf trägt ohne Aktion
+  // keinen Text (Tests lesen #toast per textContent). hideToast() räumt Text und Aktion — auch beim Sperren (clearRendered), damit kein Knopf
+  // in eine gesperrte App hinein wirkt.
+  let toastFn=null;
+  function toast(msg, opt){ const t=$('toast'); if(!t) return; opt=opt||{}; $('toast-msg').textContent=msg; const b=$('toast-btn'); toastFn=opt.action?opt.action.fn:null;
+    b.textContent=opt.action?opt.action.label:''; b.classList.toggle('hidden',!opt.action); t.classList.remove('hidden'); clearTimeout(t._t); t._t=setTimeout(hideToast, opt.ms||2600); }
+  function hideToast(){ const t=$('toast'); if(!t) return; clearTimeout(t._t); t.classList.add('hidden'); $('toast-msg').textContent=''; $('toast-btn').textContent=''; $('toast-btn').classList.add('hidden'); toastFn=null; }
+  function toastAction(){ const fn=toastFn; hideToast(); if(typeof fn==='function'&&VAULT) fn(); }
   /* ---------- Rückfrage als eigener DOM-Dialog (v1.1) statt confirm(): der Android-Systemdialog erbt FLAG_SECURE nicht — ein Screenshot bei
      offener Löschnachfrage zeigte den Notiztitel (Gerätetest 25.09.2026). ask(msg,{ok,danger}) liefert ein Promise<boolean>; nur ein Dialog zur
      Zeit (eine zweite Frage gilt als abgelehnt); Escape/Hintergrund = Abbrechen; clearRendered() schließt ihn beim Sperren mit false, der wartende
@@ -1063,7 +1073,7 @@ const App = (function(){
     ['f-title','f-cat','f-body','search','import-pass','cp-cur','cp1','cp2','lock-pass','lock-pin','pin-new','pin-rep','pin-pass','setup-pass1','setup-pass2','totp-code','totp-verify','bio-pass','vault-file','sn-file'].forEach(id=>{ const n=$(id); if(n) n.value=''; });
     ['f-fav','f-pinned','f-md','bio-keep','set-secure'].forEach(id=>{ const n=$(id); if(n) n.checked=false; });   // „auch nach Neustart“ nie stehen lassen (ab Werk aus)
     setEntryType('text'); setMdMode('edit'); err('add-err'); err('cp-err'); err('lock-err'); err('setup-err'); err('totp-err'); err('totp-setup-err'); err('bio-err'); bioMsg(''); err('pin-err'); pinMsg('');
-    maskInputs(''); closeMenus(); dialogClose(false);   // offene Rückfrage verfällt, der Aufrufer sieht false
+    maskInputs(''); closeMenus(); dialogClose(false); hideToast();   // offene Rückfrage verfällt, der Aufrufer sieht false; Toast samt „Rückgängig“ weg
     hide('help-overlay'); hide('import-pass-box'); hide('totp-setup');
     doImportVault._busy=false; const ib=$('import-btn'); if(ib){ ib.disabled=false; }
     tab('list');   // sonst stünde nach dem Entsperren die (leere) Papierkorb-Ansicht offen
@@ -1342,7 +1352,9 @@ const App = (function(){
     const snapshot=VAULT.entries.slice(), iso=nowIso();
     VAULT.entries=VAULT.entries.map(x=>x===e?Object.assign({},e,{updated:iso, deleted:iso}):x);   // neues Array (Audit run-1 #2)     // in den Papierkorb — der Inhalt bleibt TRASH_DAYS erhalten
     editing=false; editId=null; resetForm();
-    persist().then(()=>{ tab('list'); toast(tr('toast.trashed',{d:TRASH_DAYS})); }).catch(e2=>{ rollback(snapshot)(e2); if(VAULT) openEditor(e.id); }); }
+    persist().then(()=>{ tab('list'); toast(tr('toast.trashed',{d:TRASH_DAYS}),{action:{label:tr('toast.undo'),fn:()=>undoDelete(e.id)},ms:UNDO_MS}); }).catch(e2=>{ rollback(snapshot)(e2); if(VAULT) openEditor(e.id); }); }
+  // Rückgängig (v1.1 Punkt 3): holt die eben gelöschte Notiz über den Wiederherstellen-Pfad zurück (updated=jetzt ⇒ schlägt die Löschmarke überall)
+  function undoDelete(id){ if(!VAULT) return; const e=trashById(id); if(!e) return toast(tr('toast.undoGone')); restoreEntry(id); }
 
   /* ---------- Papierkorb (Alien Pass v1.5) ---------- */
   // Zähler am Symbol in der Suchzeile; leer bleibt das Symbol sichtbar (nur gedimmt), damit man es findet, bevor man es braucht.
@@ -1817,7 +1829,7 @@ const App = (function(){
   function renderAll(){ renderList(); renderSettings(); renderBackupMsg(); }
   function kdfChanged(){ kdfTouched=true; }
 
-  return {boot,doSetup,doUnlock,doTotp,cancelTotp,lock,lockNow,tab,dialogOk,dialogCancel,dialogOpen,dialogKey,
+  return {boot,doSetup,doUnlock,doTotp,cancelTotp,lock,lockNow,tab,dialogOk,toastAction,dialogCancel,dialogOpen,dialogKey,
     newEntry,openEditor,doneEditor,copyCurrent,deleteCurrent,editorChanged,changeEntryType,mdModeEdit,mdModeView,mdToggle,mdCheat,mdExample,insertDate,
     addItemRow,itemEnter,removeItemRow,itemChanged,sortDone,resetDone,
     renderList,setCatFilter,clearCatFilter,toggleFavFilter,openCatMenu,toggleCatMenu,catInput,pickCat,

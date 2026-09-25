@@ -16,6 +16,8 @@ der Papierkorb landet im Papierkorb. Authenticator-Einträge (2FA-Geheimnisse), 
 Rückfrage genannt. Ein zweiter Import derselben Datei legt keine Dubletten an. Das Handbuch beschreibt den Weg und mahnt, das
 entschlüsselte Backup danach zu löschen.
 
+Rückgängig nach dem Löschen: Nach „In den Papierkorb“ bleibt sechs Sekunden ein Knopf „Rückgängig“ im Hinweis, der die Notiz sofort zurückholt.
+
 ## v0.1 — 2026-09-24
 
 Grundgerüst aus Alien Pass v1.8: Repo, App-Design-Kit, Datei-Format `AINV1` (Argon2id + AES-256-GCM, eigene Datei-Endung `.notes`),
