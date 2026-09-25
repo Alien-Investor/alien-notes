@@ -568,6 +568,19 @@ console.log('\n[15] Standard-Notes-Import (snImport: Typen, Tags, Papierkorb, Su
   ok(ev.entries.find(e=>e.title==='Proto').body==='**ok**\n\nx'&&!('polluted' in {})&&ev.entries.find(e=>e.title==='Proto').pinned===true,'Super mit __proto__-Schlüsseln: Text kommt an, nichts verschmutzt');
   { const tf=ev.entries.find(e=>e.title==='Tief'); ok(tf&&((ev.stats.lost.deep||0)>0||tf.body.startsWith('{"root"')),'5.000-fach verschachtelter Super-Baum: Tiefenwächter (oder Rohtext), kein Stack-Überlauf ('+(ev.stats.lost.deep||0)+' abgeschnitten)'); }
   { const t0=Date.now(); V.htmlToText('<'.repeat(100000)+'&'.repeat(100000)+'<p'.repeat(50000)); V.htmlToText('&#'.repeat(100000)); const t1=Date.now()-t0; ok(t1<400,'ReDoS-Wächter htmlToText: 100.000 spitze Klammern/Ampersands in '+t1+' ms'); }
+  { const t0=Date.now(); V.htmlToText(' '.repeat(1000000)+'x'); V.htmlToText('\t'.repeat(1000000)+'x\n'); const t1=Date.now()-t0; ok(t1<400,'ReDoS-Wächter htmlToText: 1 Mio Leerzeichen/Tabs ohne Zeilenumbruch in '+t1+' ms (Audit run-2: Eingabe auf 2×CAPS.body gedeckelt)'); }
+  // 2FA-Geheimnisse in jedem Pfad verworfen (Audit run-2 Hardening): editorIdentifier schlägt noteType, Legacy-Zuordnung über SN|Component.associatedItemIds, pinned auch aus content
+  { const legacy=JSON.stringify({version:'004',items:[
+      {uuid:'00000000-0000-4000-8000-0000000000c1',content_type:'SN|Component',content:{package_info:{identifier:'org.standardnotes.token-vault'},associatedItemIds:['00000000-0000-4000-8000-0000000000a1']}},
+      {uuid:'00000000-0000-4000-8000-0000000000c2',content_type:'SN|Component',content:{identifier:'org.standardnotes.standard-sheets',associatedItemIds:['00000000-0000-4000-8000-0000000000a2']}},
+      N('00000000-0000-4000-8000-0000000000a1',{title:'Legacy-Vault',text:'[{"secret":"GEHEIMNIS-A"}]'}),
+      N('00000000-0000-4000-8000-0000000000a2',{title:'Legacy-Sheet',text:'{"rows":[]}'}),
+      N('00000000-0000-4000-8000-0000000000a3',{title:'Widerspruch',text:'[{"secret":"GEHEIMNIS-B"}]',noteType:'markdown',editorIdentifier:'org.standardnotes.token-vault'}),
+      N('00000000-0000-4000-8000-0000000000a4',{title:'Angeheftet im content',text:'x',pinned:true}),
+      N('00000000-0000-4000-8000-0000000000a5',{title:'Normal',text:'y'})]});
+    const r=V.snImport(legacy,{now:NOW}); const all=JSON.stringify(r.entries);
+    ok(r.stats.skipped.auth===2&&r.stats.skipped.sheet===1&&!all.includes('GEHEIMNIS'),'Authenticator über Component-Zuordnung UND über editorIdentifier trotz noteType verworfen, Sheet über Component: '+r.stats.skipped.auth+'/'+r.stats.skipped.sheet+', kein Geheimnis im Ergebnis');
+    ok(r.entries.length===2&&r.entries.find(e=>e.title==='Angeheftet im content').pinned===true&&r.entries.find(e=>e.title==='Normal').pinned===false,'pinned aus content.pinned gelesen (nicht nur appData), Normal bleibt normal'); }
   { const t0=Date.now(); V.snImport(JSON.stringify({version:'004',items:Array.from({length:3000},(_,i)=>N('u'+i,{title:'N'+i,text:'t'.repeat(200),noteType:'markdown'}))}),{now:NOW}); const t1=Date.now()-t0; ok(t1<3000,'3.000 Notizen in '+t1+' ms'); }
 }
 
@@ -584,6 +597,10 @@ console.log('\n[16] ZIP-Inhaltsverzeichnis (zipEntries/zipSlice/zipFindSn) für 
   th(()=>V.zipSlice(u8(z1),Object.assign({},e,{encrypted:true}),1e9),'zipenc','verschlüsselter Eintrag'); th(()=>V.zipSlice(u8(z1),Object.assign({},e,{zip64:true}),1e9),'zip64','ZIP64-Eintrag');
   th(()=>V.zipSlice(u8(z1),Object.assign({},e,{method:12}),1e9),'zipmethod','fremde Methode (bzip2)'); th(()=>V.zipSlice(u8(z1),e,100),'toolarge','angegebene Größe über dem Deckel');
   const zb=mkZip([{name:SN,data:txt,method:8,usize:5}]); ok(V.zipSlice(u8(zb),V.zipFindSn(u8(zb)),1e9).usize===5,'gelogene Größe im Verzeichnis: der Deckel greift zusätzlich beim Entpacken (zipInflate zählt)');
+  const zs=mkZip([{name:SN,data:txt,method:0,usize:0}]); th(()=>V.zipSlice(u8(zs),V.zipFindSn(u8(zs)),100),'toolarge','gespeicherter Eintrag mit gelogener usize=0: csize zählt (Audit run-2 Hardening)');
+  ok(V.zipSlice(u8(zs),V.zipFindSn(u8(zs)),1e9).data.length===Buffer.byteLength(txt),'… und unter dem Deckel kommen die csize-Bytes an');
+  th(()=>V.zipFindSn(u8(mkZip([{name:'Items/Note/'+SN,data:'x'},{name:'x/Items/'+SN,data:'x'}]))),'zipnosn','gleichnamiger Köder unter Items/ zählt nicht (Audit run-2 Hardening)');
+  ok(V.zipFindSn(u8(mkZip([{name:'Items/Note/'+SN,data:'x'},{name:'Backup/'+SN,data:txt}]))).name==='Backup/'+SN,'… der echte Eintrag außerhalb von Items/ wird gefunden');
   th(()=>V.zipSlice(u8(mkZip([{name:SN,data:txt,method:8,lho:999999}])),V.zipFindSn(u8(mkZip([{name:SN,data:txt,method:8,lho:999999}]))),1e9),'zipbad','lokaler Kopf außerhalb der Datei');
   const zm=mkZip([{name:SN,data:txt,method:8,csize:99999999}]); th(()=>V.zipSlice(u8(zm),V.zipFindSn(u8(zm)),1e9),'zipbad','csize über das Dateiende hinaus');
   th(()=>V.zipEntries('kein Uint8Array'),'zipbad','falscher Typ');

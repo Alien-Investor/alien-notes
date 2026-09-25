@@ -45,3 +45,8 @@ trailer/thumbs/
 
 # Desktop-Build (regenerierbar: Electron entpackt, app.asar, Flatpak-Bauordner)
 desktop/build/
+
+# Standard-Notes-Backups (Klartext!) nie ins Repo (Audit run-2)
+*.zip
+Standard Notes Backup*
+Items/

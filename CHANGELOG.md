@@ -2,8 +2,8 @@
 
 ## v1.1 — in Arbeit
 
-Rückfragen (Löschen, Papierkorb leeren, Umwandeln, Haken zurücksetzen, schwache Passphrase, große Import-Datei, Pforten deaktivieren,
-Notizen löschen) erscheinen als eigener Dialog im App-Design statt als Systemdialog. Grund: Der Android-Systemdialog erbt den
+Rückfragen (Löschen und endgültig Löschen, Papierkorb leeren, Umwandeln, Haken zurücksetzen, schwache Passphrase, Import-Datei mit hohem
+Argon2-Speicherbedarf, Pforten deaktivieren, Notizen löschen, Standard-Notes-Import) erscheinen als eigener Dialog im App-Design statt als Systemdialog. Grund: Der Android-Systemdialog erbt den
 Screenshot-Schutz (FLAG_SECURE) nicht, ein Screenshot bei offener Löschnachfrage zeigte den Notiztitel. Der eigene Dialog hat je Frage
 einen passenden Knopf („In den Papierkorb“, „Endgültig löschen“, „Umwandeln“ …), Escape oder ein Tipp daneben bricht ab, eine Sperre während
 der Frage lässt die Antwort verfallen.
@@ -12,8 +12,8 @@ Umzug von Standard Notes: Unter „Sicherung“ liest die App ein entschlüsselt
 ZIP (entpackt wird nur die Backup-Datei darin, mit dem Entpacker des Systems, ohne Fremdcode) oder die Textdatei daraus. Klartext-, Markdown-, Code- und
 Rich-Text-Notizen werden Textnotizen, Super-Notizen werden in die Markdown-Untermenge übersetzt (Tabellen als Textzeilen, Bilder als
 Platzhalter), Checklisten werden Checklisten; der erste Tag wird die Kategorie, Angeheftetes bleibt angeheftet, Sterne werden Favoriten,
-der Papierkorb landet im Papierkorb. Authenticator-Einträge (2FA-Geheimnisse), Tabellen und Dateien werden nie übernommen und in der
-Rückfrage genannt. Ein zweiter Import derselben Datei legt keine Dubletten an. Das Handbuch beschreibt den Weg und mahnt, das
+der Papierkorb landet im Papierkorb, soweit dort Platz ist (frische 30-Tage-Frist). Authenticator-Einträge (2FA-Geheimnisse), Spreadsheet-Notizen
+und Datei-Anhänge werden nie übernommen und in der Rückfrage gezählt. Ein zweiter Import derselben Datei legt keine Dubletten an. Das Handbuch beschreibt den Weg und mahnt, das
 entschlüsselte Backup danach zu löschen.
 
 Rückgängig nach dem Löschen: Nach „In den Papierkorb“ bleibt sechs Sekunden ein Knopf „Rückgängig“ im Hinweis, der die Notiz sofort zurückholt.
@@ -29,7 +29,15 @@ den Inhalt weiterhin. Neues Feld im Datei-Format (ältere Fassungen lesen die Da
 Schriftgröße: drei Stufen unter Einstellungen → Darstellung (Normal, Groß, Sehr groß), gilt für das Gerät wie die Darstellung selbst.
 
 Mehrere Notizen auf einmal: der ☑-Knopf neben dem Papierkorb blendet Kästchen ein; gewählte Notizen lassen sich gemeinsam in den Papierkorb legen
-(ein „Rückgängig“ für alle), in eine Kategorie setzen oder als Favorit markieren. Suche und Chips wirken dabei weiter, „Alle“ nimmt die gezeigten.
+(ein „Rückgängig“ für alle, höchstens 200 auf einmal — so viele fasst der Papierkorb), in eine Kategorie setzen oder als Favorit markieren.
+Suche und Chips wirken dabei weiter, „Alle“ nimmt die gezeigten; bereits gewählte bleiben gewählt, auch wenn ein Filter sie ausblendet.
+
+Behoben (Audit-Nachlauf): Auf Android konnte eine Änderung still verloren gehen, wenn sie in das Zeitfenster eines gerade laufenden Speicherns fiel
+(seit 0.1; die letzte Eingabe fehlte nach dem Neustart, eine bestätigte Löschung tauchte wieder auf). „Rückgängig“ nach einer Massenlöschung hält jetzt die
+Grenze von 5.000 Notizen ein (sonst ließ sich die Datei nicht mehr öffnen). Löschen direkt nach dem Tippen meldete in seltenen Fällen Erfolg, ohne zu
+löschen. „Alle“ bei leerer Trefferliste wählte unsichtbare Notizen. Im Standard-Notes-Import werden Authenticator-Einträge auch bei alten Konten ohne
+Typangabe erkannt (Zuordnung über die Erweiterung), „Angeheftet“ wird an beiden Stellen des Backups gelesen, und ein Backup-Eintrag unterhalb von
+„Items/“ im ZIP zählt nicht mehr als Backup-Datei.
 
 ## v0.1 — 2026-09-24
 

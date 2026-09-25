@@ -63,7 +63,7 @@ const I18N = {
   "sn.title":"Import from Standard Notes","sn.pick":"Choose backup file","list.selTitle":"Select several notes","sel.all":"All","sel.none":"None","sel.trash":"Trash","sel.cat":"Category…","sel.cancel":"Cancel",
   "sn.intro":"Reads a <strong>decrypted</strong> Standard Notes backup — the downloaded ZIP directly, or the file <code>Standard Notes Backup and Import File.txt</code> from it. Plain, Markdown, code, checklist, rich-text and Super notes become notes and checklists, the first tag becomes the category, the trash stays the trash. <strong>Authenticator entries are never imported</strong> (2FA secrets belong in Aegis). A confirmation shows what arrives before anything is written. <strong>Delete the decrypted file afterwards</strong> — it is plain text.",
   "help.hSn":"Moving from Standard Notes",
-  "help.pSn":"In Standard Notes open the account menu → <strong>Backups</strong> → <strong>Download decrypted backup</strong>. Under Backup → “Import from Standard Notes” pick the downloaded ZIP directly (the app reads only the file <code>Standard Notes Backup and Import File.txt</code> inside it) or that file itself. Plain, Markdown, code and rich-text notes become text notes (Markdown with the Markdown view on), Super notes are translated into the small Markdown subset (tables as text lines, images and files as placeholders), checklists become checklists. The first tag becomes the category (“Parent/Child” for nested tags), pinned stays pinned, starred becomes a favourite, the trash lands in the trash with a fresh 30-day period. <strong>Never imported:</strong> Authenticator entries (2FA secrets — move them to Aegis by hand), spreadsheets, files. A second import of the same backup does not create duplicates; the newer version of a note wins. <strong>Afterwards delete the decrypted backup and the ZIP</strong> — they contain all notes in plain text.",
+  "help.pSn":"In Standard Notes open Preferences → <strong>Backups</strong> → under “Data backups” choose <strong>Decrypted</strong> → <strong>Download backup</strong>. Under Backup → “Import from Standard Notes” pick the downloaded ZIP directly (the app reads only the file <code>Standard Notes Backup and Import File.txt</code> inside it) or that file itself. Plain, Markdown, code and rich-text notes become text notes (Markdown with the Markdown view on), Super notes are translated into the small Markdown subset (tables as text lines, images and files as placeholders), checklists become checklists. The first tag becomes the category (“Parent/Child” for nested tags), pinned stays pinned, starred becomes a favourite, the trash lands in the trash as far as there is room (fresh 30-day period). <strong>Never imported:</strong> Authenticator entries (2FA secrets — move them to Aegis by hand), spreadsheets, files. A second import of the same backup does not create duplicates; the newer version of a note wins. <strong>Afterwards delete the decrypted backup and the ZIP</strong> — they contain all notes in plain text.",
   "bk.importIntro":"Merges a <code>.notes</code> file into these notes: per note the <strong>newer change</strong> wins, deletions are applied. The file may use a different passphrase — your local one stays unchanged.",
   "bk.pick":"Choose .notes file","bk.filePass":"Passphrase of the file","bk.doImport":"Merge",
   "set.secTitle":"Locking","set.autolock":"Lock after inactivity","set.off":"Off",
@@ -122,7 +122,7 @@ const I18N = {
   "help.p1":"A <strong>local, encrypted notes app</strong> for notes and checklists. Runs fully <strong>offline</strong> — no cloud, no server, no telemetry, no account. The Android app does not even have an internet permission. Your notes never leave the device in plaintext.",
   "help.warn":"⚠ There is no reset and no backdoor. Forget your passphrase and the notes are gone for good. Make regular backups and keep the passphrase safe.",
   "help.h2":"First steps",
-  "help.l2":"<li><strong>Choose a passphrase</strong> — at least 12 characters, better six dice words (the suggest button builds them from the EFF list). Write it down and store it safely.</li><li><strong>+</strong> creates a note. The title may stay empty — the first line of the text serves as the title. There is no save button: the app saves while you type and when you leave the note.</li><li><strong>Checklists:</strong> switch a note to “Checklist” — every line becomes an entry with a box; “Done to the bottom” sorts ticked entries down. Switching back turns the entries into “- [ ] …” or “- [x] …” lines.</li><li><strong>Categories</strong> work like folders: type one freely (suggestions from existing ones). The list filters via the chips at the top; the ★ chip shows favourites only, the ☐ chip only checklists with open items (both combine with a category). Pinned notes always sit at the top. <strong>No preview:</strong> the checkbox in the editor makes the list show only the title — against onlookers. <strong>Rename:</strong> tap the category chip, then the pencil ✎ next to it — every note of that category moves (including the trash); an empty name means “no category”.</li><li><strong>Several at once:</strong> the ☑ button next to the trash turns on checkboxes; tap rows to pick them (search and chips keep working, “All” picks every row shown). The bar at the bottom moves the picked notes to the trash (one “Undo” for all), sets a category or the favourite mark.</li><li><strong>Appearance:</strong> Settings → Appearance offers Black/Soft and three font sizes. Both are device settings — not in the file, not in the backup.</li><li>The search covers title, text, checklist entries and category.</li>",
+  "help.l2":"<li><strong>Choose a passphrase</strong> — at least 12 characters, better six dice words (the suggest button builds them from the EFF list). Write it down and store it safely.</li><li><strong>+</strong> creates a note. The title may stay empty — the first line of the text serves as the title. There is no save button: the app saves while you type and when you leave the note.</li><li><strong>Checklists:</strong> switch a note to “Checklist” — every line becomes an entry with a box; “Done to the bottom” sorts ticked entries down. Switching back turns the entries into “- [ ] …” or “- [x] …” lines.</li><li><strong>Categories</strong> work like folders: type one freely (suggestions from existing ones). The list filters via the chips at the top; the ★ chip shows favourites only, the ☐ chip only checklists with open items (both combine with a category). Pinned notes always sit at the top. <strong>No preview:</strong> the checkbox in the editor makes the list show only the title — against onlookers. <strong>Rename:</strong> tap the category chip, then the pencil ✎ next to it — every note of that category moves (including the trash); an empty name means “no category”.</li><li><strong>Several at once:</strong> the ☑ button next to the trash turns on checkboxes; tap rows to pick them (search and chips keep working, “All” picks every row shown; already picked notes stay picked even when a filter hides them). The bar at the bottom moves the picked notes to the trash (one “Undo” for all, at most 200 at once — that is what the trash holds), sets a category or the favourite mark.</li><li><strong>Appearance:</strong> Settings → Appearance offers Black/Soft and three font sizes. Both are device settings — not in the file, not in the backup.</li><li>The search covers title, text, checklist entries and category.</li>",
   "help.h3":"Markdown preview",
   "help.p3":"Every text note (not checklists) has a “Markdown preview” switch. Editing always stays the plain text field; the preview renders a small subset: headings (<code>#</code> to <code>###</code>), <strong>bold</strong> (<code>**…**</code>), <em>italic</em> (<code>*…*</code>), lists (<code>-</code>, <code>1.</code> — numbered ones always start at 1), boxes (<code>- [ ]</code>, <code>- [x]</code>), code (<code>`…`</code>, ``` blocks or 4 spaces of indentation — so no indented sub-items), rules (<code>---</code>). Links are deliberately shown as text, never clickable — the app has no network anyway.",
   "help.h4":"Locking",
@@ -246,6 +246,8 @@ const T = {
   "confirm.selDeleteFull":{de:"{n} Notizen in den Papierkorb legen? Der Papierkorb fasst {m} — dabei werden die {o} ältesten darin sofort und endgültig vernichtet.",en:"Move {n} notes to the trash? The trash holds {m} — the {o} oldest in it will be destroyed immediately and for good."},
   "confirm.selCat":{de:"Kategorie für {n} Notizen setzen (leer = ohne Kategorie):",en:"Set the category for {n} notes (empty = no category):"},
   "toast.selTrashed":{de:"{n} Notizen im Papierkorb",en:"{n} notes in the trash"},"toast.selRestored":{de:"{n} Notizen wiederhergestellt",en:"{n} notes restored"},
+  "toast.selTooMany":{de:"Höchstens {m} Notizen auf einmal in den Papierkorb — bitte die Auswahl verkleinern.",en:"At most {m} notes to the trash at once — please reduce the selection."},
+  "toast.selRestoredPart":{de:"{n} von {t} Notizen wiederhergestellt — mehr passen nicht (max. 5.000), der Rest bleibt im Papierkorb.",en:"{n} of {t} notes restored — no room for more (max. 5,000), the rest stays in the trash."},
   "toast.selFav":{de:"{n} Notizen als Favorit",en:"{n} notes marked favourite"},"toast.selUnfav":{de:"Favorit entfernt bei {n} Notizen",en:"Favourite removed from {n} notes"},
   "chip.open":{de:"☐ Offen",en:"☐ Open"},"chip.openTitle":{de:"Nur Checklisten mit offenen Einträgen",en:"Only checklists with open items"},
   "chip.all":{de:"Alle",en:"All"},"chip.none":{de:"Ohne Kategorie",en:"No category"},"chip.fav":{de:"★ Favoriten",en:"★ Favourites"},
@@ -266,7 +268,7 @@ const T = {
   "ed.meta":{de:"Angelegt {c} · Geändert {u}",en:"Created {c} · Updated {u}"},
   "ed.itemPh":{de:"Eintrag",en:"Entry"},"ed.itemDel":{de:"Eintrag entfernen",en:"Remove entry"},
   "confirm.toList":{de:"In eine Checkliste umwandeln? Jede Zeile des Textes wird ein Eintrag (leere Zeilen fallen weg, Zeilen über {c} Zeichen werden gekürzt, mehr als {n} Zeilen werden abgeschnitten). Einrückung und mehrfache Leerzeichen fallen weg; Überschriften, Fett und andere Auszeichnung bleiben nur als Zeichen stehen.",en:"Convert to a checklist? Every line of the text becomes an entry (empty lines are dropped, lines over {c} characters are shortened, more than {n} lines are cut). Indentation and repeated spaces are lost; headings, bold and other markup remain only as plain characters."},
-  "confirm.toText":{de:"In eine Textnotiz umwandeln? Die Einträge werden Zeilen mit „- [ ]“- bzw. „- [x]“-Kästchen; erledigte Haken bleiben nur als Text.",en:"Convert to a text note? The entries become lines with “- [x]” boxes; ticks survive only as text."},
+  "confirm.toText":{de:"In eine Textnotiz umwandeln? Die Einträge werden Zeilen mit „- [ ]“- bzw. „- [x]“-Kästchen; erledigte Haken bleiben nur als Text.",en:"Convert to a text note? The entries become lines with “- [ ]” or “- [x]” boxes; ticks survive only as text."},
   "confirm.delete":{de:"„{t}“ in den Papierkorb legen? {d} Tage wiederherstellbar, danach endgültig. (Wird beim Sync auf andere Geräte übernommen.)",en:"Move “{t}” to the trash? Restorable for {d} days, then gone for good. (Deletion syncs to other devices.)"},
   "confirm.deleteFull":{de:"„{t}“ in den Papierkorb legen? Der Papierkorb ist voll ({m}) — dabei wird „{o}“ (gelöscht am {od}) sofort und endgültig vernichtet. (Die Löschung wird beim Sync übernommen, der Papierkorb-Inhalt bleibt auf diesem Gerät.)",en:"Move “{t}” to the trash? The trash is full ({m}) — doing so destroys “{o}” (deleted on {od}) immediately and for good. (The deletion syncs to other devices, the trash content stays on this one.)"},
   "confirm.purge":{de:"„{t}“ endgültig löschen? Das lässt sich nicht rückgängig machen.",en:"Delete “{t}” permanently? This cannot be undone."},
@@ -278,7 +280,7 @@ const T = {
   "sn.errZipNoSn":{de:"Im ZIP fehlt die Datei „Standard Notes Backup and Import File.txt“ — ist das ein entschlüsseltes Standard-Notes-Backup?",en:"The ZIP does not contain “Standard Notes Backup and Import File.txt” — is this a decrypted Standard Notes backup?"},
   "sn.errZipUnsupported":{de:"Dieses System kann das ZIP nicht entpacken. Bitte entpacken und die Datei „Standard Notes Backup and Import File.txt“ wählen.",en:"This system cannot unpack the ZIP. Please unpack it and choose “Standard Notes Backup and Import File.txt”."},
   "sn.errZipBad":{de:"Das ZIP lässt sich nicht lesen (beschädigt, verschlüsselt, mehrteilig oder ZIP64).",en:"The ZIP cannot be read (damaged, encrypted, multi-part or ZIP64)."},
-  "sn.errEncrypted":{de:"Das Backup ist verschlüsselt. In Standard Notes ein entschlüsseltes Backup herunterladen (Kontomenü → Backups → „Download decrypted backup“).",en:"This backup is encrypted. Download a decrypted backup in Standard Notes (account menu → Backups → “Download decrypted backup”)."},
+  "sn.errEncrypted":{de:"Das Backup ist verschlüsselt. In Standard Notes ein entschlüsseltes Backup herunterladen (Einstellungen → Backups → „Data backups“: Decrypted → „Download backup“).",en:"This backup is encrypted. Download a decrypted backup in Standard Notes (Preferences → Backups → “Data backups”: Decrypted → “Download backup”)."},
   "sn.take":{de:"{n} Notizen werden übernommen, {t} davon in den Papierkorb.",en:"{n} notes will be imported, {t} of them into the trash."},
   "sn.known":{de:"{n} bereits importierte werden abgeglichen (die neuere Fassung gewinnt).",en:"{n} previously imported ones will be reconciled (the newer version wins)."},
   "sn.nothing":{de:"Nichts zu übernehmen.",en:"Nothing to import."},
@@ -748,7 +750,9 @@ function snId(uuid){ const s=String(uuid||'').toLowerCase().replace(/-/g,''); if
 function snDate(v, fb){ if(typeof v!=='string'||!v) return fb; const t=Date.parse(v); return Number.isFinite(t)?new Date(t).toISOString():fb; }   // ISO oder „Thu Jan 01 2026 …“ (client_updated_at)
 // HTML (Rich-Text-Editor) → Klartext ohne den HTML-Parser des Browsers (Build-Schranke gegen HTML-Senken): Blockenden werden Zeilenumbrüche, Tags fallen weg, Entities werden dekodiert. Linear.
 const HTML_ENT={amp:'&',lt:'<',gt:'>',quot:'"',apos:"'",nbsp:' '};
-function htmlToText(html){ const s=String(html||''); let out='', i=0;
+// Eingabe vorab auf 2 × CAPS.body deckeln: die Nachläufe unten (Regex) liefen sonst über den ungekürzten Rich-Text; sanitizeEntry kappt erst danach auf CAPS.body
+// (Audit run-2, Hardening: /[ \t]+\n/ ist unter Node bei langen Leerzeichen-Läufen quadratisch, Chromium optimiert es weg — mit dem Deckel ist es überall konstant).
+function htmlToText(html){ const s=String(html||'').slice(0,CAPS.body*2); let out='', i=0;
   for(;;){ const a=s.indexOf('<',i); if(a<0){ out+=s.slice(i); break; } const b=s.indexOf('>',a+1); if(b<0){ out+=s.slice(i); break; }   // jedes Zeichen höchstens zweimal angefasst
     out+=s.slice(i,a); const close=s[a+1]==='/'; const m=/^([a-z][a-z0-9]*)/i.exec(s.slice(a+(close?2:1),Math.min(b,a+16))); const n=m?m[1].toLowerCase():'';
     if(n==='br') out+='\n'; else if(close&&/^(?:p|div|h[1-6]|li|tr|blockquote|pre|section|article|header|footer|table|ul|ol)$/.test(n)) out+='\n';
@@ -756,7 +760,7 @@ function htmlToText(html){ const s=String(html||''); let out='', i=0;
     i=b+1; }
   out=out.replace(/&(#x[0-9a-f]{1,6}|#\d{1,7}|[a-z]{2,6});/gi,(m,e)=>{ if(e[0]==='#'){ const cp=e[1]==='x'||e[1]==='X'?parseInt(e.slice(2),16):parseInt(e.slice(1),10);
     return Number.isFinite(cp)&&cp>0&&cp<0x110000&&!(cp>=0xd800&&cp<=0xdfff)?String.fromCodePoint(cp):m; } const k=e.toLowerCase(); return Object.prototype.hasOwnProperty.call(HTML_ENT,k)?HTML_ENT[k]:m; });
-  return out.replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim(); }
+  return out.split('\n').map(l=>l.trimEnd()).join('\n').replace(/\n{3,}/g,'\n\n').trim(); }   // Zeilenenden linear kürzen: /[ \t]+\n/ war unter Node quadratisch (Audit run-2)
 // Lexical-EditorState (Super-Editor) → unsere Markdown-Untermenge. st zählt, was nur vereinfacht ankommt (Tabellen als „| a | b |“-Zeilen,
 // Bilder/Dateien/Einbettungen als Platzhalter). Unbekannte Knoten: Kinder weiterlesen, sonst ihren Text. Liefert null, wenn text kein Lexical-JSON ist.
 function lexToMd(text, st){ let d; try{ d=JSON.parse(text); }catch(_){ return null; } if(!d||typeof d!=='object'||!d.root||typeof d.root!=='object') return null;
@@ -805,6 +809,13 @@ function snImport(raw, opt){ opt=opt||{}; const now=opt.now||Date.now(); const t
       if(r.reference_type==='TagToParentTag'){ if(!parent) parent=r.uuid; } else if(r.content_type==='Note'){ const l=noteTags.get(r.uuid)||[]; l.push(it.uuid); noteTags.set(r.uuid,l); } }
     tags.set(it.uuid,{title:typeof c.title==='string'?c.title:'',parent}); st.tags++; }
   const tagPath=u=>{ const parts=[], seen=new Set(); while(u&&tags.has(u)&&!seen.has(u)&&parts.length<16){ seen.add(u); const t=tags.get(u); parts.unshift(...t.title.split('.').map(s=>line(s,CAPS.cat)).filter(Boolean)); u=t.parent; } return parts; };
+  // Legacy-Zuordnung Editor→Notiz: ein SN|Component (Token Vault, Sheets) nennt seine Notizen in associatedItemIds (SN-FORMAT.md, Abschnitt Editoren) —
+  // nur für authentication/spreadsheet ausgewertet, damit solche Notizen auch ohne noteType/editorIdentifier verworfen werden
+  const compKind=new Map();
+  for(const it of d.items){ if(!isObj(it)||it.content_type!=='SN|Component'||!isObj(it.content)) continue; const c=it.content;
+    const id=typeof c.identifier==='string'?c.identifier:(isObj(c.package_info)&&typeof c.package_info.identifier==='string'?c.package_info.identifier:'');
+    const k=Object.prototype.hasOwnProperty.call(SN_EDITORS,id)?SN_EDITORS[id]:null; if(k!=='authentication'&&k!=='spreadsheet') continue;
+    if(Array.isArray(c.associatedItemIds)) for(const u of c.associatedItemIds) if(typeof u==='string') compKind.set(u,k); }
   const catFor=(uuid, refs)=>{ const l=(noteTags.get(uuid)||[]).slice(); for(const r of refs){ if(isObj(r)&&r.content_type==='Tag'&&typeof r.uuid==='string'&&tags.has(r.uuid)&&!l.includes(r.uuid)) l.push(r.uuid); }
     if(!l.length) return ''; const parts=tagPath(l[0]); if(!parts.length) return ''; const full=parts.join('/'); return full.length<=CAPS.cat?full:parts[parts.length-1]; };   // erster Tag, Pfad „Eltern/Kind“; zu lang → nur das Blatt
   const entries=[], trashed=[], nowIso=new Date(now).toISOString();
@@ -815,7 +826,11 @@ function snImport(raw, opt){ opt=opt||{}; const now=opt.now||Date.now(); const t
     if(it.content_type==='Tag') continue;
     if(it.content_type!=='Note'||!isObj(it.content)){ if(it.content_type==='SN|File') st.skipped.files++; else st.skipped.other++; continue; }
     const c=it.content, app=isObj(c.appData)&&isObj(c.appData[SN_DOMAIN])?c.appData[SN_DOMAIN]:{};
-    const kind=SN_TYPES.includes(c.noteType)?c.noteType:(Object.prototype.hasOwnProperty.call(SN_EDITORS,c.editorIdentifier)?SN_EDITORS[c.editorIdentifier]:'plain-text');
+    const edKind=Object.prototype.hasOwnProperty.call(SN_EDITORS,c.editorIdentifier)?SN_EDITORS[c.editorIdentifier]:null;
+    let kind=SN_TYPES.includes(c.noteType)?c.noteType:(edKind||'plain-text');
+    // Geheimnisse nie anfassen, egal welcher Hinweis darauf zeigt: noteType ODER editorIdentifier ODER die Legacy-Zuordnung über SN|Component.associatedItemIds
+    // (alte Konten ohne noteType/editorIdentifier — sonst landete das TOTP-JSON als Klartext-Notiz, Audit run-2 Hardening). Gleiches für Spreadsheets.
+    if(edKind==='authentication'||edKind==='spreadsheet') kind=edKind; else if(compKind.has(it.uuid)) kind=compKind.get(it.uuid);
     if(kind==='authentication'){ st.skipped.auth++; continue; }   // 2FA-Geheimnisse: nie übernehmen, nie anfassen
     if(kind==='spreadsheet'){ st.skipped.sheet++; continue; }
     const text=(typeof c.text==='string'?c.text:'').replace(/\r\n?/g,'\n'); let title=line(c.title,CAPS.title);
@@ -829,9 +844,9 @@ function snImport(raw, opt){ opt=opt||{}; const now=opt.now||Date.now(); const t
     if(!title&&(type==='text'?!body.trim():!items.length)){ st.skipped.empty++; continue; }
     const updated=snDate(app.client_updated_at, snDate(it.updated_at, nowIso)), created=snDate(it.created_at, updated);
     const e=sanitizeEntry({id:snId(it.uuid), type, cat:catFor(typeof it.uuid==='string'?it.uuid:'', Array.isArray(c.references)?c.references:[]), title, body, items,
-      fav:c.starred===true, pinned:app.pinned===true, md, created, updated, deleted:c.trashed===true?nowIso:null}, now);   // Papierkorb: Frist läuft ab jetzt, sonst wipeTrash sofort
-    if(!e){ st.skipped.other++; continue; }
-    if(e.pinned) st.pinned++; if(e.fav) st.fav++; if(app.archived===true) st.archived++;
+      fav:c.starred===true, pinned:app.pinned===true||c.pinned===true, md, created, updated, deleted:c.trashed===true?nowIso:null}, now);   // Papierkorb: Frist läuft ab jetzt, sonst wipeTrash sofort
+    if(!e){ st.skipped.other++; continue; }                        // pinned/archived: ItemContent.ts kennt beide auch direkt im content, nicht nur in appData (Faktencheck run-2)
+    if(e.pinned) st.pinned++; if(e.fav) st.fav++; if(app.archived===true||c.archived===true) st.archived++;
     if(e.deleted) trashed.push(e); else { entries.push(e); if(type==='list') st.lists++; else st.notes++; }
   }
   trashed.sort((a,b)=>ts(b.updated)-ts(a.updated)); const keep=trashed.slice(0,trashBudget); st.trashed=keep.length; st.trashOver=trashed.length-keep.length;
@@ -855,12 +870,12 @@ function zipEntries(u8){ if(!(u8 instanceof Uint8Array)) throw new Error('zipbad
     p+=46+nl+el+cl; }
   return out; }
 // Datenbereich eines Eintrags (über den lokalen Kopf, dessen Namens-/Extra-Längen abweichen dürfen). max = Deckel für die entpackte Größe.
-function zipSlice(u8, e, max){ if(e.encrypted) throw new Error('zipenc'); if(e.zip64) throw new Error('zip64'); if(e.method!==0&&e.method!==8) throw new Error('zipmethod');
+function zipSlice(u8, e, max){ if(e.encrypted) throw new Error('zipenc'); if(e.zip64) throw new Error('zip64'); if(e.method!==0&&e.method!==8) throw new Error('zipmethod'); if(e.method===0&&e.csize>max) throw new Error('toolarge');   // gespeichert: die echte Größe ist csize, usize kann lügen (Audit run-2, Hardening)
   if(e.usize>max) throw new Error('toolarge'); const dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength), n=u8.byteLength;
   if(e.lho+30>n||dv.getUint32(e.lho,true)!==0x04034b50) throw new Error('zipbad'); const off=e.lho+30+dv.getUint16(e.lho+26,true)+dv.getUint16(e.lho+28,true);
   if(off+e.csize>n) throw new Error('zipbad'); return {data:u8.subarray(off,off+e.csize), deflated:e.method===8, usize:e.usize}; }
 // Der Backup-Eintrag: genau ein Treffer auf den Dateinamen (auch in einem Unterordner), sonst 'zipnosn'
-function zipFindSn(u8){ const hits=zipEntries(u8).filter(e=>e.name===ZIP_NAME_SN||e.name.endsWith('/'+ZIP_NAME_SN)); if(!hits.length) throw new Error('zipnosn'); return hits[0]; }
+function zipFindSn(u8){ const hits=zipEntries(u8).filter(e=>(e.name===ZIP_NAME_SN||e.name.endsWith('/'+ZIP_NAME_SN))&&!/(^|\/)Items\//.test(e.name)); /* Items/ nie, auch nicht ein gleichnamiger Köder darin (Audit run-2, Hardening) */ if(!hits.length) throw new Error('zipnosn'); return hits[0]; }
 // Kategorie umbenennen (v1.1 Punkt 4, rein): alle Einträge mit cat===from (lebend UND Papierkorb mit Inhalt, nie gewipte Marken) bekommen
 // cat=to und updated=nowIso (⇒ die Umbenennung reist beim Sync). to='' heißt „ohne Kategorie“. Liefert ein NEUES Array (Persist-Regel) und die Anzahl.
 function renameCatEntries(entries, from, to, nowIso){ if(from===to) return {entries, n:0}; let n=0;
@@ -958,7 +973,9 @@ const App = (function(){
   // und überspringen ihren Rollback (VAULT ist längst null, ein Rollback schriebe nur einen toten Stand zurück).
   function lockedErr(){ const e=new Error('locked'); e.locked=true; return e; }
   // Rollback-Helfer für die Aufrufer: Snapshot zurückspielen, außer die Sitzung ist zwischendurch gesperrt worden.
-  const rollback=snap=>e=>{ if(e&&e.locked) return; if(VAULT) VAULT.entries=snap; };
+  // Rollback nur, wenn der eigene Stand (base = das Array, das der Aufrufer gesetzt hat) noch aktuell ist — sonst spielte ein gescheiterter Schreiber A
+  // den Snapshot über die Änderung eines späteren Schreibers B zurück (Audit run-2 #1, Fehlerpfad). Ohne base wie bisher.
+  const rollback=(snap,base)=>e=>{ if(e&&e.locked) return; if(VAULT&&(base===undefined||VAULT.entries===base)) VAULT.entries=snap; };
   // Laufende Schreibvorgänge als Kette (Audit run-1 #1): lockSaving wartet darauf, bevor lock() die Sitzung für tot erklärt.
   let inflight=Promise.resolve();
   function persist(){ const run=persistOnce(); inflight=inflight.then(()=>run,()=>run).then(()=>{},()=>{}); return run; }
@@ -979,7 +996,10 @@ const App = (function(){
     if(s.length>MAX_FILE_BYTES&&(s.length>storedLen+4096||s.length>MAX_READ_BYTES-1048576)){ const e=new Error('filefull'); e.fileFull=true; toast(tr('err.fileFull',{m:MAX_FILE_BYTES/1048576})); throw e; }
     try{ await vaultSet(s); }
     catch(e){ toast(tr('err.saveFailed')); throw e; }
-    if(VAULT===vault) vault.entries=entries;
+    // Nur den EIGENEN Stand committen: auf Android ist vaultSet echt asynchron, ein zweiter Schreiber kann währenddessen vault.entries neu gesetzt haben —
+    // die bedingungslose Zuweisung überschrieb dessen Array, seine Rekursion (Zeile oben) schrieb dann den alten Stand als Erfolg (Audit run-2 #1, Lost Update).
+    // Wipe/Purge rechnet der spätere Schreiber auf seinem Stand selbst.
+    if(VAULT===vault&&vault.entries===list) vault.entries=entries;
   }
   function fileErrMsg(e){ const c=e&&e.message; return tr(c==='newer'?'err.fileNewer':c==='kdfbounds'?'err.fileBounds':c==='toolarge'?'err.fileLarge':c==='toomany'?'err.tooMany':'err.fileFormat'); }
 
@@ -1259,18 +1279,25 @@ const App = (function(){
     const n=selIds.size, picked=[...selIds].map(byId).filter(Boolean); $('sel-count').textContent=tr(n===1?'sel.count1':'sel.count',{n});
     ['sel-trash','sel-cat','sel-fav'].forEach(id=>{ $(id).disabled=n===0; }); const allFav=n>0&&picked.every(e=>e.fav); $('sel-fav').textContent=tr(allFav?'sel.unfav':'sel.fav'); $('sel-fav').dataset.arg=allFav?'0':'1'; }
   function selSnapshot(){ return {ids:new Set(selIds), snap:VAULT.entries.slice()}; }
-  async function selDelete(){ if(!VAULT||!selMode||!selIds.size) return; const n=selIds.size, over=Math.max(0, trash().length+n-MAX_TRASH);
+  // Höchstens MAX_TRASH auf einmal: alle Gewählten bekommen denselben deleted-Stempel, wipeTrash (stabil sortiert) vernichtete bei n > 200 sonst n−200 der
+  // GEWÄHLTEN sofort — die Rückfrage sprach von „den ältesten darin“, der Toast meldete n, Rückgängig holte nur 200 (Audit run-2 #3).
+  async function selDelete(){ if(!VAULT||!selMode||!selIds.size) return; const n=selIds.size; if(n>MAX_TRASH) return toast(tr('toast.selTooMany',{m:MAX_TRASH}));
+    const over=Math.max(0, trash().length+n-MAX_TRASH);
     const yes=await ask(tr(over?'confirm.selDeleteFull':'confirm.selDelete',{n,d:TRASH_DAYS,m:MAX_TRASH,o:over}),{ok:'dlg.toTrash',danger:true}); if(!yes||!VAULT||!selMode) return;
     const {ids,snap}=selSnapshot(); const r=bulkEdit(VAULT.entries, ids, {deleted:true}, nowIso()); if(!r.n) return; VAULT.entries=r.entries; selCancel();
-    persist().then(()=>{ if(!VAULT) return; renderList(); toast(tr('toast.selTrashed',{n:r.n}),{action:{label:tr('toast.undo'),fn:()=>undoBulk(ids)},ms:UNDO_MS}); }).catch(e=>{ rollback(snap)(e); if(VAULT&&!(e&&e.locked)){ renderList(); toast(tr('err.saveFailed')); } }); }
-  function undoBulk(ids){ if(!VAULT) return; const snap=VAULT.entries.slice(); const r=bulkEdit(VAULT.entries, ids, {deleted:null}, nowIso()); if(!r.n) return toast(tr('toast.undoGone')); VAULT.entries=r.entries;
-    persist().then(()=>{ if(!VAULT) return; renderTrash(); renderList(); toast(tr('toast.selRestored',{n:r.n})); }).catch(rollback(snap)); }
+    persist().then(()=>{ if(!VAULT) return; renderList(); toast(tr('toast.selTrashed',{n:r.n}),{action:{label:tr('toast.undo'),fn:()=>undoBulk(ids)},ms:UNDO_MS}); }).catch(e=>{ rollback(snap,r.entries)(e); if(VAULT&&!(e&&e.locked)){ renderList(); toast(tr('err.saveFailed')); } }); }
+  // Rückgängig für alle — mit Deckel: undoBulk holte ohne MAX_ENTRIES-Prüfung zurück, die Datei wuchs über 5000 lebende Notizen und sanitizeEntries
+  // wies sie beim nächsten Entsperren an jeder Pforte ab (Audit run-2 #2). Nur so viele zurück, wie Platz ist; der Rest bleibt im Papierkorb.
+  function undoBulk(ids){ if(!VAULT) return; const room=MAX_ENTRIES-liveCount(VAULT.entries); if(room<=0) return toast(tr('err.tooMany'));
+    const want=[...ids].filter(id=>trashById(id)), pick=want.slice(0,room);
+    const snap=VAULT.entries.slice(); const r=bulkEdit(VAULT.entries, pick, {deleted:null}, nowIso()); if(!r.n) return toast(tr('toast.undoGone')); VAULT.entries=r.entries;
+    persist().then(()=>{ if(!VAULT) return; renderTrash(); renderList(); toast(want.length>r.n?tr('toast.selRestoredPart',{n:r.n,t:want.length}):tr('toast.selRestored',{n:r.n})); }).catch(rollback(snap,r.entries)); }
   async function selCat(){ if(!VAULT||!selMode||!selIds.size) return; const n=selIds.size, picked=[...selIds].map(byId).filter(Boolean); const common=picked.length&&picked.every(e=>e.cat===picked[0].cat)?picked[0].cat:'';
     const v=await ask(tr('confirm.selCat',{n}),{ok:'dlg.ok',input:{value:common,placeholder:tr('dlg.catPh'),max:CAPS.cat}}); if(v===null||!VAULT||!selMode) return; const to=line(v,CAPS.cat);
     const {ids,snap}=selSnapshot(); const r=bulkEdit(VAULT.entries, ids, {cat:to}, nowIso()); if(!r.n) return; VAULT.entries=r.entries; selCancel();
-    persist().then(()=>{ if(!VAULT) return; renderList(); toast(to?tr(r.n===1?'toast.catRenamed1':'toast.catRenamed',{n:r.n,c:to}):tr(r.n===1?'toast.catCleared1':'toast.catCleared',{n:r.n})); }).catch(e=>{ rollback(snap)(e); if(VAULT&&!(e&&e.locked)){ renderList(); toast(tr('err.saveFailed')); } }); }
+    persist().then(()=>{ if(!VAULT) return; renderList(); toast(to?tr(r.n===1?'toast.catRenamed1':'toast.catRenamed',{n:r.n,c:to}):tr(r.n===1?'toast.catCleared1':'toast.catCleared',{n:r.n})); }).catch(e=>{ rollback(snap,r.entries)(e); if(VAULT&&!(e&&e.locked)){ renderList(); toast(tr('err.saveFailed')); } }); }
   function selFav(on){ if(!VAULT||!selMode||!selIds.size) return; const fav=on!=='0'; const {ids,snap}=selSnapshot(); const r=bulkEdit(VAULT.entries, ids, {fav}, nowIso()); if(!r.n) return; VAULT.entries=r.entries; selCancel();
-    persist().then(()=>{ if(!VAULT) return; renderList(); toast(tr(fav?'toast.selFav':'toast.selUnfav',{n:r.n})); }).catch(e=>{ rollback(snap)(e); if(VAULT&&!(e&&e.locked)){ renderList(); toast(tr('err.saveFailed')); } }); }
+    persist().then(()=>{ if(!VAULT) return; renderList(); toast(tr(fav?'toast.selFav':'toast.selUnfav',{n:r.n})); }).catch(e=>{ rollback(snap,r.entries)(e); if(VAULT&&!(e&&e.locked)){ renderList(); toast(tr('err.saveFailed')); } }); }
   // Kategorie umbenennen (v1.1 Punkt 4): Stift-Chip neben der gefilterten Kategorie → Dialog mit Eingabefeld → renameCatEntries (rein) → persist
   async function renameCat(){ if(!VAULT||typeof catFilter!=='string'||!catFilter) return; const from=catFilter, n=VAULT.entries.filter(e=>e.cat===from&&!isWiped(e)).length;
     const v=await ask(tr(n===1?'confirm.renameCat1':'confirm.renameCat',{c:from,n}),{ok:'dlg.rename',input:{value:from,placeholder:tr('dlg.catPh'),max:CAPS.cat}});
@@ -1280,7 +1307,7 @@ const App = (function(){
     const snapshot=VAULT.entries.slice(), r=renameCatEntries(VAULT.entries, from, to, nowIso()); if(!r.n) return;
     VAULT.entries=r.entries; catFilter=to;                         // '' = Chip „Ohne Kategorie“
     persist().then(()=>{ if(!VAULT) return; renderList(); toast(to?tr(r.n===1?'toast.catRenamed1':'toast.catRenamed',{n:r.n,c:to}):tr(r.n===1?'toast.catCleared1':'toast.catCleared',{n:r.n})); })
-      .catch(e=>{ rollback(snapshot)(e); if(VAULT&&!(e&&e.locked)){ catFilter=from; renderList(); toast(tr('err.saveFailed')); } }); }
+      .catch(e=>{ rollback(snapshot,r.entries)(e); if(VAULT&&!(e&&e.locked)){ catFilter=from; renderList(); toast(tr('err.saveFailed')); } }); }
   function setCatFilter(v){ catFilter=typeof v==='string'?v:null; renderList(); }
   function clearCatFilter(){ catFilter=null; favFilter=false; openFilter=false; renderList(); }
   function toggleFavFilter(){ favFilter=!favFilter; renderList(); }
@@ -1299,8 +1326,9 @@ const App = (function(){
     renderChips(all); renderTrashBtn(); renderBioAlert(); renderBackupHint();
     let items=catFilter===null?all:all.filter(e=>e.cat===catFilter); if(favFilter) items=items.filter(e=>e.fav); if(openFilter) items=items.filter(hasOpenItem);   // Filter kombinieren sich
     if(search) items=items.filter(e=>(e.title+'\n'+e.body+'\n'+e.items.map(x=>x.text).join('\n')+'\n'+e.cat).toLowerCase().includes(search));
-    if(!items.length){ list.appendChild(el('div','empty',all.length?tr('list.noMatch'):tr('list.empty'))); return; }
     shownIds=items.map(e=>e.id); if(selMode){ for(const id of [...selIds]) if(!byId(id)) selIds.delete(id); }   // verschwundene (gelöschte) Notizen fallen aus der Auswahl
+    // shownIds VOR dem Leer-Zweig setzen: sonst nahm „Alle“ bei leerer Trefferliste die zuvor gezeigten, jetzt unsichtbaren Zeilen und die Leiste blieb auf der alten Zahl (Audit run-2 #4)
+    if(!items.length){ list.appendChild(el('div','empty',all.length?tr('list.noMatch'):tr('list.empty'))); renderSelBar(); return; }
     for(const e of items){
       const row=el('div',(editing&&e.id===editId)?'entry sel':'entry'); row.dataset.action=selMode?'toggleSel':'openEditor'; row.dataset.arg=e.id;
       if(selMode){ const cb=el('label','chk selbox'); const i=el('input'); i.type='checkbox'; i.checked=selIds.has(e.id); i.tabIndex=-1; cb.appendChild(i); row.appendChild(cb); if(selIds.has(e.id)) row.classList.add('picked'); }
@@ -1420,26 +1448,33 @@ const App = (function(){
     if(editId&&idx<0){ toast(tr('toast.noEntry')); return Promise.resolve(false); }   // inzwischen gelöscht (nur per Import möglich): nie mit derselben ID neu anlegen
     if(idx<0&&liveCount(VAULT.entries)>=MAX_ENTRIES){ err('add-err',tr('err.tooMany')); return Promise.resolve(false); }
     const snapshot=VAULT.entries.slice(), wasNew=!before;
-    VAULT.entries = idx>=0 ? VAULT.entries.map((x,i)=>i===idx?entry:x) : VAULT.entries.concat([entry]);   // neues Array: persist erkennt den zweiten Schreiber (Audit run-1 #2)
+    const next = idx>=0 ? VAULT.entries.map((x,i)=>i===idx?entry:x) : VAULT.entries.concat([entry]);   // neues Array: persist erkennt den zweiten Schreiber (Audit run-1 #2)
+    VAULT.entries=next;
     if(wasNew){ editId=entry.id; renderAddTitle(); $('ed-del').classList.remove('hidden'); }
     return persist().then(()=>{ if(editing&&editId===entry.id) editBase=sig(entry); if(stay&&editing&&editId===entry.id){ $('ed-meta').textContent=tr('ed.meta',{c:fmtDate(entry.created),u:fmtDate(entry.updated)}); if(DESK){ renderList(); } } return true; })
-      .catch(e=>{ rollback(snapshot)(e); if(!(e&&e.locked)&&wasNew&&editing&&editId===entry.id){ editId=null; renderAddTitle(); $('ed-del').classList.add('hidden'); } return false; });   // editId===entry.id: nur die eigene Notiz zurücksetzen (Audit run-1 #4)
+      .catch(e=>{ rollback(snapshot,next)(e); if(!(e&&e.locked)&&wasNew&&editing&&editId===entry.id){ editId=null; renderAddTitle(); $('ed-del').classList.add('hidden'); } return false; });   // editId===entry.id: nur die eigene Notiz zurücksetzen (Audit run-1 #4)
   }
   // Editor verlassen: speichern, dann Formular leeren. Eine leere neue Notiz wird verworfen (mit Hinweis).
   function closeEditor(){ if(!editing) return; const blankNew=!editId&&isBlank(readDraft()); commitEditor(false); editing=false; editId=null; editBase=null; resetForm(); renderDeskPane(); markSel(); if(blankNew) toast(tr('toast.discarded')); }
   function doneEditor(){ closeEditor(); tab('list'); }
   function copyCurrent(){ if(!editing) return; copyText(noteText(readDraft()),'what.note'); }
-  async function deleteCurrent(){ if(!editing||!editId) return; const e=byId(editId); if(!e) return;
+  async function deleteCurrent(){ if(!editing||!editId) return; if(!byId(editId)) return;
+    // Erst den Entwurf festschreiben (stoppt den Autosave-Timer): feuerte er während der Rückfrage, ersetzte commitEditor das Objekt, und die
+    // Identitätsprüfung unten traf nichts — Toast meldete „im Papierkorb“, die Notiz lebte weiter (Audit run-2 #5). Nach dem await frisch per ID holen.
+    await commitEditor(true); if(!VAULT||!editing||!editId) return;
+    const e=byId(editId); if(!e) return;
     // Bei vollem Papierkorb vernichtet diese Löschung die älteste — das muss dastehen, bevor der Nutzer zustimmt (Audit run-5 #1).
     const t=trash(), full=t.length>=MAX_TRASH, oldest=full?t[t.length-1]:null;
     if(!(await ask(full?tr('confirm.deleteFull',{t:titleOf(e),m:MAX_TRASH,o:titleOf(oldest),od:fmtDate(oldest.deleted)})
                       :tr('confirm.delete',{t:titleOf(e),d:TRASH_DAYS}),{ok:'dlg.toTrash',danger:true}))) return;
-    if(!VAULT||!editing||editId!==e.id||!byId(e.id)) return;      // während der Rückfrage gesperrt, verlassen oder (Import) verschwunden
+    if(!VAULT||!editing||editId!==e.id) return;                   // während der Rückfrage gesperrt oder verlassen
+    const cur=byId(e.id); if(!cur) return;                        // (Import) verschwunden — nie ein fremdes Objekt treffen
     clearTimeout(autosaveTimer); autosaveTimer=null;
     const snapshot=VAULT.entries.slice(), iso=nowIso();
-    VAULT.entries=VAULT.entries.map(x=>x===e?Object.assign({},e,{updated:iso, deleted:iso}):x);   // neues Array (Audit run-1 #2)     // in den Papierkorb — der Inhalt bleibt TRASH_DAYS erhalten
+    const next=VAULT.entries.map(x=>x===cur?Object.assign({},cur,{updated:iso, deleted:iso}):x);   // neues Array (Audit run-1 #2)     // in den Papierkorb — der Inhalt bleibt TRASH_DAYS erhalten
+    VAULT.entries=next;
     editing=false; editId=null; resetForm();
-    persist().then(()=>{ tab('list'); toast(tr('toast.trashed',{d:TRASH_DAYS}),{action:{label:tr('toast.undo'),fn:()=>undoDelete(e.id)},ms:UNDO_MS}); }).catch(e2=>{ rollback(snapshot)(e2); if(VAULT) openEditor(e.id); }); }
+    persist().then(()=>{ tab('list'); toast(tr('toast.trashed',{d:TRASH_DAYS}),{action:{label:tr('toast.undo'),fn:()=>undoDelete(e.id)},ms:UNDO_MS}); }).catch(e2=>{ rollback(snapshot,next)(e2); if(VAULT) openEditor(e.id); }); }
   // Rückgängig (v1.1 Punkt 3): holt die eben gelöschte Notiz über den Wiederherstellen-Pfad zurück (updated=jetzt ⇒ schlägt die Löschmarke überall)
   function undoDelete(id){ if(!VAULT) return; const e=trashById(id); if(!e) return toast(tr('toast.undoGone')); restoreEntry(id); }
 
@@ -1474,19 +1509,22 @@ const App = (function(){
   function restoreEntry(id){ const e=trashById(id); if(!e) return toast(tr('toast.noEntry'));
     if(liveCount(VAULT.entries)>=MAX_ENTRIES) return toast(tr('err.tooMany'));
     const snapshot=VAULT.entries.slice();
-    VAULT.entries=VAULT.entries.map(x=>x===e?Object.assign({},e,{updated:nowIso(), deleted:null}):x);   // neues Array (Audit run-1 #2)   // neueres updated ⇒ schlägt die Löschmarke auf anderen Geräten
-    persist().then(()=>{ renderTrash(); renderList(); toast(tr('toast.restored')); }).catch(rollback(snapshot)); }
+    const next=VAULT.entries.map(x=>x===e?Object.assign({},e,{updated:nowIso(), deleted:null}):x);   // neues Array (Audit run-1 #2)   // neueres updated ⇒ schlägt die Löschmarke auf anderen Geräten
+    VAULT.entries=next;
+    persist().then(()=>{ renderTrash(); renderList(); toast(tr('toast.restored')); }).catch(rollback(snapshot,next)); }
   async function purgeEntry(id){ const e=trashById(id); if(!e) return; if(!(await ask(tr('confirm.purge',{t:titleOf(e)}),{ok:'dlg.deleteForever',danger:true}))) return;
     if(!VAULT||trashById(id)!==e) return;                        // während der Rückfrage gesperrt oder Stand verändert
     const snapshot=VAULT.entries.slice();
-    VAULT.entries=VAULT.entries.map(x=>x===e?tombstone(e, nowIso()):x);   // neues Array (Audit run-1 #2)                                 // updated=jetzt ⇒ der leere Stand gewinnt überall
-    persist().then(()=>{ renderTrash(); renderList(); toast(tr('toast.purged')); }).catch(rollback(snapshot)); }
+    const next=VAULT.entries.map(x=>x===e?tombstone(e, nowIso()):x);   // neues Array (Audit run-1 #2)                                 // updated=jetzt ⇒ der leere Stand gewinnt überall
+    VAULT.entries=next;
+    persist().then(()=>{ renderTrash(); renderList(); toast(tr('toast.purged')); }).catch(rollback(snapshot,next)); }
   async function emptyTrash(){ if(!VAULT) return; const n=trash().length; if(!n) return;
     if(!(await ask(tr('confirm.emptyTrash',{n}),{ok:'dlg.deleteForever',danger:true}))) return;
     if(!VAULT) return; const t=trash(); if(!t.length) return;   // während der Rückfrage gesperrt; Stand frisch lesen
     const snapshot=VAULT.entries.slice(), iso=nowIso(), ids=new Set(t.map(e=>e.id));
-    VAULT.entries=VAULT.entries.map(e=>ids.has(e.id)?tombstone(e,iso):e);
-    persist().then(()=>{ renderTrash(); renderList(); toast(tr('toast.trashEmptied')); }).catch(rollback(snapshot)); }
+    const next=VAULT.entries.map(e=>ids.has(e.id)?tombstone(e,iso):e);
+    VAULT.entries=next;
+    persist().then(()=>{ renderTrash(); renderList(); toast(tr('toast.trashEmptied')); }).catch(rollback(snapshot,next)); }
 
   /* ---------- Passphrase-Vorschlag + Stärke (Setup, Passphrase-Wechsel) ---------- */
   const whyText=why=>why.map(k=>tr('why.'+k)).join(', ');
