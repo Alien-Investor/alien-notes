@@ -26,7 +26,7 @@ const V = new Function(region + `
     encryptBody,decryptBody,serializeFile,parseFile,kdfOk,KDF_DEFAULT,KDF_BOUNDS,MAX_ENTRIES,MAX_FILE_BYTES,MAX_READ_BYTES,emptyVault,sanitizeEntry,sanitizeEntries,sanitizeVault,sanitizeSettings,
     SETTINGS_DEFAULT,SETTINGS_ALLOWED,BG_NEVER,normalizeTotp,otpauthUri,sanitizeItems,ITEMS_MAX,ENTRY_TYPES,CAPS,mergeEntries,winner,canon,purgeTombstones,tombstone,
     totpCode,totpRemaining,genWords,passStrength,passCheck,MAX_TOMBSTONES,liveCount,tombFrom,isWiped,wipeTrash,shapeIncoming,TRASH_DAYS,MAX_TRASH,TOMBSTONE_DAYS,ts,
-    dupKey,entryType,line,bioKey,parseBioBlob,serializeBioBlob,bioWrapOk,wrapTag,mdParse,mdInline,noteText,linesToItems,itemsToBody,snImport,snId,htmlToText,lexToMd,zipEntries,zipSlice,zipFindSn,ZIP_NAME_SN};`)();
+    dupKey,entryType,line,bioKey,parseBioBlob,serializeBioBlob,bioWrapOk,wrapTag,mdParse,mdInline,noteText,linesToItems,itemsToBody,snImport,snId,htmlToText,lexToMd,zipEntries,zipSlice,zipFindSn,ZIP_NAME_SN,renameCatEntries};`)();
 
 let pass=0, fail=0; const ok=(c,m)=>{ if(c){pass++;console.log('  ✓',m);} else {fail++;console.log('  ✗ FEHLER:',m);} };
 const throwsWith=async(fn,code,m)=>{ try{ await fn(); ok(false,m+' (kein Fehler)'); }catch(e){ ok(e&&e.message===code,m+' → '+(e&&e.message)); } };
@@ -581,6 +581,19 @@ console.log('\n[16] ZIP-Inhaltsverzeichnis (zipEntries/zipSlice/zipFindSn) für 
   const zm=mkZip([{name:SN,data:txt,method:8,csize:99999999}]); th(()=>V.zipSlice(u8(zm),V.zipFindSn(u8(zm)),1e9),'zipbad','csize über das Dateiende hinaus');
   th(()=>V.zipEntries('kein Uint8Array'),'zipbad','falscher Typ');
   { const t0=Date.now(); const many=mkZip(Array.from({length:3000},(_,i)=>({name:'Items/Note/n'+i+'.txt',data:'x'})).concat([{name:SN,data:'{"items":[]}'}])); const f=V.zipFindSn(u8(many)); ok(f.name===SN&&Date.now()-t0<1500,'3.001 Einträge in '+(Date.now()-t0)+' ms'); }
+}
+
+console.log('\n[17] Kategorie umbenennen (renameCatEntries): lebend + Papierkorb mit Inhalt, nie gewipte Marken, updated=jetzt, neues Array');
+{ const NOW='2026-09-25T12:00:00.000Z', mk=(id,cat,extra)=>V.sanitizeEntry(Object.assign({id,type:'text',cat,title:'t'+id,body:'b',created:'2026-01-01T00:00:00.000Z',updated:'2026-01-02T00:00:00.000Z'},extra||{}),Date.parse(NOW));
+  const wiped=V.tombFrom(mk('0000000000000004','Alt',{deleted:'2026-01-03T00:00:00.000Z'}));   // gewipte Marke (cat '' per Definition): darf nie Inhalt bekommen
+  const list=[mk('0000000000000001','Alt'),mk('0000000000000002','Neu'),mk('0000000000000003','Alt',{deleted:'2026-01-03T00:00:00.000Z'}),wiped,mk('0000000000000005','')];
+  const r=V.renameCatEntries(list,'Alt','Neu',NOW);
+  ok(r.n===2&&r.entries!==list&&r.entries[0].cat==='Neu'&&r.entries[0].updated===NOW&&r.entries[2].cat==='Neu'&&r.entries[2].updated===NOW&&r.entries[2].deleted===list[2].deleted,'2 Treffer (lebend + Papierkorb), cat und updated gesetzt, deleted bleibt, neues Array');
+  ok(r.entries[1]===list[1]&&r.entries[3]===list[3]&&r.entries[4]===list[4]&&list[0].cat==='Alt','Unbeteiligte, gewipte Marke und Eingabe unverändert (keine Mutation)');
+  const r0=V.renameCatEntries(list,'Alt','Alt',NOW); ok(r0.n===0&&r0.entries===list,'gleicher Name: nichts');
+  const r1=V.renameCatEntries(list,'Gibtsnicht','X',NOW); ok(r1.n===0&&r1.entries===list,'unbekannte Kategorie: nichts');
+  const rw=V.renameCatEntries(list,'','Neu',NOW); ok(rw.n===1&&rw.entries[3]===list[3]&&V.isWiped(rw.entries[3])&&rw.entries[4].cat==='Neu','„ohne Kategorie“ umbenennen: die gewipte Marke bleibt gewipt, nur der lebende Eintrag zieht um');
+  const r2=V.renameCatEntries(list,'Alt','',NOW); ok(r2.n===2&&r2.entries[0].cat===''&&Object.keys(r2.entries[0]).length===FIELDS&&V.canon(V.sanitizeEntry(r2.entries[0],Date.parse(NOW)))===V.canon(r2.entries[0]),'leer = ohne Kategorie, Eintrag bleibt sanitizer-stabil ('+FIELDS+' Felder)');
 }
 
 console.log(`\n${pass} ok, ${fail} Fehler`); process.exit(fail?1:0);

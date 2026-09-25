@@ -119,7 +119,7 @@ const I18N = {
   "help.p1":"A <strong>local, encrypted notes app</strong> for notes and checklists. Runs fully <strong>offline</strong> — no cloud, no server, no telemetry, no account. The Android app does not even have an internet permission. Your notes never leave the device in plaintext.",
   "help.warn":"⚠ There is no reset and no backdoor. Forget your passphrase and the notes are gone for good. Make regular backups and keep the passphrase safe.",
   "help.h2":"First steps",
-  "help.l2":"<li><strong>Choose a passphrase</strong> — at least 12 characters, better six dice words (the suggest button builds them from the EFF list). Write it down and store it safely.</li><li><strong>+</strong> creates a note. The title may stay empty — the first line of the text serves as the title. There is no save button: the app saves while you type and when you leave the note.</li><li><strong>Checklists:</strong> switch a note to “Checklist” — every line becomes an entry with a box; “Done to the bottom” sorts ticked entries down. Switching back turns the entries into “- [ ] …” or “- [x] …” lines.</li><li><strong>Categories</strong> work like folders: type one freely (suggestions from existing ones). The list filters via the chips at the top; the ★ chip shows favourites only. Pinned notes always sit at the top.</li><li>The search covers title, text, checklist entries and category.</li>",
+  "help.l2":"<li><strong>Choose a passphrase</strong> — at least 12 characters, better six dice words (the suggest button builds them from the EFF list). Write it down and store it safely.</li><li><strong>+</strong> creates a note. The title may stay empty — the first line of the text serves as the title. There is no save button: the app saves while you type and when you leave the note.</li><li><strong>Checklists:</strong> switch a note to “Checklist” — every line becomes an entry with a box; “Done to the bottom” sorts ticked entries down. Switching back turns the entries into “- [ ] …” or “- [x] …” lines.</li><li><strong>Categories</strong> work like folders: type one freely (suggestions from existing ones). The list filters via the chips at the top; the ★ chip shows favourites only. Pinned notes always sit at the top. <strong>Rename:</strong> tap the category chip, then the pencil ✎ next to it — every note of that category moves (including the trash); an empty name means “no category”.</li><li>The search covers title, text, checklist entries and category.</li>",
   "help.h3":"Markdown preview",
   "help.p3":"Every text note (not checklists) has a “Markdown preview” switch. Editing always stays the plain text field; the preview renders a small subset: headings (<code>#</code> to <code>###</code>), <strong>bold</strong> (<code>**…**</code>), <em>italic</em> (<code>*…*</code>), lists (<code>-</code>, <code>1.</code> — numbered ones always start at 1), boxes (<code>- [ ]</code>, <code>- [x]</code>), code (<code>`…`</code>, ``` blocks or 4 spaces of indentation — so no indented sub-items), rules (<code>---</code>). Links are deliberately shown as text, never clickable — the app has no network anyway.",
   "help.h4":"Locking",
@@ -286,6 +286,15 @@ const T = {
   "sn.hint":{de:"Danach die entschlüsselte Backup-Datei löschen — sie ist Klartext.",en:"Afterwards delete the decrypted backup file — it is plain text."},
   "sn.done":{de:"Übernommen: {a} neu, {u} aktualisiert, {t} in den Papierkorb. Jetzt die Backup-Datei löschen.",en:"Imported: {a} new, {u} updated, {t} into the trash. Now delete the backup file."},
   "sn.doneToast":{de:"Standard-Notes-Import fertig",en:"Standard Notes import done"},
+  "dlg.rename":{de:"Umbenennen",en:"Rename"},
+  "dlg.catPh":{de:"Neuer Name (leer = ohne Kategorie)",en:"New name (empty = no category)"},
+  "chip.rename":{de:"Kategorie umbenennen",en:"Rename category"},
+  "confirm.renameCat1":{de:"Kategorie „{c}“ umbenennen? Betrifft 1 Notiz. Gibt es den neuen Namen schon, wird die Notiz dort eingeordnet. Leer lassen heißt „ohne Kategorie“.",en:"Rename category “{c}”? Affects 1 note. If the new name already exists, the note joins that category. Leave empty for “no category”."},
+  "toast.catRenamed1":{de:"1 Notiz jetzt in „{c}“",en:"1 note now in “{c}”"},
+  "toast.catCleared1":{de:"1 Notiz jetzt ohne Kategorie",en:"1 note now without category"},
+  "confirm.renameCat":{de:"Kategorie „{c}“ umbenennen? Betrifft {n} Notizen (auch im Papierkorb). Gibt es den neuen Namen schon, werden die Notizen dort eingeordnet. Leer lassen heißt „ohne Kategorie“.",en:"Rename category “{c}”? Affects {n} notes (including the trash). If the new name already exists, the notes join that category. Leave empty for “no category”."},
+  "toast.catRenamed":{de:"{n} Notizen jetzt in „{c}“",en:"{n} notes now in “{c}”"},
+  "toast.catCleared":{de:"{n} Notizen jetzt ohne Kategorie",en:"{n} notes now without category"},
   "dlg.ok":{de:"OK",en:"OK"},
   "dlg.cancel":{de:"Abbrechen",en:"Cancel"},
   "dlg.useAnyway":{de:"Trotzdem verwenden",en:"Use anyway"},
@@ -837,6 +846,10 @@ function zipSlice(u8, e, max){ if(e.encrypted) throw new Error('zipenc'); if(e.z
   if(off+e.csize>n) throw new Error('zipbad'); return {data:u8.subarray(off,off+e.csize), deflated:e.method===8, usize:e.usize}; }
 // Der Backup-Eintrag: genau ein Treffer auf den Dateinamen (auch in einem Unterordner), sonst 'zipnosn'
 function zipFindSn(u8){ const hits=zipEntries(u8).filter(e=>e.name===ZIP_NAME_SN||e.name.endsWith('/'+ZIP_NAME_SN)); if(!hits.length) throw new Error('zipnosn'); return hits[0]; }
+// Kategorie umbenennen (v1.1 Punkt 4, rein): alle Einträge mit cat===from (lebend UND Papierkorb mit Inhalt, nie gewipte Marken) bekommen
+// cat=to und updated=nowIso (⇒ die Umbenennung reist beim Sync). to='' heißt „ohne Kategorie“. Liefert ein NEUES Array (Persist-Regel) und die Anzahl.
+function renameCatEntries(entries, from, to, nowIso){ if(from===to) return {entries, n:0}; let n=0;
+  const out=entries.map(e=>{ if(e.cat!==from||isWiped(e)) return e; n++; return Object.assign({}, e, {cat:to, updated:nowIso}); }); return {entries:n?out:entries, n}; }
 /* === VAULT-FORMAT END === */
 
 /* ============================================================
@@ -886,17 +899,23 @@ const App = (function(){
      Zeit (eine zweite Frage gilt als abgelehnt); Escape/Hintergrund = Abbrechen; clearRendered() schließt ihn beim Sperren mit false, der wartende
      Aufrufer prüft danach VAULT/editing selbst nach. Text nur per textContent. ---------- */
   let dlgResolve=null, dlgPrev=null;
-  function ask(msg, opt){ opt=opt||{}; if(dlgResolve) return Promise.resolve(false);
-    return new Promise(res=>{ dlgResolve=res; dlgPrev=document.activeElement; $('dlg-msg').textContent=msg;
-      const b=$('dlg-ok'); b.textContent=tr(opt.ok||'dlg.ok'); b.classList.toggle('danger',!!opt.danger); show('dlg'); $('dlg-cancel').focus(); }); }
-  function dialogClose(v){ const r=dlgResolve; if(!r) return; dlgResolve=null; hide('dlg'); $('dlg-msg').textContent=''; $('dlg-ok').classList.remove('danger');
-    const f=dlgPrev; dlgPrev=null; if(f&&document.contains(f)&&typeof f.focus==='function'){ try{ f.focus(); }catch(_){} } r(!!v); }
+  // opt.input={value,placeholder,max}: Dialog mit Eingabefeld (Ersatz für prompt()) — löst dann mit dem Text (über line(), max) oder null auf
+  let dlgInput=null;
+  function ask(msg, opt){ opt=opt||{}; if(dlgResolve) return Promise.resolve(opt.input?null:false);
+    return new Promise(res=>{ dlgResolve=res; dlgPrev=document.activeElement; $('dlg-msg').textContent=msg; dlgInput=opt.input||null;
+      const inp=$('dlg-input'); inp.value=dlgInput?String(dlgInput.value||''):''; inp.placeholder=dlgInput&&dlgInput.placeholder?dlgInput.placeholder:''; inp.maxLength=dlgInput&&dlgInput.max?dlgInput.max:200; inp.classList.toggle('hidden',!dlgInput);
+      const b=$('dlg-ok'); b.textContent=tr(opt.ok||'dlg.ok'); b.classList.toggle('danger',!!opt.danger); show('dlg');
+      if(dlgInput){ inp.focus(); inp.select(); } else $('dlg-cancel').focus(); }); }
+  function dialogClose(v){ const r=dlgResolve; if(!r) return; dlgResolve=null; const inp=$('dlg-input'), wasInput=dlgInput, max=wasInput&&wasInput.max?wasInput.max:200; dlgInput=null;
+    const text=wasInput&&v?line(inp.value,max):null; inp.value=''; inp.classList.add('hidden');   // Eingabe nie stehen lassen (Nutzerdaten)
+    hide('dlg'); $('dlg-msg').textContent=''; $('dlg-ok').classList.remove('danger');
+    const f=dlgPrev; dlgPrev=null; if(f&&document.contains(f)&&typeof f.focus==='function'){ try{ f.focus(); }catch(_){} } r(wasInput?text:!!v); }
   function dialogOk(){ dialogClose(true); }
   function dialogCancel(){ dialogClose(false); }
   function dialogOpen(){ return !!dlgResolve; }
   function dialogKey(ev){ if(!dlgResolve) return false;   // offener Dialog: Escape bricht ab, Tab pendelt zwischen den zwei Knöpfen, alles andere bleibt im Dialog
     if(ev.key==='Escape'){ dialogCancel(); return true; }
-    if(ev.key==='Tab'){ const a=$('dlg-cancel'), b=$('dlg-ok'); (document.activeElement===a?b:a).focus(); return true; }
+    if(ev.key==='Tab'){ const ring=[$('dlg-input'),$('dlg-cancel'),$('dlg-ok')].filter(n=>!n.classList.contains('hidden')); const i=ring.indexOf(document.activeElement); ring[(i+(ev.shiftKey?-1:1)+ring.length)%ring.length].focus(); return true; }
     return false; }
   function err(id,msg){ const e=$(id); if(!e) return; if(!msg){ e.classList.add('hidden'); e.textContent=''; return; } e.textContent=msg; e.classList.remove('hidden'); }
   function el(tag, cls, text){ const n=document.createElement(tag); if(cls) n.className=cls; if(text!=null) n.textContent=text; return n; }
@@ -1198,8 +1217,19 @@ const App = (function(){
     const mk=(label,val,cls)=>{ const b=el('button','chip'+(cls?' '+cls:''),label); if(val===null) b.dataset.action='clearCatFilter'; else { b.dataset.action='setCatFilter'; b.dataset.arg=val; } box.appendChild(b); return b; };
     mk(tr('chip.all'),null,(catFilter===null&&!favFilter)?'on':'');
     if(hasFav){ const b=el('button','chip fav'+(favFilter?' on':''),tr('chip.fav')); b.dataset.action='toggleFavFilter'; box.appendChild(b); }
-    for(const c of cs) mk(c,c,catFilter===c?'on':''); if(hasNone) mk(tr('chip.none'),'',catFilter===''?'on':'');
+    for(const c of cs){ mk(c,c,catFilter===c?'on':''); if(catFilter===c){ const b=el('button','chip edit','✎'); b.dataset.action='renameCat'; b.title=tr('chip.rename'); b.setAttribute('aria-label',tr('chip.rename')); box.appendChild(b); } }
+    if(hasNone) mk(tr('chip.none'),'',catFilter===''?'on':'');
   }
+  // Kategorie umbenennen (v1.1 Punkt 4): Stift-Chip neben der gefilterten Kategorie → Dialog mit Eingabefeld → renameCatEntries (rein) → persist
+  async function renameCat(){ if(!VAULT||typeof catFilter!=='string'||!catFilter) return; const from=catFilter, n=VAULT.entries.filter(e=>e.cat===from&&!isWiped(e)).length;
+    const v=await ask(tr(n===1?'confirm.renameCat1':'confirm.renameCat',{c:from,n}),{ok:'dlg.rename',input:{value:from,placeholder:tr('dlg.catPh'),max:CAPS.cat}});
+    if(v===null||!VAULT||catFilter!==from) return;                 // abgebrochen, gesperrt oder Filter inzwischen gewechselt
+    const to=line(v,CAPS.cat); if(to===from) return;
+    if(editing) doneEditor(); if(!VAULT) return;                   // offener Editor würde die alte Kategorie zurückschreiben
+    const snapshot=VAULT.entries.slice(), r=renameCatEntries(VAULT.entries, from, to, nowIso()); if(!r.n) return;
+    VAULT.entries=r.entries; catFilter=to;                         // '' = Chip „Ohne Kategorie“
+    persist().then(()=>{ if(!VAULT) return; renderList(); toast(to?tr(r.n===1?'toast.catRenamed1':'toast.catRenamed',{n:r.n,c:to}):tr(r.n===1?'toast.catCleared1':'toast.catCleared',{n:r.n})); })
+      .catch(e=>{ rollback(snapshot)(e); if(VAULT&&!(e&&e.locked)){ catFilter=from; renderList(); toast(tr('err.saveFailed')); } }); }
   function setCatFilter(v){ catFilter=typeof v==='string'?v:null; renderList(); }
   function clearCatFilter(){ catFilter=null; favFilter=false; renderList(); }
   function toggleFavFilter(){ favFilter=!favFilter; renderList(); }
@@ -1829,7 +1859,7 @@ const App = (function(){
   function renderAll(){ renderList(); renderSettings(); renderBackupMsg(); }
   function kdfChanged(){ kdfTouched=true; }
 
-  return {boot,doSetup,doUnlock,doTotp,cancelTotp,lock,lockNow,tab,dialogOk,toastAction,dialogCancel,dialogOpen,dialogKey,
+  return {boot,doSetup,doUnlock,doTotp,cancelTotp,lock,lockNow,tab,dialogOk,renameCat,toastAction,dialogCancel,dialogOpen,dialogKey,
     newEntry,openEditor,doneEditor,copyCurrent,deleteCurrent,editorChanged,changeEntryType,mdModeEdit,mdModeView,mdToggle,mdCheat,mdExample,insertDate,
     addItemRow,itemEnter,removeItemRow,itemChanged,sortDone,resetDone,
     renderList,setCatFilter,clearCatFilter,toggleFavFilter,openCatMenu,toggleCatMenu,catInput,pickCat,

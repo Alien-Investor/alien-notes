@@ -18,6 +18,9 @@ entschlüsselte Backup danach zu löschen.
 
 Rückgängig nach dem Löschen: Nach „In den Papierkorb“ bleibt sechs Sekunden ein Knopf „Rückgängig“ im Hinweis, der die Notiz sofort zurückholt.
 
+Kategorie umbenennen: Kategorie-Chip antippen, dann den Stift daneben — alle Notizen der Kategorie ziehen um, auch im Papierkorb; ein vorhandener
+Name legt zusammen, ein leerer Name heißt „ohne Kategorie“. Die Rückfrage dafür hat ein Eingabefeld im App-Design (kein Systemdialog).
+
 ## v0.1 — 2026-09-24
 
 Grundgerüst aus Alien Pass v1.8: Repo, App-Design-Kit, Datei-Format `AINV1` (Argon2id + AES-256-GCM, eigene Datei-Endung `.notes`),
