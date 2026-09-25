@@ -1,5 +1,13 @@
 # Changelog — Alien Notes
 
+## v1.1 — in Arbeit
+
+Rückfragen (Löschen, Papierkorb leeren, Umwandeln, Haken zurücksetzen, schwache Passphrase, große Import-Datei, Pforten deaktivieren,
+Notizen löschen) erscheinen als eigener Dialog im App-Design statt als Systemdialog. Grund: Der Android-Systemdialog erbt den
+Screenshot-Schutz (FLAG_SECURE) nicht, ein Screenshot bei offener Löschnachfrage zeigte den Notiztitel. Der eigene Dialog hat je Frage
+einen passenden Knopf („In den Papierkorb“, „Endgültig löschen“, „Umwandeln“ …), Escape oder ein Tipp daneben bricht ab, eine Sperre während
+der Frage lässt die Antwort verfallen.
+
 ## v0.1 — 2026-09-24
 
 Grundgerüst aus Alien Pass v1.8: Repo, App-Design-Kit, Datei-Format `AINV1` (Argon2id + AES-256-GCM, eigene Datei-Endung `.notes`),

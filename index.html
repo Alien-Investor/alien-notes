@@ -17,7 +17,13 @@
 <link href="vendor/fonts/fonts.css" rel="stylesheet">
 <link href="app-theme.css" rel="stylesheet">
 <style>
-/* App-eigene Ergänzungen zum Kit (app-theme.css): Listenkarten, Editor, Checkliste, Markdown-Ansicht */
+/* App-eigene Ergänzungen zum Kit (app-theme.css): Listenkarten, Editor, Checkliste, Markdown-Ansicht, Rückfrage-Dialog */
+/* Rückfrage-Dialog (v1.1) — über dem Handbuch (100), unter dem Toast (200); wandert nach Gerätebestätigung ins Design-Kit */
+.dlg-back{position:fixed;inset:0;z-index:150;background:rgba(0,8,6,.85);display:flex;align-items:center;justify-content:center;padding:16px;}
+.dlg{width:100%;max-width:440px;max-height:calc(100vh - 32px);overflow-y:auto;background:var(--card-bg);border:1px solid var(--neon-mid);border-radius:6px;padding:18px;box-shadow:0 0 24px rgba(0,255,204,.25);}
+.dlg-msg{font-size:.86rem;line-height:1.6;color:var(--neon);white-space:pre-line;overflow-wrap:break-word;}
+.dlg-btns{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap;}
+.dlg-btns .btn{flex:1 1 auto;padding:10px 12px;letter-spacing:1px;font-size:.72rem;}
 .gate{max-width:440px;margin:6vh auto 0;}
 .gate .card{padding:26px;}
 .meter{margin-top:4px;font-size:.78rem;}
@@ -509,6 +515,16 @@ html.desk .no-desk{display:none;}
       <li><strong>Fremdcode:</strong> nur die Argon2-Bibliothek hash-wasm (MIT) und die EFF-Wortliste, beide gebündelt und beim Bauen per Hash geprüft. Kein CDN, kein Tracker.</li>
       <li><strong>Grenzen:</strong> keine Bilder oder Anhänge, kein Teilen von Klartext, keine Passwörter je Notiz. Eine Passphrase lässt sich nicht wiederherstellen.</li>
     </ul>
+  </div>
+</div>
+<!-- Rückfrage-Dialog (v1.1): eigener DOM-Dialog statt confirm(), damit FLAG_SECURE gilt und der Look stimmt; Text nur per textContent -->
+<div id="dlg" class="dlg-back hidden" role="dialog" aria-modal="true" aria-describedby="dlg-msg">
+  <div class="dlg">
+    <div id="dlg-msg" class="dlg-msg"></div>
+    <div class="dlg-btns">
+      <button id="dlg-cancel" class="btn ghost" data-action="dialogCancel" data-i18n="dlg.cancel">Abbrechen</button>
+      <button id="dlg-ok" class="btn" data-action="dialogOk">OK</button>
+    </div>
   </div>
 </div>
 <div id="toast" class="toast hidden"></div>

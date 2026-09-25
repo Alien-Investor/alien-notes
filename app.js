@@ -255,6 +255,16 @@ const T = {
   "confirm.purge":{de:"„{t}“ endgültig löschen? Das lässt sich nicht rückgängig machen.",en:"Delete “{t}” permanently? This cannot be undone."},
   "confirm.emptyTrash":{de:"Alle {n} Notizen im Papierkorb endgültig löschen? Das lässt sich nicht rückgängig machen.",en:"Permanently delete all {n} notes in the trash? This cannot be undone."},
   "confirm.wipe":{de:"Die Notizen auf diesem Gerät wirklich löschen? Ohne Backup ist alles weg.",en:"Really delete the notes on this device? Without a backup everything is gone."},
+  "dlg.ok":{de:"OK",en:"OK"},
+  "dlg.cancel":{de:"Abbrechen",en:"Cancel"},
+  "dlg.useAnyway":{de:"Trotzdem verwenden",en:"Use anyway"},
+  "dlg.tryAnyway":{de:"Trotzdem versuchen",en:"Try anyway"},
+  "dlg.convert":{de:"Umwandeln",en:"Convert"},
+  "dlg.remove":{de:"Entfernen",en:"Remove"},
+  "dlg.toTrash":{de:"In den Papierkorb",en:"Move to trash"},
+  "dlg.deleteForever":{de:"Endgültig löschen",en:"Delete permanently"},
+  "dlg.disable":{de:"Deaktivieren",en:"Disable"},
+  "dlg.discard":{de:"Verwerfen",en:"Discard"},
   "confirm.bigKdf":{de:"Die Datei verlangt {m} MiB Arbeitsspeicher für Argon2 — das kann auf dem Handy abstürzen. Trotzdem versuchen?",en:"The file demands {m} MiB of memory for Argon2 — this may crash on a phone. Try anyway?"},
   "confirm.weakPass":{de:"Diese Passphrase ist vorhersagbar ({why}).\n\nSie schützt auch jedes Backup — eine gestohlene Backup-Datei lässt sich offline beliebig oft durchprobieren. Besser: der Vorschlag-Button (sechs Würfelwörter).\n\nTrotzdem verwenden?",en:"This passphrase is predictable ({why}).\n\nIt also protects every backup — a stolen backup file can be guessed offline as often as an attacker likes. Better: the suggest button (six dice words).\n\nUse it anyway?"},
   "confirm.weakPassCp":{de:"Diese Passphrase ist vorhersagbar ({why}).\n\nSie schützt auch jedes künftige Backup — eine gestohlene Backup-Datei lässt sich offline beliebig oft durchprobieren. Besser: sechs Würfelwörter wie beim Einrichten.\n\nTrotzdem verwenden?",en:"This passphrase is predictable ({why}).\n\nIt also protects every future backup — a stolen backup file can be guessed offline as often as an attacker likes. Better: six dice words as in the setup.\n\nUse it anyway?"},
@@ -701,6 +711,23 @@ const App = (function(){
   const hide = id => $(id).classList.add('hidden');
   function screen(name){ ['setup','lock','totp','app'].forEach(s=>$('screen-'+s).classList.add('hidden')); $('screen-'+name).classList.remove('hidden'); }
   function toast(msg){ const t=$('toast'); if(!t) return; t.textContent=msg; t.classList.remove('hidden'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.add('hidden'),2600); }
+  /* ---------- Rückfrage als eigener DOM-Dialog (v1.1) statt confirm(): der Android-Systemdialog erbt FLAG_SECURE nicht — ein Screenshot bei
+     offener Löschnachfrage zeigte den Notiztitel (Gerätetest 25.09.2026). ask(msg,{ok,danger}) liefert ein Promise<boolean>; nur ein Dialog zur
+     Zeit (eine zweite Frage gilt als abgelehnt); Escape/Hintergrund = Abbrechen; clearRendered() schließt ihn beim Sperren mit false, der wartende
+     Aufrufer prüft danach VAULT/editing selbst nach. Text nur per textContent. ---------- */
+  let dlgResolve=null, dlgPrev=null;
+  function ask(msg, opt){ opt=opt||{}; if(dlgResolve) return Promise.resolve(false);
+    return new Promise(res=>{ dlgResolve=res; dlgPrev=document.activeElement; $('dlg-msg').textContent=msg;
+      const b=$('dlg-ok'); b.textContent=tr(opt.ok||'dlg.ok'); b.classList.toggle('danger',!!opt.danger); show('dlg'); $('dlg-cancel').focus(); }); }
+  function dialogClose(v){ const r=dlgResolve; if(!r) return; dlgResolve=null; hide('dlg'); $('dlg-msg').textContent=''; $('dlg-ok').classList.remove('danger');
+    const f=dlgPrev; dlgPrev=null; if(f&&document.contains(f)&&typeof f.focus==='function'){ try{ f.focus(); }catch(_){} } r(!!v); }
+  function dialogOk(){ dialogClose(true); }
+  function dialogCancel(){ dialogClose(false); }
+  function dialogOpen(){ return !!dlgResolve; }
+  function dialogKey(ev){ if(!dlgResolve) return false;   // offener Dialog: Escape bricht ab, Tab pendelt zwischen den zwei Knöpfen, alles andere bleibt im Dialog
+    if(ev.key==='Escape'){ dialogCancel(); return true; }
+    if(ev.key==='Tab'){ const a=$('dlg-cancel'), b=$('dlg-ok'); (document.activeElement===a?b:a).focus(); return true; }
+    return false; }
   function err(id,msg){ const e=$(id); if(!e) return; if(!msg){ e.classList.add('hidden'); e.textContent=''; return; } e.textContent=msg; e.classList.remove('hidden'); }
   function el(tag, cls, text){ const n=document.createElement(tag); if(cls) n.className=cls; if(text!=null) n.textContent=text; return n; }
   const nowIso=()=>new Date().toISOString();
@@ -769,7 +796,8 @@ const App = (function(){
     const p1=$('setup-pass1').value, p2=$('setup-pass2').value;
     if(p1.length<12) return err('setup-err',tr('err.setupShort'));
     if(p1!==p2) return err('setup-err',tr('err.setupMismatch'));
-    { const c=passCheck(p1); if(c.weak&&!confirm(tr('confirm.weakPass',{why:whyText(c.why)}))) return; }   // Rückfrage, kein Verbot
+    { const c=passCheck(p1); if(c.weak&&!(await ask(tr('confirm.weakPass',{why:whyText(c.why)}),{ok:'dlg.useAnyway'}))) return; }   // Rückfrage, kein Verbot
+    if(doSetup._busy||$('setup-pass1').value!==p1) return;      // während der Rückfrage: zweiter Aufruf oder geändertes Feld → nichts anlegen
     const btn=$('setup-btn'), orig=btn.textContent; doSetup._busy=true; btn.disabled=true; btn.textContent=tr('busy.creating');
     try{
       const m=parseInt($('setup-kdf').value,10);
@@ -875,7 +903,7 @@ const App = (function(){
     ['f-title','f-cat','f-body','search','import-pass','cp-cur','cp1','cp2','lock-pass','lock-pin','pin-new','pin-rep','pin-pass','setup-pass1','setup-pass2','totp-code','totp-verify','bio-pass','vault-file'].forEach(id=>{ const n=$(id); if(n) n.value=''; });
     ['f-fav','f-pinned','f-md','bio-keep','set-secure'].forEach(id=>{ const n=$(id); if(n) n.checked=false; });   // „auch nach Neustart“ nie stehen lassen (ab Werk aus)
     setEntryType('text'); setMdMode('edit'); err('add-err'); err('cp-err'); err('lock-err'); err('setup-err'); err('totp-err'); err('totp-setup-err'); err('bio-err'); bioMsg(''); err('pin-err'); pinMsg('');
-    maskInputs(''); closeMenus();
+    maskInputs(''); closeMenus(); dialogClose(false);   // offene Rückfrage verfällt, der Aufrufer sieht false
     hide('help-overlay'); hide('import-pass-box'); hide('totp-setup');
     doImportVault._busy=false; const ib=$('import-btn'); if(ib){ ib.disabled=false; }
     tab('list');   // sonst stünde nach dem Entsperren die (leere) Papierkorb-Ansicht offen
@@ -1049,10 +1077,14 @@ const App = (function(){
   function setEntryType(t){ formType=entryType(t); closeMenus(); ENTRY_TYPES.forEach(x=>$('ft-'+x).classList.toggle('on',x===formType)); $('grp-text').classList.toggle('hidden',formType!=='text'); $('grp-list').classList.toggle('hidden',formType!=='list'); $('f-md-wrap').classList.toggle('hidden',formType!=='text'); hide('md-cheat'); renderAddTitle(); }
   function renderAddTitle(){ $('add-title').textContent=tr(editId?(formType==='list'?'add.titleEditList':'add.titleEdit'):(formType==='list'?'add.titleNewList':'add.titleNew')); }
   // Typwechsel per Segment: Inhalt wird umgewandelt (Zeilen ↔ Einträge), nach Rückfrage — nichts geht still verloren
-  function changeEntryType(t){ t=entryType(t); if(t===formType) return;
-    if(t==='list'){ const body=$('f-body').value; if(body.trim()&&!confirm(tr('confirm.toList',{n:ITEMS_MAX,c:CAPS.item}))) return; setItemRows(linesToItems(body)); if(!itemRows().length) pushItemRow('',false); $('f-body').value=''; $('f-md').checked=false; $('md-seg').classList.add('hidden'); setMdMode('edit'); }
+  async function changeEntryType(t){ t=entryType(t); if(t===formType||!editing) return;
+    if(t==='list'){ const body=$('f-body').value; if(body.trim()&&!(await ask(tr('confirm.toList',{n:ITEMS_MAX,c:CAPS.item}),{ok:'dlg.convert'}))) return;
+      if(!editing||formType!=='text') return;                    // während der Rückfrage gesperrt oder verlassen
+      setItemRows(linesToItems($('f-body').value)); if(!itemRows().length) pushItemRow('',false); $('f-body').value=''; $('f-md').checked=false; $('md-seg').classList.add('hidden'); setMdMode('edit'); }
     else { const items=readItemRows(); const body=itemsToBody(items); if(body.length>CAPS.body) return toast(tr('toast.bodyFull',{n:CAPS.body}));   // sonst kappte sanitizeEntry still (Audit run-1 #6)
-      if(items.length&&!confirm(tr('confirm.toText'))) return; $('f-body').value=body; clearItemRows(); }
+      if(items.length&&!(await ask(tr('confirm.toText'),{ok:'dlg.convert'}))) return;
+      if(!editing||formType!=='list') return;
+      $('f-body').value=itemsToBody(readItemRows()); clearItemRows(); }
     setEntryType(t); editorChanged(); renderCounter(); }
   function setMdMode(m){ mdMode=m==='view'?'view':'edit'; const on=mdMode==='view'; $('mm-edit').classList.toggle('on',!on); $('mm-view').classList.toggle('on',on);
     $('f-body').classList.toggle('hidden',on); $('md-view').classList.toggle('hidden',!on); if(on) renderMd($('f-body').value); else $('md-view').replaceChildren(); }
@@ -1097,8 +1129,9 @@ const App = (function(){
   function setItemRows(items){ clearItemRows(); for(const x of items) pushItemRow(x.text,x.done); }
   function readItemRows(){ return itemRows().map(r=>({text:$(r.dataset.t).value, done:$(r.dataset.c).checked})); }
   function sortDone(){ const it=readItemRows(); setItemRows(it.filter(x=>!x.done).concat(it.filter(x=>x.done))); editorChanged(); }
-  function resetDone(){ const rows=itemRows().filter(r=>$(r.dataset.c).checked); if(!rows.length) return; if(!confirm(tr('confirm.resetDone',{n:rows.length}))) return;
-    rows.forEach(r=>{ $(r.dataset.c).checked=false; r.classList.remove('done'); }); editorChanged(); renderCounter(); }
+  async function resetDone(){ const rows=itemRows().filter(r=>$(r.dataset.c).checked); if(!rows.length) return; if(!(await ask(tr('confirm.resetDone',{n:rows.length}),{ok:'dlg.remove'}))) return;
+    if(!editing||formType!=='list') return;                      // während der Rückfrage gesperrt
+    itemRows().forEach(r=>{ $(r.dataset.c).checked=false; r.classList.remove('done'); }); editorChanged(); renderCounter(); }
   function relabelItemRows(){ itemRows().forEach(r=>{ $(r.dataset.t).placeholder=tr('ed.itemPh'); const b=r.querySelector('.idel'); b.title=tr('ed.itemDel'); b.setAttribute('aria-label',tr('ed.itemDel')); }); }
   function resetForm(){ ['f-title','f-cat','f-body'].forEach(id=>$(id).value=''); ['f-fav','f-pinned','f-md'].forEach(id=>$(id).checked=false); clearItemRows(); $('md-seg').classList.add('hidden'); hide('md-cheat'); setMdMode('edit'); closeMenus(); err('add-err'); setEntryType('text'); $('ed-count').textContent=''; $('ed-meta').textContent=''; $('ed-del').classList.add('hidden'); }
   function newEntry(t){ if(editing) closeEditor(); editId=null; editBase=null; editing=true; resetForm(); if(t==='list') setEntryType('list'); if(catFilter) $('f-cat').value=catFilter; tab('add'); setTimeout(()=>$(formType==='list'?'f-title':'f-body').focus(),80); if(formType==='list') addItemRow(); }
@@ -1139,11 +1172,12 @@ const App = (function(){
   function closeEditor(){ if(!editing) return; const blankNew=!editId&&isBlank(readDraft()); commitEditor(false); editing=false; editId=null; editBase=null; resetForm(); renderDeskPane(); markSel(); if(blankNew) toast(tr('toast.discarded')); }
   function doneEditor(){ closeEditor(); tab('list'); }
   function copyCurrent(){ if(!editing) return; copyText(noteText(readDraft()),'what.note'); }
-  function deleteCurrent(){ if(!editing||!editId) return; const e=byId(editId); if(!e) return;
+  async function deleteCurrent(){ if(!editing||!editId) return; const e=byId(editId); if(!e) return;
     // Bei vollem Papierkorb vernichtet diese Löschung die älteste — das muss dastehen, bevor der Nutzer zustimmt (Audit run-5 #1).
     const t=trash(), full=t.length>=MAX_TRASH, oldest=full?t[t.length-1]:null;
-    if(!confirm(full?tr('confirm.deleteFull',{t:titleOf(e),m:MAX_TRASH,o:titleOf(oldest),od:fmtDate(oldest.deleted)})
-                    :tr('confirm.delete',{t:titleOf(e),d:TRASH_DAYS}))) return;
+    if(!(await ask(full?tr('confirm.deleteFull',{t:titleOf(e),m:MAX_TRASH,o:titleOf(oldest),od:fmtDate(oldest.deleted)})
+                      :tr('confirm.delete',{t:titleOf(e),d:TRASH_DAYS}),{ok:'dlg.toTrash',danger:true}))) return;
+    if(!VAULT||!editing||editId!==e.id||!byId(e.id)) return;      // während der Rückfrage gesperrt, verlassen oder (Import) verschwunden
     clearTimeout(autosaveTimer); autosaveTimer=null;
     const snapshot=VAULT.entries.slice(), iso=nowIso();
     VAULT.entries=VAULT.entries.map(x=>x===e?Object.assign({},e,{updated:iso, deleted:iso}):x);   // neues Array (Audit run-1 #2)     // in den Papierkorb — der Inhalt bleibt TRASH_DAYS erhalten
@@ -1183,12 +1217,14 @@ const App = (function(){
     const snapshot=VAULT.entries.slice();
     VAULT.entries=VAULT.entries.map(x=>x===e?Object.assign({},e,{updated:nowIso(), deleted:null}):x);   // neues Array (Audit run-1 #2)   // neueres updated ⇒ schlägt die Löschmarke auf anderen Geräten
     persist().then(()=>{ renderTrash(); renderList(); toast(tr('toast.restored')); }).catch(rollback(snapshot)); }
-  function purgeEntry(id){ const e=trashById(id); if(!e) return; if(!confirm(tr('confirm.purge',{t:titleOf(e)}))) return;
+  async function purgeEntry(id){ const e=trashById(id); if(!e) return; if(!(await ask(tr('confirm.purge',{t:titleOf(e)}),{ok:'dlg.deleteForever',danger:true}))) return;
+    if(!VAULT||trashById(id)!==e) return;                        // während der Rückfrage gesperrt oder Stand verändert
     const snapshot=VAULT.entries.slice();
     VAULT.entries=VAULT.entries.map(x=>x===e?tombstone(e, nowIso()):x);   // neues Array (Audit run-1 #2)                                 // updated=jetzt ⇒ der leere Stand gewinnt überall
     persist().then(()=>{ renderTrash(); renderList(); toast(tr('toast.purged')); }).catch(rollback(snapshot)); }
-  function emptyTrash(){ if(!VAULT) return; const t=trash(); if(!t.length) return;
-    if(!confirm(tr('confirm.emptyTrash',{n:t.length}))) return;
+  async function emptyTrash(){ if(!VAULT) return; const n=trash().length; if(!n) return;
+    if(!(await ask(tr('confirm.emptyTrash',{n}),{ok:'dlg.deleteForever',danger:true}))) return;
+    if(!VAULT) return; const t=trash(); if(!t.length) return;   // während der Rückfrage gesperrt; Stand frisch lesen
     const snapshot=VAULT.entries.slice(), iso=nowIso(), ids=new Set(t.map(e=>e.id));
     VAULT.entries=VAULT.entries.map(e=>ids.has(e.id)?tombstone(e,iso):e);
     persist().then(()=>{ renderTrash(); renderList(); toast(tr('toast.trashEmptied')); }).catch(rollback(snapshot)); }
@@ -1273,7 +1309,8 @@ const App = (function(){
   function cancelImport(){ pendingImport=null; $('import-pass').value=''; hide('import-pass-box'); }
   async function doImportVault(){
     if(doImportVault._busy||!pendingImport||!VAULT) return; const f=pendingImport;
-    if(f.kdf.m>KDF_CONFIRM_M && !confirm(tr('confirm.bigKdf',{m:Math.round(f.kdf.m/1024)}))) return;
+    if(f.kdf.m>KDF_CONFIRM_M){ if(!(await ask(tr('confirm.bigKdf',{m:Math.round(f.kdf.m/1024)}),{ok:'dlg.tryAnyway'}))) return;
+      if(doImportVault._busy||pendingImport!==f||!VAULT) return; }   // während der Rückfrage gesperrt oder andere Datei gewählt
     const btn=$('import-btn'), orig=btn.textContent; doImportVault._busy=true; btn.disabled=true; btn.textContent=tr('busy.decrypting');
     try{
       let incoming;
@@ -1311,7 +1348,7 @@ const App = (function(){
     }finally{ totpConfirm._busy=false; }
   }
   function totpCancel(){ pendingSecret=null; pendingOtpauth=''; $('totp-verify').value=''; $('totp-secret').textContent=''; renderSettings(); }
-  async function totpDisable(){ if(!VAULT||!VAULT.totp||!confirm(tr('confirm.totpDisable'))) return; const before=VAULT.totp; VAULT.totp=null; try{ await persist(); }catch(e){ if(!(e&&e.locked)&&VAULT) VAULT.totp=before; return; } renderSettings(); toast(tr('toast.totpOff')); }
+  async function totpDisable(){ if(!VAULT||!VAULT.totp||!(await ask(tr('confirm.totpDisable'),{ok:'dlg.disable'}))) return; if(!VAULT||!VAULT.totp) return; const before=VAULT.totp; VAULT.totp=null; try{ await persist(); }catch(e){ if(!(e&&e.locked)&&VAULT) VAULT.totp=before; return; } renderSettings(); toast(tr('toast.totpOff')); }
 
   /* ---------- Fingerabdruck-Entsperren (nur Android-App) — wortgleich Alien Pass v1.8, Invarianten in BIO-INVARIANTEN.md dort ----------
      Der DEK wird zusätzlich unter einem 32-Byte-Zufallsschlüssel verpackt (Rolle 'bio', Blob in localStorage, nie in der .notes-Datei).
@@ -1423,7 +1460,7 @@ const App = (function(){
       if(await bioArm(dekX, KDF, WRAP, false, keep)){ toast(tr('bio.on')); const k=$('bio-keep'); if(k) k.checked=false; }
     }finally{ bioEnable._busy=false; btn.disabled=false; btn.textContent=orig; $('bio-pass').value=''; maskInputs('#bio-card'); renderSettings(); }
   }
-  function bioDisable(){ if(!VAULT||!bioArmed||!confirm(tr('confirm.bioDisable'))) return; bioDrop(true); toast(tr('bio.off')); renderSettings(); }
+  async function bioDisable(){ if(!VAULT||!bioArmed||!(await ask(tr('confirm.bioDisable'),{ok:'dlg.disable'}))) return; if(!VAULT||!bioArmed) return; bioDrop(true); toast(tr('bio.off')); renderSettings(); }
 
 
   /* ---------- Schnell-Entsperren per PIN (Alien Pass v1.8, RAM-Slot bis zum Beenden, nur Desktop sichtbar) — Invarianten in PIN-INVARIANTEN.md dort ----------
@@ -1497,11 +1534,12 @@ const App = (function(){
     finally{ pinEnable._busy=false; btn.disabled=false; btn.textContent=orig; $('pin-new').value=$('pin-rep').value=$('pin-pass').value=''; maskInputs('#pin-card'); renderPinGate(); if(VAULT) renderSettings();
       if(!done&&(gen!==bioGen||!VAULT||!DEK)) toast(tr('pin.aborted')); }
   }
-  function pinDisable(){ if(!VAULT||!PIN||!confirm(tr('confirm.pinDisable'))) return; pinDrop(); toast(tr('pin.off')); }
+  async function pinDisable(){ if(!VAULT||!PIN||!(await ask(tr('confirm.pinDisable'),{ok:'dlg.discard'}))) return; if(!VAULT||!PIN) return; pinDrop(); toast(tr('pin.off')); }
   // Desktop-Tastatur: Strg+L sperren, Strg+F Suche, Strg+N neue Notiz, Strg+S Notiz fertig. Nur in der Hülle, nur entsperrt (Strg+L auch in der Wartestellung).
   function deskKey(ev){
     if(!DESK||!ev.ctrlKey||ev.altKey||ev.shiftKey||ev.metaKey) return false; const k=(ev.key||'').toLowerCase();
     if(k==='l'&&(DEK||pendingUnlock)){ lockNow(); return true; }
+    if(dlgResolve) return true;   // offene Rückfrage: kein Strg+N/F/S daran vorbei (nur Sperren)
     if(!DEK) return false;
     if(k==='f'){ closeHelp(); tab('list'); const q=$('search'); q.focus(); q.select(); return true; }
     if(k==='n'){ closeHelp(); newEntry(); return true; }
@@ -1545,7 +1583,7 @@ const App = (function(){
     try{
       try{ const kOld=await deriveKek(passBytes(cur), KDF); await unwrapDek(WRAP,kOld,KDF,false); }   // alte Passphrase real prüfen
       catch(_){ return err('cp-err',tr('err.cpWrong')); }
-      { const c=passCheck(p1); if(c.weak&&!confirm(tr('confirm.weakPassCp',{why:whyText(c.why)}))) return; }   // erst nach der alten Passphrase
+      { const c=passCheck(p1); if(c.weak&&!(await ask(tr('confirm.weakPassCp',{why:whyText(c.why)}),{ok:'dlg.useAnyway'}))) return; }   // erst nach der alten Passphrase
       if(!VAULT||!DEK) return;                                   // während der Rückfrage gesperrt
       const kdf={m:KDF.m,t:KDF.t,p:KDF.p,salt:rand(16)};
       const kNew=await deriveKek(passBytes(p1), kdf);
@@ -1558,7 +1596,7 @@ const App = (function(){
       $('cp-cur').value=$('cp1').value=$('cp2').value=''; $('cp-meter').textContent=''; toast(tr(hadBio?'toast.passChangedBio':'toast.passChanged')); renderSettings();
     }finally{ changePass._busy=false; btn.disabled=false; btn.textContent=orig; }
   }
-  function wipeLocal(){ if(!confirm(tr('confirm.wipe'))) return; bioDrop(true); pinDrop(); try{ localStorage.removeItem(BIO_ALERT_KEY); }catch(_){}
+  async function wipeLocal(){ if(!VAULT||!(await ask(tr('confirm.wipe'),{ok:'dlg.deleteForever',danger:true}))) return; if(!VAULT) return; bioDrop(true); pinDrop(); try{ localStorage.removeItem(BIO_ALERT_KEY); }catch(_){}
     try{ localStorage.removeItem(LS_KEY); }catch(_){}   // auch auf Android: sonst holte migrateStore einen Rest aus dem Browser-Speicher zurück (Audit run-1b)
     vaultDel().then(()=>{ editing=false; editId=null; lock(); }).catch(()=>toast(tr('err.saveFailed'))); }
 
@@ -1570,7 +1608,7 @@ const App = (function(){
   function renderAll(){ renderList(); renderSettings(); renderBackupMsg(); }
   function kdfChanged(){ kdfTouched=true; }
 
-  return {boot,doSetup,doUnlock,doTotp,cancelTotp,lock,lockNow,tab,
+  return {boot,doSetup,doUnlock,doTotp,cancelTotp,lock,lockNow,tab,dialogOk,dialogCancel,dialogOpen,dialogKey,
     newEntry,openEditor,doneEditor,copyCurrent,deleteCurrent,editorChanged,changeEntryType,mdModeEdit,mdModeView,mdToggle,mdCheat,mdExample,insertDate,
     addItemRow,itemEnter,removeItemRow,itemChanged,sortDone,resetDone,
     renderList,setCatFilter,clearCatFilter,toggleFavFilter,openCatMenu,toggleCatMenu,catInput,pickCat,
@@ -1605,6 +1643,7 @@ document.addEventListener('input',ev=>{
 });
 document.addEventListener('keydown',ev=>{
   if(App.deskKey(ev)){ ev.preventDefault(); return; }
+  if(App.dialogKey(ev)){ ev.preventDefault(); return; }
   if(ev.key==='Escape'){ App.closeMenus(); App.closeHelp(); return; }
   if(ev.key!=='Enter') return;
   const elx=ev.target.closest('[data-enter]'); if(!elx) return;
@@ -1614,6 +1653,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   const ok=window.crypto&&crypto.subtle&&typeof WebAssembly!=='undefined'&&window.hashwasm&&typeof hashwasm.argon2id==='function';
   if(!ok){ const c=document.querySelector('.container'); c.replaceChildren(); const d=document.createElement('div'); d.className='card warn'; d.textContent=tr('nocrypto'); c.appendChild(d); return; }
   const k=document.getElementById('setup-kdf'); if(k) k.addEventListener('change',App.kdfChanged);
+  const dg=document.getElementById('dlg'); if(dg) dg.addEventListener('click',ev=>{ if(ev.target===dg) App.dialogCancel(); });   // Tippen auf den Hintergrund = Abbrechen
   if(window.AlienDesktop){   // Zweispaltig im breiten Fenster (CSS html.desk): der Editor wird rechte Spalte der Liste statt eigener Ansicht
     document.documentElement.classList.add('desk'); const a=document.getElementById('tab-add'), de=document.getElementById('detail-empty');
     if(a&&de) de.parentNode.insertBefore(a,de); }
