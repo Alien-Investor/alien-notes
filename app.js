@@ -119,7 +119,7 @@ const I18N = {
   "help.p1":"A <strong>local, encrypted notes app</strong> for notes and checklists. Runs fully <strong>offline</strong> — no cloud, no server, no telemetry, no account. The Android app does not even have an internet permission. Your notes never leave the device in plaintext.",
   "help.warn":"⚠ There is no reset and no backdoor. Forget your passphrase and the notes are gone for good. Make regular backups and keep the passphrase safe.",
   "help.h2":"First steps",
-  "help.l2":"<li><strong>Choose a passphrase</strong> — at least 12 characters, better six dice words (the suggest button builds them from the EFF list). Write it down and store it safely.</li><li><strong>+</strong> creates a note. The title may stay empty — the first line of the text serves as the title. There is no save button: the app saves while you type and when you leave the note.</li><li><strong>Checklists:</strong> switch a note to “Checklist” — every line becomes an entry with a box; “Done to the bottom” sorts ticked entries down. Switching back turns the entries into “- [ ] …” or “- [x] …” lines.</li><li><strong>Categories</strong> work like folders: type one freely (suggestions from existing ones). The list filters via the chips at the top; the ★ chip shows favourites only. Pinned notes always sit at the top. <strong>Rename:</strong> tap the category chip, then the pencil ✎ next to it — every note of that category moves (including the trash); an empty name means “no category”.</li><li>The search covers title, text, checklist entries and category.</li>",
+  "help.l2":"<li><strong>Choose a passphrase</strong> — at least 12 characters, better six dice words (the suggest button builds them from the EFF list). Write it down and store it safely.</li><li><strong>+</strong> creates a note. The title may stay empty — the first line of the text serves as the title. There is no save button: the app saves while you type and when you leave the note.</li><li><strong>Checklists:</strong> switch a note to “Checklist” — every line becomes an entry with a box; “Done to the bottom” sorts ticked entries down. Switching back turns the entries into “- [ ] …” or “- [x] …” lines.</li><li><strong>Categories</strong> work like folders: type one freely (suggestions from existing ones). The list filters via the chips at the top; the ★ chip shows favourites only, the ☐ chip only checklists with open items (both combine with a category). Pinned notes always sit at the top. <strong>Rename:</strong> tap the category chip, then the pencil ✎ next to it — every note of that category moves (including the trash); an empty name means “no category”.</li><li>The search covers title, text, checklist entries and category.</li>",
   "help.h3":"Markdown preview",
   "help.p3":"Every text note (not checklists) has a “Markdown preview” switch. Editing always stays the plain text field; the preview renders a small subset: headings (<code>#</code> to <code>###</code>), <strong>bold</strong> (<code>**…**</code>), <em>italic</em> (<code>*…*</code>), lists (<code>-</code>, <code>1.</code> — numbered ones always start at 1), boxes (<code>- [ ]</code>, <code>- [x]</code>), code (<code>`…`</code>, ``` blocks or 4 spaces of indentation — so no indented sub-items), rules (<code>---</code>). Links are deliberately shown as text, never clickable — the app has no network anyway.",
   "help.h4":"Locking",
@@ -237,6 +237,7 @@ const T = {
   "copy.manual":{de:"Kopieren nicht möglich — bitte manuell markieren",en:"Copy not possible — please select manually"},
   "copy.empty":{de:"Nichts zu kopieren",en:"Nothing to copy"},
   "what.note":{de:"Notiz",en:"Note"},"what.sel":{de:"Markierung",en:"Selection"},
+  "chip.open":{de:"☐ Offen",en:"☐ Open"},"chip.openTitle":{de:"Nur Checklisten mit offenen Einträgen",en:"Only checklists with open items"},
   "chip.all":{de:"Alle",en:"All"},"chip.none":{de:"Ohne Kategorie",en:"No category"},"chip.fav":{de:"★ Favoriten",en:"★ Favourites"},
   "pill.list":{de:"Liste",en:"List"},"pill.pin":{de:"Oben",en:"Pinned"},
   "list.empty":{de:"Noch keine Notizen.\nTippe auf + für die erste Notiz.",en:"No notes yet.\nTap + for the first note."},
@@ -860,7 +861,7 @@ function renameCatEntries(entries, from, to, nowIso){ if(from===to) return {entr
    ============================================================ */
 const App = (function(){
   let DEK=null, KDF=null, WRAP=null, VAULT=null;      // Sitzungszustand — auf lock() alles null
-  let editId=null, editing=false, formType='text', mdMode='edit', search='', catFilter=null, favFilter=false;
+  let editId=null, editing=false, formType='text', mdMode='edit', search='', catFilter=null, favFilter=false, openFilter=false;   // openFilter: nur Checklisten mit offenen Einträgen (v1.1 Punkt 5)
   let clipTimer=null, clipOwnedAt=0, failCount=0, lockedUntil=0, pendingImport=null, kdfTouched=false;
   let pendingUnlock=null, pendingSecret=null, pendingOtpauth='';   // Aegis-Hürde: Schlüssel warten auf den Code / Einrichtung läuft
   let bioGen=0;             // Generation ALLER Pforten (Alien Pass v1.8): jede Sperre erhöht sie, laufende Pforten verwerfen ihr Ergebnis
@@ -1080,7 +1081,7 @@ const App = (function(){
     if(bioRearmDek){ const d=bioRearmDek; bioRearmDek=null; bioArm(d, KDF, WRAP, true).then(ok=>{ if(ok) toast(tr('bio.rearmed')); if(VAULT) renderSettings(); }); } }   // nach Neustart: Slot mit frischem Zufall neu bewaffnen; if(VAULT): während der Neu-Einrichtung gesperrt → sonst TypeError
   function lock(){
     clearIdle(); clearClip(); clearTimeout(autosaveTimer); autosaveTimer=null; applySecure(true);
-    DEK=null; KDF=null; WRAP=null; VAULT=null; editId=null; editing=false; pendingImport=null; search=''; catFilter=null; favFilter=false;
+    DEK=null; KDF=null; WRAP=null; VAULT=null; editId=null; editing=false; pendingImport=null; search=''; catFilter=null; favFilter=false; openFilter=false;
     pendingUnlock=null; pendingSecret=null; pendingOtpauth='';
     bioGen++; bioRearmDek=null; bioArmed=false; bioNeedsRearm=false;   // laufende Fingerabdruck-Vorgänge verfallen (Generation)
     clearRendered(); screen('lock'); boot();   // Sperrbildschirm sofort; boot() liest die Datei asynchron nach (Android-Plugin)
@@ -1209,14 +1210,15 @@ const App = (function(){
 
   /* ---------- Liste ---------- */
   function renderChips(all){
-    const box=$('cat-chips'); box.replaceChildren(); const cs=cats(); const hasFav=all.some(e=>e.fav);
-    if(!hasFav) favFilter=false;
-    if(!cs.length&&!hasFav){ catFilter=null; return; }
+    const box=$('cat-chips'); box.replaceChildren(); const cs=cats(); const hasFav=all.some(e=>e.fav), hasOpen=all.some(hasOpenItem);
+    if(!hasFav) favFilter=false; if(!hasOpen) openFilter=false;   // Chip verschwindet → Filter fällt (sonst zeigte die Liste grundlos nichts)
+    if(!cs.length&&!hasFav&&!hasOpen){ catFilter=null; return; }
     const hasNone=all.some(e=>!e.cat);
     if(catFilter!==null&&(catFilter===''?!hasNone:!cs.includes(catFilter))) catFilter=null;   // Filter auf verschwundene Kategorie zurücksetzen
     const mk=(label,val,cls,parent)=>{ const b=el('button','chip'+(cls?' '+cls:''),label); if(val===null) b.dataset.action='clearCatFilter'; else { b.dataset.action='setCatFilter'; b.dataset.arg=val; } (parent||box).appendChild(b); return b; };
-    mk(tr('chip.all'),null,(catFilter===null&&!favFilter)?'on':'');
+    mk(tr('chip.all'),null,(catFilter===null&&!favFilter&&!openFilter)?'on':'');
     if(hasFav){ const b=el('button','chip fav'+(favFilter?' on':''),tr('chip.fav')); b.dataset.action='toggleFavFilter'; box.appendChild(b); }
+    if(hasOpen){ const b=el('button','chip open'+(openFilter?' on':''),tr('chip.open')); b.dataset.action='toggleOpenFilter'; b.title=tr('chip.openTitle'); box.appendChild(b); }
     for(const c of cs){ if(catFilter!==c){ mk(c,c,''); continue; }
       const pair=el('span','chip-pair'); box.appendChild(pair); mk(c,c,'on',pair);   // Chip + Stift als Paar: brechen bei langem Namen gemeinsam um (Gerätetest 25.09.2026)
       const b=el('button','chip edit','✎'); b.dataset.action='renameCat'; b.title=tr('chip.rename'); b.setAttribute('aria-label',tr('chip.rename')); pair.appendChild(b); }
@@ -1233,8 +1235,10 @@ const App = (function(){
     persist().then(()=>{ if(!VAULT) return; renderList(); toast(to?tr(r.n===1?'toast.catRenamed1':'toast.catRenamed',{n:r.n,c:to}):tr(r.n===1?'toast.catCleared1':'toast.catCleared',{n:r.n})); })
       .catch(e=>{ rollback(snapshot)(e); if(VAULT&&!(e&&e.locked)){ catFilter=from; renderList(); toast(tr('err.saveFailed')); } }); }
   function setCatFilter(v){ catFilter=typeof v==='string'?v:null; renderList(); }
-  function clearCatFilter(){ catFilter=null; favFilter=false; renderList(); }
+  function clearCatFilter(){ catFilter=null; favFilter=false; openFilter=false; renderList(); }
   function toggleFavFilter(){ favFilter=!favFilter; renderList(); }
+  const hasOpenItem=e=>e.type==='list'&&e.items.some(x=>!x.done);   // Checkliste mit mindestens einem unerledigten Eintrag
+  function toggleOpenFilter(){ openFilter=!openFilter; renderList(); }
   // Vorschauzeile: erste Textzeile, die nicht der Titel ist (Titel kann aus der ersten Zeile stammen); Checkliste: Fortschritt + erster offener Eintrag
   function preview(e){
     if(e.type==='list'){ const n=e.items.length; if(!n) return tr('list.itemsEmpty'); const open=e.items.find(x=>!x.done); return tr('list.progress',{d:n-e.items.filter(x=>!x.done).length,n})+(open?' · '+open.text:''); }
@@ -1245,7 +1249,7 @@ const App = (function(){
     const list=$('entry-list'); list.replaceChildren();
     const all=live().sort((a,b)=>((b.pinned?1:0)-(a.pinned?1:0))||(ts(b.updated)-ts(a.updated)));
     renderChips(all); renderTrashBtn(); renderBioAlert(); renderBackupHint();
-    let items=catFilter===null?all:all.filter(e=>e.cat===catFilter); if(favFilter) items=items.filter(e=>e.fav);
+    let items=catFilter===null?all:all.filter(e=>e.cat===catFilter); if(favFilter) items=items.filter(e=>e.fav); if(openFilter) items=items.filter(hasOpenItem);   // Filter kombinieren sich
     if(search) items=items.filter(e=>(e.title+'\n'+e.body+'\n'+e.items.map(x=>x.text).join('\n')+'\n'+e.cat).toLowerCase().includes(search));
     if(!items.length){ list.appendChild(el('div','empty',all.length?tr('list.noMatch'):tr('list.empty'))); return; }
     for(const e of items){
@@ -1861,10 +1865,10 @@ const App = (function(){
   function renderAll(){ renderList(); renderSettings(); renderBackupMsg(); }
   function kdfChanged(){ kdfTouched=true; }
 
-  return {boot,doSetup,doUnlock,doTotp,cancelTotp,lock,lockNow,tab,dialogOk,renameCat,toastAction,dialogCancel,dialogOpen,dialogKey,
+  return {boot,doSetup,doUnlock,doTotp,cancelTotp,lock,lockNow,tab,dialogOk,renameCat,toastAction,hideToast,dialogCancel,dialogOpen,dialogKey,
     newEntry,openEditor,doneEditor,copyCurrent,deleteCurrent,editorChanged,changeEntryType,mdModeEdit,mdModeView,mdToggle,mdCheat,mdExample,insertDate,
     addItemRow,itemEnter,removeItemRow,itemChanged,sortDone,resetDone,
-    renderList,setCatFilter,clearCatFilter,toggleFavFilter,openCatMenu,toggleCatMenu,catInput,pickCat,
+    renderList,setCatFilter,clearCatFilter,toggleFavFilter,toggleOpenFilter,openCatMenu,toggleCatMenu,catInput,pickCat,
     openTrash,renderTrash,restoreEntry,purgeEntry,emptyTrash,
     closeMenus,syncCombo,syncCombos,toggleCombo,chooseOpt,
     suggestPass,meterSetup,meterCp,kdfChanged,
