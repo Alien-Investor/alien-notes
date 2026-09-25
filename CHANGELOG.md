@@ -8,7 +8,8 @@ Screenshot-Schutz (FLAG_SECURE) nicht, ein Screenshot bei offener Löschnachfrag
 einen passenden Knopf („In den Papierkorb“, „Endgültig löschen“, „Umwandeln“ …), Escape oder ein Tipp daneben bricht ab, eine Sperre während
 der Frage lässt die Antwort verfallen.
 
-Umzug von Standard Notes: Unter „Sicherung“ liest die App ein entschlüsseltes Standard-Notes-Backup. Klartext-, Markdown-, Code- und
+Umzug von Standard Notes: Unter „Sicherung“ liest die App ein entschlüsseltes Standard-Notes-Backup, wahlweise direkt das heruntergeladene
+ZIP (entpackt wird nur die Backup-Datei darin, mit dem Entpacker des Systems, ohne Fremdcode) oder die Textdatei daraus. Klartext-, Markdown-, Code- und
 Rich-Text-Notizen werden Textnotizen, Super-Notizen werden in die Markdown-Untermenge übersetzt (Tabellen als Textzeilen, Bilder als
 Platzhalter), Checklisten werden Checklisten; der erste Tag wird die Kategorie, Angeheftetes bleibt angeheftet, Sterne werden Favoriten,
 der Papierkorb landet im Papierkorb. Authenticator-Einträge (2FA-Geheimnisse), Tabellen und Dateien werden nie übernommen und in der

@@ -4,6 +4,8 @@
 // Aus Alien Pass v1.8 übernommen und auf das Notizen-Modell (text/list, 13 Felder, Magic AINV1) angepasst.
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { inflateRawSync } from 'node:zlib';
+import { mkZip } from './test-zip.mjs';
 const require = createRequire(import.meta.url);
 globalThis.hashwasm = require('./vendor/hash-wasm/argon2.umd.min.js');
 const words = readFileSync('vendor/eff/eff_large_wordlist.txt','utf8').trim().split('\n').map(l=>l.split('\t')[1].trim());
@@ -24,7 +26,7 @@ const V = new Function(region + `
     encryptBody,decryptBody,serializeFile,parseFile,kdfOk,KDF_DEFAULT,KDF_BOUNDS,MAX_ENTRIES,MAX_FILE_BYTES,MAX_READ_BYTES,emptyVault,sanitizeEntry,sanitizeEntries,sanitizeVault,sanitizeSettings,
     SETTINGS_DEFAULT,SETTINGS_ALLOWED,BG_NEVER,normalizeTotp,otpauthUri,sanitizeItems,ITEMS_MAX,ENTRY_TYPES,CAPS,mergeEntries,winner,canon,purgeTombstones,tombstone,
     totpCode,totpRemaining,genWords,passStrength,passCheck,MAX_TOMBSTONES,liveCount,tombFrom,isWiped,wipeTrash,shapeIncoming,TRASH_DAYS,MAX_TRASH,TOMBSTONE_DAYS,ts,
-    dupKey,entryType,line,bioKey,parseBioBlob,serializeBioBlob,bioWrapOk,wrapTag,mdParse,mdInline,noteText,linesToItems,itemsToBody,snImport,snId,htmlToText,lexToMd};`)();
+    dupKey,entryType,line,bioKey,parseBioBlob,serializeBioBlob,bioWrapOk,wrapTag,mdParse,mdInline,noteText,linesToItems,itemsToBody,snImport,snId,htmlToText,lexToMd,zipEntries,zipSlice,zipFindSn,ZIP_NAME_SN};`)();
 
 let pass=0, fail=0; const ok=(c,m)=>{ if(c){pass++;console.log('  ✓',m);} else {fail++;console.log('  ✗ FEHLER:',m);} };
 const throwsWith=async(fn,code,m)=>{ try{ await fn(); ok(false,m+' (kein Fehler)'); }catch(e){ ok(e&&e.message===code,m+' → '+(e&&e.message)); } };
@@ -560,6 +562,25 @@ console.log('\n[15] Standard-Notes-Import (snImport: Typen, Tags, Papierkorb, Su
   { const tf=ev.entries.find(e=>e.title==='Tief'); ok(tf&&((ev.stats.lost.deep||0)>0||tf.body.startsWith('{"root"')),'5.000-fach verschachtelter Super-Baum: Tiefenwächter (oder Rohtext), kein Stack-Überlauf ('+(ev.stats.lost.deep||0)+' abgeschnitten)'); }
   { const t0=Date.now(); V.htmlToText('<'.repeat(100000)+'&'.repeat(100000)+'<p'.repeat(50000)); V.htmlToText('&#'.repeat(100000)); const t1=Date.now()-t0; ok(t1<400,'ReDoS-Wächter htmlToText: 100.000 spitze Klammern/Ampersands in '+t1+' ms'); }
   { const t0=Date.now(); V.snImport(JSON.stringify({version:'004',items:Array.from({length:3000},(_,i)=>N('u'+i,{title:'N'+i,text:'t'.repeat(200),noteType:'markdown'}))}),{now:NOW}); const t1=Date.now()-t0; ok(t1<3000,'3.000 Notizen in '+t1+' ms'); }
+}
+
+console.log('\n[16] ZIP-Inhaltsverzeichnis (zipEntries/zipSlice/zipFindSn) für das Standard-Notes-ZIP');
+{ const SN=V.ZIP_NAME_SN, txt=readFileSync('test-data/sn-sample.json','utf8'); const u8=b=>new Uint8Array(b.buffer,b.byteOffset,b.byteLength);
+  const th=(fn,code,msg)=>{ try{ fn(); ok(false,msg+' (kein Fehler)'); }catch(e){ ok(e&&e.message===code,msg+' → '+(e&&e.message)); } };
+  const z1=mkZip([{name:'Items/Note/Plain-0000.txt',data:'Köder',method:8},{name:SN,data:txt,method:8},{name:'Items/Tag/x.txt',data:'{}',method:0}]);
+  const es=V.zipEntries(u8(z1)); ok(es.length===3&&es[1].name===SN&&es[1].method===8&&es[1].usize===Buffer.byteLength(txt)&&!es[1].encrypted&&!es[1].zip64,'Inhaltsverzeichnis: 3 Einträge, Backup-Datei mit deflate und Größe');
+  const e=V.zipFindSn(u8(z1)); const part=V.zipSlice(u8(z1),e,20*1024*1024); ok(part.deflated&&Buffer.from(inflateRawSync(Buffer.from(part.data))).toString('utf8')===txt,'zipSlice liefert genau die deflate-Bytes des Backup-Eintrags (entpackt = Original)');
+  const z0=mkZip([{name:'sub/ordner/'+SN,data:txt,method:0}]); const p0=V.zipSlice(u8(z0),V.zipFindSn(u8(z0)),20*1024*1024); ok(!p0.deflated&&Buffer.from(p0.data).toString('utf8')===txt,'gespeicherter Eintrag in einem Unterordner: gefunden, Bytes 1:1');
+  ok(V.snImport(Buffer.from(p0.data).toString('utf8'),{now:Date.now()}).entries.length===9,'… und daraus importiert das Beispiel wie aus der .txt');
+  th(()=>V.zipFindSn(u8(mkZip([{name:'Items/Note/a.txt',data:'x'},{name:'Standard Notes Backup and Import File.txt.bak',data:'x'}]))),'zipnosn','ohne die Backup-Datei (ähnlicher Name zählt nicht)');
+  th(()=>V.zipEntries(u8(Buffer.from('PK\x03\x04 kein zip'))),'zipbad','Müll mit PK-Magic'); th(()=>V.zipEntries(u8(z1.subarray(0,z1.length-30))),'zipbad','abgeschnittenes Archiv');
+  th(()=>V.zipSlice(u8(z1),Object.assign({},e,{encrypted:true}),1e9),'zipenc','verschlüsselter Eintrag'); th(()=>V.zipSlice(u8(z1),Object.assign({},e,{zip64:true}),1e9),'zip64','ZIP64-Eintrag');
+  th(()=>V.zipSlice(u8(z1),Object.assign({},e,{method:12}),1e9),'zipmethod','fremde Methode (bzip2)'); th(()=>V.zipSlice(u8(z1),e,100),'toolarge','angegebene Größe über dem Deckel');
+  const zb=mkZip([{name:SN,data:txt,method:8,usize:5}]); ok(V.zipSlice(u8(zb),V.zipFindSn(u8(zb)),1e9).usize===5,'gelogene Größe im Verzeichnis: der Deckel greift zusätzlich beim Entpacken (zipInflate zählt)');
+  th(()=>V.zipSlice(u8(mkZip([{name:SN,data:txt,method:8,lho:999999}])),V.zipFindSn(u8(mkZip([{name:SN,data:txt,method:8,lho:999999}]))),1e9),'zipbad','lokaler Kopf außerhalb der Datei');
+  const zm=mkZip([{name:SN,data:txt,method:8,csize:99999999}]); th(()=>V.zipSlice(u8(zm),V.zipFindSn(u8(zm)),1e9),'zipbad','csize über das Dateiende hinaus');
+  th(()=>V.zipEntries('kein Uint8Array'),'zipbad','falscher Typ');
+  { const t0=Date.now(); const many=mkZip(Array.from({length:3000},(_,i)=>({name:'Items/Note/n'+i+'.txt',data:'x'})).concat([{name:SN,data:'{"items":[]}'}])); const f=V.zipFindSn(u8(many)); ok(f.name===SN&&Date.now()-t0<1500,'3.001 Einträge in '+(Date.now()-t0)+' ms'); }
 }
 
 console.log(`\n${pass} ok, ${fail} Fehler`); process.exit(fail?1:0);

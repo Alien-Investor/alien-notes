@@ -58,9 +58,9 @@ const I18N = {
   "bk.export":"Create backup (.notes)",
   "bk.importTitle":"Import backup (merge)",
   "sn.title":"Import from Standard Notes","sn.pick":"Choose backup file",
-  "sn.intro":"Reads a <strong>decrypted</strong> Standard Notes backup (the file <code>Standard Notes Backup and Import File.txt</code> inside the downloaded ZIP). Plain, Markdown, code, checklist, rich-text and Super notes become notes and checklists, the first tag becomes the category, the trash stays the trash. <strong>Authenticator entries are never imported</strong> (2FA secrets belong in Aegis). A confirmation shows what arrives before anything is written. <strong>Delete the decrypted file afterwards</strong> — it is plain text.",
+  "sn.intro":"Reads a <strong>decrypted</strong> Standard Notes backup — the downloaded ZIP directly, or the file <code>Standard Notes Backup and Import File.txt</code> from it. Plain, Markdown, code, checklist, rich-text and Super notes become notes and checklists, the first tag becomes the category, the trash stays the trash. <strong>Authenticator entries are never imported</strong> (2FA secrets belong in Aegis). A confirmation shows what arrives before anything is written. <strong>Delete the decrypted file afterwards</strong> — it is plain text.",
   "help.hSn":"Moving from Standard Notes",
-  "help.pSn":"In Standard Notes open the account menu → <strong>Backups</strong> → <strong>Download decrypted backup</strong>. Unpack the ZIP and pick <code>Standard Notes Backup and Import File.txt</code> under Backup → “Import from Standard Notes”. Plain, Markdown, code and rich-text notes become text notes (Markdown with the Markdown view on), Super notes are translated into the small Markdown subset (tables as text lines, images and files as placeholders), checklists become checklists. The first tag becomes the category (“Parent/Child” for nested tags), pinned stays pinned, starred becomes a favourite, the trash lands in the trash with a fresh 30-day period. <strong>Never imported:</strong> Authenticator entries (2FA secrets — move them to Aegis by hand), spreadsheets, files. A second import of the same backup does not create duplicates; the newer version of a note wins. <strong>Afterwards delete the decrypted backup and the ZIP</strong> — they contain all notes in plain text.",
+  "help.pSn":"In Standard Notes open the account menu → <strong>Backups</strong> → <strong>Download decrypted backup</strong>. Under Backup → “Import from Standard Notes” pick the downloaded ZIP directly (the app reads only the file <code>Standard Notes Backup and Import File.txt</code> inside it) or that file itself. Plain, Markdown, code and rich-text notes become text notes (Markdown with the Markdown view on), Super notes are translated into the small Markdown subset (tables as text lines, images and files as placeholders), checklists become checklists. The first tag becomes the category (“Parent/Child” for nested tags), pinned stays pinned, starred becomes a favourite, the trash lands in the trash with a fresh 30-day period. <strong>Never imported:</strong> Authenticator entries (2FA secrets — move them to Aegis by hand), spreadsheets, files. A second import of the same backup does not create duplicates; the newer version of a note wins. <strong>Afterwards delete the decrypted backup and the ZIP</strong> — they contain all notes in plain text.",
   "bk.importIntro":"Merges a <code>.notes</code> file into these notes: per note the <strong>newer change</strong> wins, deletions are applied. The file may use a different passphrase — your local one stays unchanged.",
   "bk.pick":"Choose .notes file","bk.filePass":"Passphrase of the file","bk.doImport":"Merge",
   "set.secTitle":"Locking","set.autolock":"Lock after inactivity","set.off":"Off",
@@ -262,6 +262,9 @@ const T = {
   "dlg.import":{de:"Übernehmen",en:"Import"},
   "sn.errJson":{de:"Das ist keine lesbare Backup-Datei (kein JSON).",en:"This is not a readable backup file (not JSON)."},
   "sn.errFormat":{de:"Das ist kein Standard-Notes-Backup (keine Liste „items“).",en:"This is not a Standard Notes backup (no “items” list)."},
+  "sn.errZipNoSn":{de:"Im ZIP fehlt die Datei „Standard Notes Backup and Import File.txt“ — ist das ein entschlüsseltes Standard-Notes-Backup?",en:"The ZIP does not contain “Standard Notes Backup and Import File.txt” — is this a decrypted Standard Notes backup?"},
+  "sn.errZipUnsupported":{de:"Dieses System kann das ZIP nicht entpacken. Bitte entpacken und die Datei „Standard Notes Backup and Import File.txt“ wählen.",en:"This system cannot unpack the ZIP. Please unpack it and choose “Standard Notes Backup and Import File.txt”."},
+  "sn.errZipBad":{de:"Das ZIP lässt sich nicht lesen (beschädigt, verschlüsselt, mehrteilig oder ZIP64).",en:"The ZIP cannot be read (damaged, encrypted, multi-part or ZIP64)."},
   "sn.errEncrypted":{de:"Das Backup ist verschlüsselt. In Standard Notes ein entschlüsseltes Backup herunterladen (Kontomenü → Backups → „Download decrypted backup“).",en:"This backup is encrypted. Download a decrypted backup in Standard Notes (account menu → Backups → “Download decrypted backup”)."},
   "sn.take":{de:"{n} Notizen werden übernommen, {t} davon in den Papierkorb.",en:"{n} notes will be imported, {t} of them into the trash."},
   "sn.known":{de:"{n} bereits importierte werden abgeglichen (die neuere Fassung gewinnt).",en:"{n} previously imported ones will be reconciled (the newer version wins)."},
@@ -807,6 +810,30 @@ function snImport(raw, opt){ opt=opt||{}; const now=opt.now||Date.now(); const t
   trashed.sort((a,b)=>ts(b.updated)-ts(a.updated)); const keep=trashed.slice(0,trashBudget); st.trashed=keep.length; st.trashOver=trashed.length-keep.length;
   return {entries:entries.concat(keep), stats:st};
 }
+/* ---------- ZIP lesen (rein, nur Inhaltsverzeichnis + Datenlage; das Entpacken macht der Aufrufer mit DecompressionStream) ----------
+   Für das Standard-Notes-Backup: die App lädt ein ZIP mit „Standard Notes Backup and Import File.txt“ plus einem Ordner Items/. Wir lesen
+   genau EINEN Eintrag, deckeln seine Größe und fassen sonst nichts an. Kein ZIP64, keine Verschlüsselung, keine Mehrteiler (→ Fehlercodes). */
+const ZIP_NAME_SN='Standard Notes Backup and Import File.txt', ZIP_MAX_ENTRIES=100000;
+function zipEntries(u8){ if(!(u8 instanceof Uint8Array)) throw new Error('zipbad'); const dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength), n=u8.byteLength;
+  let eocd=-1; for(let i=n-22;i>=0&&i>=n-22-65535;i--){ if(dv.getUint32(i,true)===0x06054b50){ eocd=i; break; } } if(eocd<0) throw new Error('zipbad');
+  const count=dv.getUint16(eocd+10,true), cdSize=dv.getUint32(eocd+12,true), cdOff=dv.getUint32(eocd+16,true);
+  if(dv.getUint16(eocd+4,true)!==0||dv.getUint16(eocd+6,true)!==0) throw new Error('zipmulti');   // mehrteiliges Archiv
+  if(count===0xFFFF||cdOff===0xFFFFFFFF||cdSize===0xFFFFFFFF) throw new Error('zip64'); if(cdOff+cdSize>n||count>ZIP_MAX_ENTRIES) throw new Error('zipbad');
+  const td=new TextDecoder('utf-8'), out=[]; let p=cdOff;
+  for(let k=0;k<count;k++){ if(p+46>n||dv.getUint32(p,true)!==0x02014b50) throw new Error('zipbad');
+    const flags=dv.getUint16(p+8,true), method=dv.getUint16(p+10,true), csize=dv.getUint32(p+20,true), usize=dv.getUint32(p+24,true);
+    const nl=dv.getUint16(p+28,true), el=dv.getUint16(p+30,true), cl=dv.getUint16(p+32,true), lho=dv.getUint32(p+42,true);
+    if(p+46+nl+el+cl>n) throw new Error('zipbad');
+    out.push({name:td.decode(u8.subarray(p+46,p+46+nl)), method, csize, usize, lho, encrypted:!!(flags&1), zip64:csize===0xFFFFFFFF||usize===0xFFFFFFFF||lho===0xFFFFFFFF});
+    p+=46+nl+el+cl; }
+  return out; }
+// Datenbereich eines Eintrags (über den lokalen Kopf, dessen Namens-/Extra-Längen abweichen dürfen). max = Deckel für die entpackte Größe.
+function zipSlice(u8, e, max){ if(e.encrypted) throw new Error('zipenc'); if(e.zip64) throw new Error('zip64'); if(e.method!==0&&e.method!==8) throw new Error('zipmethod');
+  if(e.usize>max) throw new Error('toolarge'); const dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength), n=u8.byteLength;
+  if(e.lho+30>n||dv.getUint32(e.lho,true)!==0x04034b50) throw new Error('zipbad'); const off=e.lho+30+dv.getUint16(e.lho+26,true)+dv.getUint16(e.lho+28,true);
+  if(off+e.csize>n) throw new Error('zipbad'); return {data:u8.subarray(off,off+e.csize), deflated:e.method===8, usize:e.usize}; }
+// Der Backup-Eintrag: genau ein Treffer auf den Dateinamen (auch in einem Unterordner), sonst 'zipnosn'
+function zipFindSn(u8){ const hits=zipEntries(u8).filter(e=>e.name===ZIP_NAME_SN||e.name.endsWith('/'+ZIP_NAME_SN)); if(!hits.length) throw new Error('zipnosn'); return hits[0]; }
 /* === VAULT-FORMAT END === */
 
 /* ============================================================
@@ -1462,15 +1489,26 @@ const App = (function(){
 
 
   /* ---------- Standard-Notes-Import (v1.1): entschlüsseltes Backup → snImport() (rein) → Rückfrage mit Zusammenfassung → Merge wie beim Backup ---------- */
-  function snErrMsg(e){ const c=e&&e.message; return tr(c==='snencrypted'?'sn.errEncrypted':c==='snformat'?'sn.errFormat':'sn.errJson'); }
+  function snErrMsg(e){ const c=e&&e.message; return tr(c==='snencrypted'?'sn.errEncrypted':c==='snformat'?'sn.errFormat':c==='zipnosn'?'sn.errZipNoSn':c==='zipunsupported'?'sn.errZipUnsupported'
+    :c==='toolarge'?'err.fileLarge':c==='zipenc'||c==='zip64'||c==='zipmulti'||c==='zipmethod'||c==='zipbad'?'sn.errZipBad':'sn.errJson'); }
+  // ZIP-Eintrag entpacken: DecompressionStream('deflate-raw') des Browsers (WebView ab Chromium 103), Deckel MAX_FILE_BYTES beim Lesen — nie mehr in den RAM als erlaubt
+  async function zipInflate(part){ if(!part.deflated) return part.data; if(typeof DecompressionStream!=='function') throw new Error('zipunsupported');
+    let ds; try{ ds=new DecompressionStream('deflate-raw'); }catch(_){ throw new Error('zipunsupported'); }
+    const rd=new Blob([part.data]).stream().pipeThrough(ds).getReader(); const chunks=[]; let n=0;
+    for(;;){ const {done,value}=await rd.read(); if(done) break; n+=value.byteLength; if(n>MAX_FILE_BYTES){ try{ await rd.cancel(); }catch(_){} throw new Error('toolarge'); } chunks.push(value); }
+    const out=new Uint8Array(n); let o=0; for(const c of chunks){ out.set(c,o); o+=c.byteLength; } return out; }
   function importSn(ev){
     const f=ev&&ev.target&&ev.target.files&&ev.target.files[0]; if(!f) return; const input=ev.target; $('sn-msg').textContent='';
-    if(f.size>MAX_FILE_BYTES){ $('sn-msg').textContent=tr('err.fileLarge'); input.value=''; return; }
+    if(f.size>2*MAX_FILE_BYTES){ $('sn-msg').textContent=tr('err.fileLarge'); input.value=''; return; }   // ZIP darf doppelt so groß sein (Items/ ist eine Zweitkopie), der entpackte Eintrag bleibt bei 20 MB
     const r=new FileReader(); r.onerror=()=>{ $('sn-msg').textContent=tr('bk.readErr'); input.value=''; };
-    r.onload=()=>{ input.value=''; if(!VAULT||importSn._busy) return; let res;
-      try{ res=snImport(String(r.result),{trashBudget:Math.max(0,MAX_TRASH-trash().length)}); }catch(e){ $('sn-msg').textContent=snErrMsg(e); return; }
+    r.onload=async()=>{ input.value=''; if(!VAULT||importSn._busy) return; let res;
+      try{ let u8=new Uint8Array(r.result);
+        if(u8.length>=4&&u8[0]===0x50&&u8[1]===0x4b&&u8[2]===3&&u8[3]===4){ const part=zipSlice(u8, zipFindSn(u8), MAX_FILE_BYTES); u8=await zipInflate(part); if(!VAULT||importSn._busy) return; }
+        else if(u8.length>MAX_FILE_BYTES) throw new Error('toolarge');
+        res=snImport(new TextDecoder('utf-8').decode(u8),{trashBudget:Math.max(0,MAX_TRASH-trash().length)}); }
+      catch(e){ if(VAULT) $('sn-msg').textContent=snErrMsg(e); return; }
       snConfirm(res); };
-    r.readAsText(f);
+    r.readAsArrayBuffer(f);
   }
   async function snConfirm(res){
     if(!VAULT||importSn._busy) return; const s=res.stats, sk=s.skipped;
