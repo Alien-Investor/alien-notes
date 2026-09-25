@@ -51,7 +51,7 @@ const I18N = {
   "cheat.bSrc":"**bold**","cheat.b":"bold","cheat.iSrc":"*italic*","cheat.i":"italic","cheat.lSrc":"- item","cheat.l":"• item",
   "cheat.nSrc":"1. first","cheat.n":"1. first","cheat.cSrc":"- [ ] open","cheat.c":"☐ open","cheat.dSrc":"- [x] done","cheat.d":"☑ done",
   "cheat.codeSrc":"`code`","cheat.code":"code","cheat.example":"Insert example",
-  "f.fav":"Favourite","f.pinned":"Pin to the top","f.md":"Markdown preview",
+  "f.fav":"Favourite","f.hide":"No preview","f.pinned":"Pin to the top","f.md":"Markdown preview",
   "ed.done":"Done","ed.copy":"Copy","ed.delete":"Delete",
   "bk.title":"Encrypted backup",
   "bk.intro":"The <code>.notes</code> file holds all notes <strong>encrypted</strong> (Argon2id + AES-256-GCM) — it only opens with the passphrase. Sync it between devices e.g. via Syncthing; nothing is ever exported in plaintext.",
@@ -119,7 +119,7 @@ const I18N = {
   "help.p1":"A <strong>local, encrypted notes app</strong> for notes and checklists. Runs fully <strong>offline</strong> — no cloud, no server, no telemetry, no account. The Android app does not even have an internet permission. Your notes never leave the device in plaintext.",
   "help.warn":"⚠ There is no reset and no backdoor. Forget your passphrase and the notes are gone for good. Make regular backups and keep the passphrase safe.",
   "help.h2":"First steps",
-  "help.l2":"<li><strong>Choose a passphrase</strong> — at least 12 characters, better six dice words (the suggest button builds them from the EFF list). Write it down and store it safely.</li><li><strong>+</strong> creates a note. The title may stay empty — the first line of the text serves as the title. There is no save button: the app saves while you type and when you leave the note.</li><li><strong>Checklists:</strong> switch a note to “Checklist” — every line becomes an entry with a box; “Done to the bottom” sorts ticked entries down. Switching back turns the entries into “- [ ] …” or “- [x] …” lines.</li><li><strong>Categories</strong> work like folders: type one freely (suggestions from existing ones). The list filters via the chips at the top; the ★ chip shows favourites only, the ☐ chip only checklists with open items (both combine with a category). Pinned notes always sit at the top. <strong>Rename:</strong> tap the category chip, then the pencil ✎ next to it — every note of that category moves (including the trash); an empty name means “no category”.</li><li>The search covers title, text, checklist entries and category.</li>",
+  "help.l2":"<li><strong>Choose a passphrase</strong> — at least 12 characters, better six dice words (the suggest button builds them from the EFF list). Write it down and store it safely.</li><li><strong>+</strong> creates a note. The title may stay empty — the first line of the text serves as the title. There is no save button: the app saves while you type and when you leave the note.</li><li><strong>Checklists:</strong> switch a note to “Checklist” — every line becomes an entry with a box; “Done to the bottom” sorts ticked entries down. Switching back turns the entries into “- [ ] …” or “- [x] …” lines.</li><li><strong>Categories</strong> work like folders: type one freely (suggestions from existing ones). The list filters via the chips at the top; the ★ chip shows favourites only, the ☐ chip only checklists with open items (both combine with a category). Pinned notes always sit at the top. <strong>No preview:</strong> the checkbox in the editor makes the list show only the title — against onlookers. <strong>Rename:</strong> tap the category chip, then the pencil ✎ next to it — every note of that category moves (including the trash); an empty name means “no category”.</li><li>The search covers title, text, checklist entries and category.</li>",
   "help.h3":"Markdown preview",
   "help.p3":"Every text note (not checklists) has a “Markdown preview” switch. Editing always stays the plain text field; the preview renders a small subset: headings (<code>#</code> to <code>###</code>), <strong>bold</strong> (<code>**…**</code>), <em>italic</em> (<code>*…*</code>), lists (<code>-</code>, <code>1.</code> — numbered ones always start at 1), boxes (<code>- [ ]</code>, <code>- [x]</code>), code (<code>`…`</code>, ``` blocks or 4 spaces of indentation — so no indented sub-items), rules (<code>---</code>). Links are deliberately shown as text, never clickable — the app has no network anyway.",
   "help.h4":"Locking",
@@ -237,6 +237,7 @@ const T = {
   "copy.manual":{de:"Kopieren nicht möglich — bitte manuell markieren",en:"Copy not possible — please select manually"},
   "copy.empty":{de:"Nichts zu kopieren",en:"Nothing to copy"},
   "what.note":{de:"Notiz",en:"Note"},"what.sel":{de:"Markierung",en:"Selection"},
+  "list.hidden":{de:"Vorschau aus",en:"Preview off"},
   "chip.open":{de:"☐ Offen",en:"☐ Open"},"chip.openTitle":{de:"Nur Checklisten mit offenen Einträgen",en:"Only checklists with open items"},
   "chip.all":{de:"Alle",en:"All"},"chip.none":{de:"Ohne Kategorie",en:"No category"},"chip.fav":{de:"★ Favoriten",en:"★ Favourites"},
   "pill.list":{de:"Liste",en:"List"},"pill.pin":{de:"Oben",en:"Pinned"},
@@ -423,7 +424,11 @@ function bioWrapOk(blob, wrap){ return !!blob&&!!wrap&&blob.w===bufToB64(wrap.ct
 // Bindung des PIN-Slots (nur RAM) an die Datei: KDF-Header (m/t/p/Salz über die AAD-Zeichenkette) + Wrap-IV + Wrap-Ciphertext — jede Abweichung
 // heißt „Datei geändert“, nie „falsche PIN“ (Audit run-8 #1/#10)
 function wrapTag(kdf, wrap){ return dec.decode(aad(kdf,'wrap'))+'|'+bufToB64(wrap.iv)+'|'+bufToB64(wrap.ct); }
-async function encryptBody(obj, dek, kdf){ const iv=rand(12); const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:aad(kdf,'body')}, dek, enc.encode(JSON.stringify(obj)))); return {iv,ct}; }
+// Body-JSON: „hide“ (v1.1 Punkt 6) steht nur in der Datei, wenn es wahr ist — fehlt = false (sanitizeEntry). Sonst wüchse JEDE bestehende Notiz beim
+// ersten Speichern um 13 Byte, und bei einer übergroßen Datei fräße das die 4-KB-Toleranz fürs Löschen (verify-store [7], 200 × 100 KB). Ein
+// Eintragsfeld heißt nie anders als hier gelistet, Titel/Text sind Werte, keine Schlüssel — der Replacer trifft nur das Feld.
+function bodyJson(obj){ return JSON.stringify(obj,(k,v)=>k==='hide'&&v===false?undefined:v); }
+async function encryptBody(obj, dek, kdf){ const iv=rand(12); const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:aad(kdf,'body')}, dek, enc.encode(bodyJson(obj)))); return {iv,ct}; }
 async function decryptBody(body, dek, kdf){ const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:body.iv,additionalData:aad(kdf,'body')}, dek, body.ct); return JSON.parse(dec.decode(pt)); }
 function serializeFile(kdf, wrap, body){
   return JSON.stringify({magic:MAGIC, ver:FILE_VER,
@@ -510,7 +515,7 @@ function normalizeTotp(v){
   return {secret, algorithm:alg, digits, period, issuer:str(o.issuer,CAPS.issuer), label:str(o.label,CAPS.label)};
 }
 function otpauthUri(t){ const lbl=encodeURIComponent(t.label||t.issuer||'Alien Notes'); let s=`otpauth://totp/${lbl}?secret=${t.secret}`; if(t.issuer) s+=`&issuer=${encodeURIComponent(t.issuer)}`; if(t.algorithm!=='SHA1') s+=`&algorithm=${t.algorithm}`; if(t.digits!==6) s+=`&digits=${t.digits}`; if(t.period!==30) s+=`&period=${t.period}`; return s; }
-// Whitelist (12 Felder): baut ein frisches Objekt; ungültige ID → null (Aufrufer verwirft).
+// Whitelist (13 Felder): baut ein frisches Objekt; ungültige ID → null (Aufrufer verwirft). hide = „Keine Vorschau“ (v1.1 Punkt 6): die Liste zeigt nur den Titel.
 // GELÖSCHTE Einträge laufen durch dieselbe Whitelist wie lebende (Papierkorb) — sie behalten ihren Inhalt und
 // verlieren ihn erst durch wipeTrash()/tombstone().
 function sanitizeEntry(e, now){
@@ -528,7 +533,7 @@ function sanitizeEntry(e, now){
   // Typ bestimmt, welche Felder tragen: text (body, Zeilenumbrüche bleiben; md = Markdown-Ansicht je Notiz), list (items)
   const type=entryType(e.type);
   const o={id, type, cat:line(e.cat,CAPS.cat), title:line(e.title,CAPS.title), body:'', items:[],
-           fav:e.fav===true, pinned:e.pinned===true, md:type==='text'&&e.md===true, created, updated, deleted};
+           fav:e.fav===true, pinned:e.pinned===true, md:type==='text'&&e.md===true, hide:e.hide===true, created, updated, deleted};
   if(type==='text') o.body=str(e.body,CAPS.body).replace(/\r\n?/g,'\n');   // Zeilenumbrüche kanonisch (Audit run-1 #8: textarea liefert nie CR)
   else o.items=sanitizeItems(e.items);
   return o;
@@ -606,8 +611,8 @@ function shapeIncoming(local, incoming){
   return out;
 }
 // Löschmarken-Gestalt zu einem Eintrag: inhaltsleer, Zeitstempel unverändert. Basis von tombstone(), isWiped() und wipeTrash().
-// MUSS dieselbe Feldmenge liefern wie sanitizeEntry() (12 Felder) — Test „tombFrom() ist sanitizer-stabil“.
-function tombFrom(e){ return {id:e.id, type:'text', cat:'', title:'', body:'', items:[], fav:false, pinned:false, md:false, created:e.created, updated:e.updated, deleted:e.deleted}; }
+// MUSS dieselbe Feldmenge liefern wie sanitizeEntry() (13 Felder) — Test „tombFrom() ist sanitizer-stabil“.
+function tombFrom(e){ return {id:e.id, type:'text', cat:'', title:'', body:'', items:[], fav:false, pinned:false, md:false, hide:false, created:e.created, updated:e.updated, deleted:e.deleted}; }
 // Sofortige, endgültige Löschmarke: Inhalt weg UND updated=jetzt — schlägt damit jeden älteren Stand auf anderen Geräten.
 function tombstone(e, nowIso){ return tombFrom({id:e.id, created:e.created, updated:nowIso, deleted:nowIso}); }
 // Gelöscht UND inhaltsleer. Stützt sich darauf, dass tombFrom() sanitizer-stabil ist.
@@ -1091,7 +1096,7 @@ const App = (function(){
     ['entry-list','backup-hint','cat-chips','cat-menu','trash-list','f-items','md-view','cp-meter','setup-meter','bio-alert-list','bio-alert'].forEach(id=>{ const n=$(id); if(n) n.replaceChildren(); });
     ['bk-msg','import-msg','sn-msg','about-line','trash-msg','trash-n','ed-count','ed-meta','add-title','totp-secret'].forEach(id=>{ const n=$(id); if(n) n.textContent=''; });
     ['f-title','f-cat','f-body','search','import-pass','cp-cur','cp1','cp2','lock-pass','lock-pin','pin-new','pin-rep','pin-pass','setup-pass1','setup-pass2','totp-code','totp-verify','bio-pass','vault-file','sn-file'].forEach(id=>{ const n=$(id); if(n) n.value=''; });
-    ['f-fav','f-pinned','f-md','bio-keep','set-secure'].forEach(id=>{ const n=$(id); if(n) n.checked=false; });   // „auch nach Neustart“ nie stehen lassen (ab Werk aus)
+    ['f-fav','f-pinned','f-md','f-hide','bio-keep','set-secure'].forEach(id=>{ const n=$(id); if(n) n.checked=false; });   // „auch nach Neustart“ nie stehen lassen (ab Werk aus)
     setEntryType('text'); setMdMode('edit'); err('add-err'); err('cp-err'); err('lock-err'); err('setup-err'); err('totp-err'); err('totp-setup-err'); err('bio-err'); bioMsg(''); err('pin-err'); pinMsg('');
     maskInputs(''); closeMenus(); dialogClose(false); hideToast();   // offene Rückfrage verfällt, der Aufrufer sieht false; Toast samt „Rückgängig“ weg
     hide('help-overlay'); hide('import-pass-box'); hide('totp-setup');
@@ -1241,6 +1246,7 @@ const App = (function(){
   function toggleOpenFilter(){ openFilter=!openFilter; renderList(); }
   // Vorschauzeile: erste Textzeile, die nicht der Titel ist (Titel kann aus der ersten Zeile stammen); Checkliste: Fortschritt + erster offener Eintrag
   function preview(e){
+    if(e.hide) return tr('list.hidden');   // „Keine Vorschau“ (v1.1 Punkt 6): nur der Titel steht in der Liste — gegen Mitleser
     if(e.type==='list'){ const n=e.items.length; if(!n) return tr('list.itemsEmpty'); const open=e.items.find(x=>!x.done); return tr('list.progress',{d:n-e.items.filter(x=>!x.done).length,n})+(open?' · '+open.text:''); }
     const lines=e.body.split('\n').map(l=>line(l,120)).filter(Boolean); if(lines.length&&lines[0]===e.title) lines.shift(); return (lines[0]||'').replace(/^#{1,3}\s+|^(?:[-*+]|\d{1,9}[.)])\s+(?:\[[ xX]\]\s+)?/,''); }   // Markdown-Marker der Vorschau abstreifen
   function renderList(){
@@ -1339,10 +1345,10 @@ const App = (function(){
     if(!editing||formType!=='list') return;                      // während der Rückfrage gesperrt
     itemRows().forEach(r=>{ $(r.dataset.c).checked=false; r.classList.remove('done'); }); editorChanged(); renderCounter(); }
   function relabelItemRows(){ itemRows().forEach(r=>{ $(r.dataset.t).placeholder=tr('ed.itemPh'); const b=r.querySelector('.idel'); b.title=tr('ed.itemDel'); b.setAttribute('aria-label',tr('ed.itemDel')); }); }
-  function resetForm(){ ['f-title','f-cat','f-body'].forEach(id=>$(id).value=''); ['f-fav','f-pinned','f-md'].forEach(id=>$(id).checked=false); clearItemRows(); $('md-seg').classList.add('hidden'); hide('md-cheat'); setMdMode('edit'); closeMenus(); err('add-err'); setEntryType('text'); $('ed-count').textContent=''; $('ed-meta').textContent=''; $('ed-del').classList.add('hidden'); }
+  function resetForm(){ ['f-title','f-cat','f-body'].forEach(id=>$(id).value=''); ['f-fav','f-pinned','f-md','f-hide'].forEach(id=>$(id).checked=false); clearItemRows(); $('md-seg').classList.add('hidden'); hide('md-cheat'); setMdMode('edit'); closeMenus(); err('add-err'); setEntryType('text'); $('ed-count').textContent=''; $('ed-meta').textContent=''; $('ed-del').classList.add('hidden'); }
   function newEntry(t){ if(editing) closeEditor(); editId=null; editBase=null; editing=true; resetForm(); if(t==='list') setEntryType('list'); if(catFilter) $('f-cat').value=catFilter; tab('add'); setTimeout(()=>$(formType==='list'?'f-title':'f-body').focus(),80); if(formType==='list') addItemRow(); }
   function openEditor(id){ const e=byId(id); if(!e) return toast(tr('toast.noEntry')); if(editing) closeEditor(); editId=e.id; editing=true; resetForm(); setEntryType(e.type);
-    $('f-title').value=e.title; $('f-cat').value=e.cat; $('f-fav').checked=e.fav; $('f-pinned').checked=e.pinned;
+    $('f-title').value=e.title; $('f-cat').value=e.cat; $('f-fav').checked=e.fav; $('f-pinned').checked=e.pinned; $('f-hide').checked=e.hide;
     if(e.type==='text'){ $('f-body').value=e.body; $('f-md').checked=e.md; $('md-seg').classList.toggle('hidden',!e.md); setMdMode(e.md?'view':'edit'); }
     else setItemRows(e.items);
     $('ed-meta').textContent=tr('ed.meta',{c:fmtDate(e.created),u:fmtDate(e.updated)}); $('ed-del').classList.remove('hidden'); renderCounter(); tab('add'); markSel();
@@ -1351,8 +1357,8 @@ const App = (function(){
   // Entwurf aus dem Formular; leerer Titel → erste Zeile des Textes (Konzept: Easy-Notes-Bedienung)
   function readDraft(){ const t=formType, body=t==='text'?$('f-body').value:'', items=t==='list'?readItemRows():[];
     let title=line($('f-title').value,CAPS.title); if(!title&&t==='text'){ const first=body.split('\n').map(l=>line(l,CAPS.title)).find(Boolean); title=first||''; }
-    return {type:t, title, body, items, cat:$('f-cat').value, fav:$('f-fav').checked, pinned:$('f-pinned').checked, md:t==='text'&&$('f-md').checked}; }
-  const sig=e=>canon({type:e.type,title:e.title,body:e.body,items:e.items,cat:e.cat,fav:e.fav,pinned:e.pinned,md:e.md});
+    return {type:t, title, body, items, cat:$('f-cat').value, fav:$('f-fav').checked, pinned:$('f-pinned').checked, md:t==='text'&&$('f-md').checked, hide:$('f-hide').checked}; }
+  const sig=e=>canon({type:e.type,title:e.title,body:e.body,items:e.items,cat:e.cat,fav:e.fav,pinned:e.pinned,md:e.md,hide:e.hide});
   const isBlank=e=>!e.title&&!e.body.trim()&&!e.items.length;
   function editorChanged(){ if(!editing) return; clearTimeout(autosaveTimer); autosaveTimer=setTimeout(()=>commitEditor(true),AUTOSAVE_MS); renderCounter(); }
   // Schreiben: dirty-Prüfung gegen den gespeicherten Stand, dann Snapshot → VAULT → persist; Rollback bei Fehler (Editor bleibt offen, Toast)

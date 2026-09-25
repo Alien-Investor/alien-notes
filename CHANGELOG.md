@@ -23,6 +23,9 @@ Name legt zusammen, ein leerer Name heißt „ohne Kategorie“. Die Rückfrage 
 
 Chip „☐ Offen“: zeigt nur Checklisten mit unerledigten Einträgen, kombinierbar mit einer Kategorie; erscheint nur, wenn es solche gibt.
 
+„Keine Vorschau“ je Notiz: ein Kästchen im Editor lässt die Liste nur den Titel zeigen — gegen Mitleser über die Schulter. Die Suche findet
+den Inhalt weiterhin. Neues Feld im Datei-Format (ältere Fassungen lesen die Datei weiter, das Feld fällt dort weg).
+
 ## v0.1 — 2026-09-24
 
 Grundgerüst aus Alien Pass v1.8: Repo, App-Design-Kit, Datei-Format `AINV1` (Argon2id + AES-256-GCM, eigene Datei-Endung `.notes`),

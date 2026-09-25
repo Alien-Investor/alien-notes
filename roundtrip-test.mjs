@@ -26,12 +26,12 @@ const V = new Function(region + `
     encryptBody,decryptBody,serializeFile,parseFile,kdfOk,KDF_DEFAULT,KDF_BOUNDS,MAX_ENTRIES,MAX_FILE_BYTES,MAX_READ_BYTES,emptyVault,sanitizeEntry,sanitizeEntries,sanitizeVault,sanitizeSettings,
     SETTINGS_DEFAULT,SETTINGS_ALLOWED,BG_NEVER,normalizeTotp,otpauthUri,sanitizeItems,ITEMS_MAX,ENTRY_TYPES,CAPS,mergeEntries,winner,canon,purgeTombstones,tombstone,
     totpCode,totpRemaining,genWords,passStrength,passCheck,MAX_TOMBSTONES,liveCount,tombFrom,isWiped,wipeTrash,shapeIncoming,TRASH_DAYS,MAX_TRASH,TOMBSTONE_DAYS,ts,
-    dupKey,entryType,line,bioKey,parseBioBlob,serializeBioBlob,bioWrapOk,wrapTag,mdParse,mdInline,noteText,linesToItems,itemsToBody,snImport,snId,htmlToText,lexToMd,zipEntries,zipSlice,zipFindSn,ZIP_NAME_SN,renameCatEntries};`)();
+    dupKey,entryType,line,bioKey,parseBioBlob,serializeBioBlob,bioWrapOk,wrapTag,mdParse,mdInline,noteText,linesToItems,itemsToBody,snImport,snId,htmlToText,lexToMd,zipEntries,zipSlice,zipFindSn,ZIP_NAME_SN,renameCatEntries,bodyJson};`)();
 
 let pass=0, fail=0; const ok=(c,m)=>{ if(c){pass++;console.log('  ✓',m);} else {fail++;console.log('  ✗ FEHLER:',m);} };
 const throwsWith=async(fn,code,m)=>{ try{ await fn(); ok(false,m+' (kein Fehler)'); }catch(e){ ok(e&&e.message===code,m+' → '+(e&&e.message)); } };
 const KDF_TEST={m:8192,t:1,p:1};   // klein für schnelle Tests; Format identisch
-const FIELDS=12;                   // Whitelist-Felder eines Eintrags: id,type,cat,title,body,items,fav,pinned,md,created,updated,deleted
+const FIELDS=13;                   // Whitelist-Felder eines Eintrags: id,type,cat,title,body,items,fav,pinned,md,hide,created,updated,deleted
 
 async function createVault(pass, vault, kdfP){
   const kdf=Object.assign({}, kdfP||KDF_TEST, {salt:V.rand(16)});
@@ -241,6 +241,13 @@ console.log('\n[9] Notizen-Modell: Typen text/list, Checklisten-Zeilen, Markdown
   ok(V.sanitizeItems('nope').length===0&&V.sanitizeItems(null).length===0&&V.sanitizeItems({}).length===0,'kaputte items → [] (nie null)');
   const u=V.sanitizeEntry(E({type:'bogus',cat:'a'.repeat(100),body:'b'}),now);
   ok(u.type==='text'&&u.body==='b'&&u.cat.length===40,'unbekannter Typ → text; cat auf 40 gekappt');
+  // „Keine Vorschau“ (v1.1 Punkt 6): 13. Feld hide, nur echtes true, für beide Typen, Tombstone false, Signatur-relevant im Editor
+  ok(V.sanitizeEntry(E({type:'text',body:'x',hide:true}),now).hide===true&&V.sanitizeEntry(E({type:'list',items:[{text:'a'}],hide:true}),now).hide===true&&V.sanitizeEntry(E({type:'text',body:'x',hide:'ja'}),now).hide===false&&V.sanitizeEntry(E({type:'text',body:'x'}),now).hide===false,'hide: nur echtes true, beide Typen, Vorgabe false');
+  ok(V.tombFrom(V.sanitizeEntry(E({type:'text',body:'x',hide:true}),now)).hide===false&&V.isWiped(V.tombFrom(V.sanitizeEntry(E({type:'text',body:'x',hide:true,deleted:'2026-01-03T00:00:00.000Z'}),now))),'tombFrom: hide false, gewipt');
+  ok(V.dupKey(V.sanitizeEntry(E({type:'text',body:'x',hide:true}),now))===V.dupKey(V.sanitizeEntry(E({type:'text',body:'x'}),now)),'dupKey ignoriert hide (wie fav/pinned/md)');
+  { const j=V.bodyJson({entries:[V.sanitizeEntry(E({type:'text',body:'x',title:'hide'}),now),V.sanitizeEntry(E({type:'text',body:'x',hide:true}),now)],settings:{hide:false}});
+    ok(!j.includes('"hide":false')&&j.includes('"hide":true')&&j.includes('"title":"hide"')&&(j.match(/"hide"/g)||[]).length===2,'Datei-JSON: hide nur wenn wahr (bestehende Notizen bleiben byteidentisch), Werte „hide“ unberührt');
+    const back=V.sanitizeVault(JSON.parse(j),now); ok(back.entries[0].hide===false&&back.entries[1].hide===true&&Object.keys(back.entries[0]).length===FIELDS,'gelesen: fehlt = false, '+FIELDS+' Felder'); }
   ok(JSON.stringify(V.ENTRY_TYPES)==='["text","list"]'&&V.entryType('list')==='list'&&V.entryType('login')==='text','ENTRY_TYPES = text|list, alles andere → text');
   // Tombstone: für JEDEN Typ dieselbe Feldmenge wie sanitizeEntry (Muster Alien Pass Test [10])
   for(const type of ['text','list']){
