@@ -184,6 +184,11 @@ input[type=search]::-webkit-search-cancel-button{-webkit-appearance:none;appeara
 .dlg-msg{font-size:.86rem;line-height:1.6;color:var(--neon);white-space:pre-line;overflow-wrap:break-word;}
 .dlg-btns{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap;}
 .dlg-btns .btn{flex:1 1 auto;padding:10px 12px;letter-spacing:1px;font-size:.72rem;}
+/* ===== Toast mit Knopf („Rückgängig“ nach dem Löschen — Alien Notes v1.1, am Gerät bestätigt 25.09.2026) =====
+   toast(msg,{action:{label,fn},ms}); ohne Aktion trägt der Knopf keinen Text. Sperren räumt Toast und Aktion (hideToast). */
+.toast{display:flex;align-items:center;justify-content:center;gap:12px;}
+.toast-btn{flex-shrink:0;background:none;border:1px solid var(--neon-mid);border-radius:3px;color:var(--neon);font-family:'Orbitron',sans-serif;font-weight:700;font-size:.66rem;letter-spacing:1px;text-transform:uppercase;padding:6px 10px;cursor:pointer;}
+.toast-btn:hover{background:var(--neon-dim);}
 .help-overlay{position:fixed;inset:0;background:rgba(0,8,6,.975);z-index:100;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .help-inner{max-width:760px;margin:0 auto;padding:0 18px 60px;}
 .help-head{display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:0;background:rgba(0,8,6,.99);padding:16px 0 12px;border-bottom:1px solid var(--neon-dim);margin-bottom:6px;z-index:2;}
