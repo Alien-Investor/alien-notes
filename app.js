@@ -1214,10 +1214,12 @@ const App = (function(){
     if(!cs.length&&!hasFav){ catFilter=null; return; }
     const hasNone=all.some(e=>!e.cat);
     if(catFilter!==null&&(catFilter===''?!hasNone:!cs.includes(catFilter))) catFilter=null;   // Filter auf verschwundene Kategorie zurücksetzen
-    const mk=(label,val,cls)=>{ const b=el('button','chip'+(cls?' '+cls:''),label); if(val===null) b.dataset.action='clearCatFilter'; else { b.dataset.action='setCatFilter'; b.dataset.arg=val; } box.appendChild(b); return b; };
+    const mk=(label,val,cls,parent)=>{ const b=el('button','chip'+(cls?' '+cls:''),label); if(val===null) b.dataset.action='clearCatFilter'; else { b.dataset.action='setCatFilter'; b.dataset.arg=val; } (parent||box).appendChild(b); return b; };
     mk(tr('chip.all'),null,(catFilter===null&&!favFilter)?'on':'');
     if(hasFav){ const b=el('button','chip fav'+(favFilter?' on':''),tr('chip.fav')); b.dataset.action='toggleFavFilter'; box.appendChild(b); }
-    for(const c of cs){ mk(c,c,catFilter===c?'on':''); if(catFilter===c){ const b=el('button','chip edit','✎'); b.dataset.action='renameCat'; b.title=tr('chip.rename'); b.setAttribute('aria-label',tr('chip.rename')); box.appendChild(b); } }
+    for(const c of cs){ if(catFilter!==c){ mk(c,c,''); continue; }
+      const pair=el('span','chip-pair'); box.appendChild(pair); mk(c,c,'on',pair);   // Chip + Stift als Paar: brechen bei langem Namen gemeinsam um (Gerätetest 25.09.2026)
+      const b=el('button','chip edit','✎'); b.dataset.action='renameCat'; b.title=tr('chip.rename'); b.setAttribute('aria-label',tr('chip.rename')); pair.appendChild(b); }
     if(hasNone) mk(tr('chip.none'),'',catFilter===''?'on':'');
   }
   // Kategorie umbenennen (v1.1 Punkt 4): Stift-Chip neben der gefilterten Kategorie → Dialog mit Eingabefeld → renameCatEntries (rein) → persist

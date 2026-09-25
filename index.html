@@ -36,8 +36,9 @@ html.desk .no-desk{display:none;}
 .pill.type{color:var(--text-mid);border-color:var(--border);}
 .pill.cat{color:var(--yellow);border-color:rgba(255,204,68,.35);text-transform:none;letter-spacing:.5px;}
 .chip.fav{color:var(--yellow);}
-.chip.edit{padding:4px 8px;color:var(--neon);border-color:var(--neon-mid);}   /* Stift neben der gefilterten Kategorie (Umbenennen) */
-.dlg input{margin-top:12px;}
+.chip-pair{display:inline-flex;gap:6px;align-items:center;max-width:100%;}   /* gefilterte Kategorie + Stift bleiben zusammen */
+.chip-pair .chip.on{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.chip.edit{padding:4px 8px;color:var(--neon);border-color:var(--neon-mid);flex-shrink:0;}   /* Stift neben der gefilterten Kategorie (Umbenennen) */
 .chip.fav.on{color:var(--yellow);border-color:rgba(255,204,68,.5);background:rgba(255,204,68,.1);}
 /* Editor */
 #f-body{min-height:42vh;line-height:1.55;font-size:.95rem;resize:vertical;}

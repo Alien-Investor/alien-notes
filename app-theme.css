@@ -184,6 +184,7 @@ input[type=search]::-webkit-search-cancel-button{-webkit-appearance:none;appeara
 .dlg-msg{font-size:.86rem;line-height:1.6;color:var(--neon);white-space:pre-line;overflow-wrap:break-word;}
 .dlg-btns{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap;}
 .dlg-btns .btn{flex:1 1 auto;padding:10px 12px;letter-spacing:1px;font-size:.72rem;}
+.dlg input{margin-top:12px;}   /* Eingabefeld (prompt()-Ersatz, Alien Notes v1.1 Kategorie umbenennen, Gerät 25.09.2026) */
 /* ===== Toast mit Knopf („Rückgängig“ nach dem Löschen — Alien Notes v1.1, am Gerät bestätigt 25.09.2026) =====
    toast(msg,{action:{label,fn},ms}); ohne Aktion trägt der Knopf keinen Text. Sperren räumt Toast und Aktion (hideToast). */
 .toast{display:flex;align-items:center;justify-content:center;gap:12px;}
