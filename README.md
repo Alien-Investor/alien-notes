@@ -193,7 +193,7 @@ Schlüsselableitung schafft, und schlägt eine passende Argon2-Stufe vor.
   vor 1.1) über die neue Fläche: Standard-Notes-Import samt ZIP-Leser, Rückfrage-Dialog, Rückgängig, Mehrfachauswahl. Ergebnis: kein Weg vom
   fremden Backup in Markup, Skript oder Prototyp; fünf Funde ohne Fremdakteur (zwei mittlerer Schwere: ein seit 0.1 bestehender Wettlauf beim
   Speichern auf Android, der eine Änderung still verlieren konnte, und ein Rückgängig-Weg über die 5.000er-Grenze, der die Datei aussperrte; drei
-  niedriger Schwere rund um die Mehrfachauswahl), alle vor dem Release behoben und mit Regressionstests belegt.
+  niedriger Schwere rund um die Mehrfachauswahl und das Löschen während des Autosaves), alle vor dem Release behoben und mit Regressionstests belegt.
 - **Grenzen, ehrlich benannt**: Im Hintergrund leert die Android-App die Zwischenablage nur, solange Android sie nicht eingefroren hat
   (meist nach dem zweiten App-Wechsel); danach erst beim Zurückkehren. Ab Android 13 leert das System nach etwa 1 h selbst, davor nicht.
   Die Tastatur lernt aus dem Getippten (eine WebView kann das nicht abschalten) — wer das nicht will, nutzt eine Tastatur ohne
