@@ -1,6 +1,6 @@
 # Changelog — Alien Notes
 
-## v1.1 — in Arbeit
+## v1.1 — 2026-09-26
 
 Rückfragen (Löschen und endgültig Löschen, Papierkorb leeren, Umwandeln, Haken zurücksetzen, schwache Passphrase, Import-Datei mit hohem
 Argon2-Speicherbedarf, Pforten deaktivieren, Notizen löschen, Standard-Notes-Import) erscheinen als eigener Dialog im App-Design statt als Systemdialog. Grund: Der Android-Systemdialog erbt den

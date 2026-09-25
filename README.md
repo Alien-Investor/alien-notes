@@ -104,8 +104,16 @@ Schlüsselableitung schafft, und schlägt eine passende Argon2-Stufe vor.
 - **Markdown-Ansicht je Notiz** (Schalter, ab Werk aus): Überschriften (`#` bis `###`), **fett**, *kursiv*, Listen, Kästchen (`- [ ]`,
   `- [x]`), Code, Trennlinien. Eigene kleine Untermenge, kein Fremd-Renderer, kein HTML, Links bleiben bewusst reiner Text — die App hat
   ohnehin kein Netz. Ein Spickzettel im Editor zeigt „so tippen → so sieht es aus“ und fügt auf Wunsch eine Beispielnotiz ein.
-- **Kategorien** wie Ordner (frei eintippen, Vorschläge aus vorhandenen, Filter-Chips über der Liste), **Favoriten**, **angeheftete** Notizen
-  ganz oben, Suche über Titel, Text, Checklisten-Einträge und Kategorie. „Datum einfügen“ setzt Datum und Uhrzeit an den Cursor.
+- **Kategorien** wie Ordner (frei eintippen, Vorschläge aus vorhandenen, Filter-Chips über der Liste, umbenennen mit allen Notizen darin),
+  **Favoriten**, **angeheftete** Notizen ganz oben, Chip „Offen“ für Checklisten mit unerledigten Einträgen, Suche über Titel, Text,
+  Checklisten-Einträge und Kategorie. „Datum einfügen“ setzt Datum und Uhrzeit an den Cursor.
+- **Umzug von Standard Notes** (seit 1.1): liest ein entschlüsseltes Standard-Notes-Backup — das heruntergeladene ZIP direkt oder die Textdatei
+  daraus. Klartext-, Markdown-, Code-, Rich-Text- und Super-Notizen werden Notizen, Checklisten werden Checklisten, der erste Tag wird die
+  Kategorie. Authenticator-Einträge (2FA), Spreadsheets und Dateien werden nie übernommen; ein zweiter Import legt keine Dubletten an.
+- **Mehrere auf einmal** (seit 1.1): Notizen auswählen und gemeinsam in den Papierkorb legen (ein „Rückgängig“ für alle, höchstens 200 auf
+  einmal), in eine Kategorie setzen oder als Favorit markieren.
+- **„Rückgängig“ nach dem Löschen** (sechs Sekunden), **„Keine Vorschau“** je Notiz (die Liste zeigt nur den Titel), **drei Schriftgrößen**, und
+  jede Rückfrage ist ein Dialog im App-Design — der Android-Systemdialog erbt den Screenshot-Schutz nicht (seit 1.1).
 - **Kopieren** legt die ganze Notiz in die Zwischenablage; die App leert sie nach der eingestellten Zeit (ab Werk 30 s, abschaltbar) und beim
   Sperren. In der Android-App ist Kopiertes als **sensibel** markiert — die System-Vorschau zeigt den Inhalt nicht (Android 13+).
 - **Sperre, lockerer als beim Passwort-Manager:** ab Werk keine Sperre nach Inaktivität und im Hintergrund erst nach 30 Minuten (beides
@@ -181,7 +189,11 @@ Schlüsselableitung schafft, und schlägt eine passende Argon2-Stufe vor.
   keine Klartext-Lecks, keine Injektion; sieben Funde niedriger Schwere (Wettläufe zwischen Autosave und Sperre, Import bei offenem Editor,
   Laufzeitfalle im Markdown-Parser, unehrliche Rückfragen beim Typwechsel) und ein Hinweis, alle vor dem Release behoben. Ein Nachlauf
   prüfte den danach eingebauten Dateispeicher und die 20-MB-Schreibgrenze: ein Fund (die Toleranz der Grenze wanderte mit und ließ kleine
-  Schreibvorgänge die Datei schrittweise über die Lesegrenze treiben), ebenfalls vor dem Release behoben.
+  Schreibvorgänge die Datei schrittweise über die Lesegrenze treiben), ebenfalls vor dem Release behoben. **Zweiter interner Audit** (25./26.09.2026,
+  vor 1.1) über die neue Fläche: Standard-Notes-Import samt ZIP-Leser, Rückfrage-Dialog, Rückgängig, Mehrfachauswahl. Ergebnis: kein Weg vom
+  fremden Backup in Markup, Skript oder Prototyp; fünf Funde ohne Fremdakteur (zwei mittlerer Schwere: ein seit 0.1 bestehender Wettlauf beim
+  Speichern auf Android, der eine Änderung still verlieren konnte, und ein Rückgängig-Weg über die 5.000er-Grenze, der die Datei aussperrte; drei
+  niedriger Schwere rund um die Mehrfachauswahl), alle vor dem Release behoben und mit Regressionstests belegt.
 - **Grenzen, ehrlich benannt**: Im Hintergrund leert die Android-App die Zwischenablage nur, solange Android sie nicht eingefroren hat
   (meist nach dem zweiten App-Wechsel); danach erst beim Zurückkehren. Ab Android 13 leert das System nach etwa 1 h selbst, davor nicht.
   Die Tastatur lernt aus dem Getippten (eine WebView kann das nicht abschalten) — wer das nicht will, nutzt eine Tastatur ohne

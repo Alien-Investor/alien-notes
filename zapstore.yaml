@@ -24,8 +24,14 @@ description: |
     the title may stay empty, the first line then serves as the title
   - Markdown preview per note (off by default): headings, bold, italic, lists, boxes, code, rules — a small own subset, no third-party
     renderer, no HTML, links stay plain text; a cheat sheet in the editor shows "type this → looks like this"
-  - Categories like folders (filter chips, suggestions), favourites, pinned notes, search across title, text, checklist entries and category,
-    "insert date"
+  - Categories like folders (filter chips, suggestions, rename a category with all its notes), favourites, pinned notes, search across title,
+    text, checklist entries and category, "insert date", an "Open" chip for checklists with unfinished entries
+  - Moving from Standard Notes (since 1.1): reads a decrypted Standard Notes backup — the downloaded ZIP directly or the text file inside — and
+    turns plain, Markdown, code, rich-text and Super notes into notes, checklists into checklists, the first tag into the category; 2FA
+    (Authenticator) entries, spreadsheets and files are never imported; a second import creates no duplicates
+  - Select several notes at once (since 1.1): trash (with one "Undo" for all, at most 200 at once), set a category or the favourite mark
+  - "Undo" after deleting (six seconds), "no preview" per note (the list shows only the title), three font sizes, and every confirmation is
+    an in-app dialog — the Android system dialog does not inherit the screenshot protection
   - Copy puts the whole note into the clipboard; auto-clear after 15/30/60 s (default 30 s, can be switched off) and on lock; copied content
     is flagged sensitive so the Android 13+ system preview hides it
   - Locking, more relaxed than a password manager: by default no lock after inactivity and in the background only after 30 minutes
