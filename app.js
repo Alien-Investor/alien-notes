@@ -60,7 +60,7 @@ const I18N = {
   "bk.intro":"The <code>.notes</code> file holds all notes <strong>encrypted</strong> (Argon2id + AES-256-GCM) — it only opens with the passphrase. Sync it between devices e.g. via Syncthing; nothing is ever exported in plaintext.",
   "bk.export":"Create backup (.notes)",
   "bk.importTitle":"Import backup (merge)",
-  "sn.title":"Import from Standard Notes","sn.pick":"Choose backup file",
+  "sn.title":"Import from Standard Notes","sn.pick":"Choose backup file","list.selTitle":"Select several notes","sel.all":"All","sel.none":"None","sel.trash":"Trash","sel.cat":"Category…","sel.cancel":"Cancel",
   "sn.intro":"Reads a <strong>decrypted</strong> Standard Notes backup — the downloaded ZIP directly, or the file <code>Standard Notes Backup and Import File.txt</code> from it. Plain, Markdown, code, checklist, rich-text and Super notes become notes and checklists, the first tag becomes the category, the trash stays the trash. <strong>Authenticator entries are never imported</strong> (2FA secrets belong in Aegis). A confirmation shows what arrives before anything is written. <strong>Delete the decrypted file afterwards</strong> — it is plain text.",
   "help.hSn":"Moving from Standard Notes",
   "help.pSn":"In Standard Notes open the account menu → <strong>Backups</strong> → <strong>Download decrypted backup</strong>. Under Backup → “Import from Standard Notes” pick the downloaded ZIP directly (the app reads only the file <code>Standard Notes Backup and Import File.txt</code> inside it) or that file itself. Plain, Markdown, code and rich-text notes become text notes (Markdown with the Markdown view on), Super notes are translated into the small Markdown subset (tables as text lines, images and files as placeholders), checklists become checklists. The first tag becomes the category (“Parent/Child” for nested tags), pinned stays pinned, starred becomes a favourite, the trash lands in the trash with a fresh 30-day period. <strong>Never imported:</strong> Authenticator entries (2FA secrets — move them to Aegis by hand), spreadsheets, files. A second import of the same backup does not create duplicates; the newer version of a note wins. <strong>Afterwards delete the decrypted backup and the ZIP</strong> — they contain all notes in plain text.",
@@ -122,7 +122,7 @@ const I18N = {
   "help.p1":"A <strong>local, encrypted notes app</strong> for notes and checklists. Runs fully <strong>offline</strong> — no cloud, no server, no telemetry, no account. The Android app does not even have an internet permission. Your notes never leave the device in plaintext.",
   "help.warn":"⚠ There is no reset and no backdoor. Forget your passphrase and the notes are gone for good. Make regular backups and keep the passphrase safe.",
   "help.h2":"First steps",
-  "help.l2":"<li><strong>Choose a passphrase</strong> — at least 12 characters, better six dice words (the suggest button builds them from the EFF list). Write it down and store it safely.</li><li><strong>+</strong> creates a note. The title may stay empty — the first line of the text serves as the title. There is no save button: the app saves while you type and when you leave the note.</li><li><strong>Checklists:</strong> switch a note to “Checklist” — every line becomes an entry with a box; “Done to the bottom” sorts ticked entries down. Switching back turns the entries into “- [ ] …” or “- [x] …” lines.</li><li><strong>Categories</strong> work like folders: type one freely (suggestions from existing ones). The list filters via the chips at the top; the ★ chip shows favourites only, the ☐ chip only checklists with open items (both combine with a category). Pinned notes always sit at the top. <strong>No preview:</strong> the checkbox in the editor makes the list show only the title — against onlookers. <strong>Rename:</strong> tap the category chip, then the pencil ✎ next to it — every note of that category moves (including the trash); an empty name means “no category”.</li><li><strong>Appearance:</strong> Settings → Appearance offers Black/Soft and three font sizes. Both are device settings — not in the file, not in the backup.</li><li>The search covers title, text, checklist entries and category.</li>",
+  "help.l2":"<li><strong>Choose a passphrase</strong> — at least 12 characters, better six dice words (the suggest button builds them from the EFF list). Write it down and store it safely.</li><li><strong>+</strong> creates a note. The title may stay empty — the first line of the text serves as the title. There is no save button: the app saves while you type and when you leave the note.</li><li><strong>Checklists:</strong> switch a note to “Checklist” — every line becomes an entry with a box; “Done to the bottom” sorts ticked entries down. Switching back turns the entries into “- [ ] …” or “- [x] …” lines.</li><li><strong>Categories</strong> work like folders: type one freely (suggestions from existing ones). The list filters via the chips at the top; the ★ chip shows favourites only, the ☐ chip only checklists with open items (both combine with a category). Pinned notes always sit at the top. <strong>No preview:</strong> the checkbox in the editor makes the list show only the title — against onlookers. <strong>Rename:</strong> tap the category chip, then the pencil ✎ next to it — every note of that category moves (including the trash); an empty name means “no category”.</li><li><strong>Several at once:</strong> the ☑ button next to the trash turns on checkboxes; tap rows to pick them (search and chips keep working, “All” picks every row shown). The bar at the bottom moves the picked notes to the trash (one “Undo” for all), sets a category or the favourite mark.</li><li><strong>Appearance:</strong> Settings → Appearance offers Black/Soft and three font sizes. Both are device settings — not in the file, not in the backup.</li><li>The search covers title, text, checklist entries and category.</li>",
   "help.h3":"Markdown preview",
   "help.p3":"Every text note (not checklists) has a “Markdown preview” switch. Editing always stays the plain text field; the preview renders a small subset: headings (<code>#</code> to <code>###</code>), <strong>bold</strong> (<code>**…**</code>), <em>italic</em> (<code>*…*</code>), lists (<code>-</code>, <code>1.</code> — numbered ones always start at 1), boxes (<code>- [ ]</code>, <code>- [x]</code>), code (<code>`…`</code>, ``` blocks or 4 spaces of indentation — so no indented sub-items), rules (<code>---</code>). Links are deliberately shown as text, never clickable — the app has no network anyway.",
   "help.h4":"Locking",
@@ -241,6 +241,12 @@ const T = {
   "copy.empty":{de:"Nichts zu kopieren",en:"Nothing to copy"},
   "what.note":{de:"Notiz",en:"Note"},"what.sel":{de:"Markierung",en:"Selection"},
   "list.hidden":{de:"Vorschau aus",en:"Preview off"},
+  "sel.count":{de:"{n} ausgewählt",en:"{n} selected"},"sel.count1":{de:"1 ausgewählt",en:"1 selected"},"sel.fav":{de:"★ Favorit",en:"★ Favourite"},"sel.unfav":{de:"☆ Favorit weg",en:"☆ Unfavourite"},
+  "confirm.selDelete":{de:"{n} Notizen in den Papierkorb legen? {d} Tage wiederherstellbar, danach endgültig.",en:"Move {n} notes to the trash? Restorable for {d} days, then gone for good."},
+  "confirm.selDeleteFull":{de:"{n} Notizen in den Papierkorb legen? Der Papierkorb fasst {m} — dabei werden die {o} ältesten darin sofort und endgültig vernichtet.",en:"Move {n} notes to the trash? The trash holds {m} — the {o} oldest in it will be destroyed immediately and for good."},
+  "confirm.selCat":{de:"Kategorie für {n} Notizen setzen (leer = ohne Kategorie):",en:"Set the category for {n} notes (empty = no category):"},
+  "toast.selTrashed":{de:"{n} Notizen im Papierkorb",en:"{n} notes in the trash"},"toast.selRestored":{de:"{n} Notizen wiederhergestellt",en:"{n} notes restored"},
+  "toast.selFav":{de:"{n} Notizen als Favorit",en:"{n} notes marked favourite"},"toast.selUnfav":{de:"Favorit entfernt bei {n} Notizen",en:"Favourite removed from {n} notes"},
   "chip.open":{de:"☐ Offen",en:"☐ Open"},"chip.openTitle":{de:"Nur Checklisten mit offenen Einträgen",en:"Only checklists with open items"},
   "chip.all":{de:"Alle",en:"All"},"chip.none":{de:"Ohne Kategorie",en:"No category"},"chip.fav":{de:"★ Favoriten",en:"★ Favourites"},
   "pill.list":{de:"Liste",en:"List"},"pill.pin":{de:"Oben",en:"Pinned"},
@@ -859,6 +865,15 @@ function zipFindSn(u8){ const hits=zipEntries(u8).filter(e=>e.name===ZIP_NAME_SN
 // cat=to und updated=nowIso (⇒ die Umbenennung reist beim Sync). to='' heißt „ohne Kategorie“. Liefert ein NEUES Array (Persist-Regel) und die Anzahl.
 function renameCatEntries(entries, from, to, nowIso){ if(from===to) return {entries, n:0}; let n=0;
   const out=entries.map(e=>{ if(e.cat!==from||isWiped(e)) return e; n++; return Object.assign({}, e, {cat:to, updated:nowIso}); }); return {entries:n?out:entries, n}; }
+// Mehrfachauswahl (v1.1 Punkt 8, rein): patch = {deleted:true} (lebende → Papierkorb), {deleted:null} (Papierkorb mit Inhalt → lebend, Rückgängig),
+// {cat:'…'} oder {fav:bool} (nur lebende). Nie gewipte Marken, updated=nowIso, NEUES Array (Persist-Regel). Liefert {entries, n}.
+function bulkEdit(entries, ids, patch, nowIso){ const set=ids instanceof Set?ids:new Set(ids); let n=0;
+  const out=entries.map(e=>{ if(!set.has(e.id)||isWiped(e)) return e;
+    if(patch.deleted===true){ if(e.deleted) return e; n++; return Object.assign({}, e, {deleted:nowIso, updated:nowIso}); }
+    if(patch.deleted===null){ if(!e.deleted) return e; n++; return Object.assign({}, e, {deleted:null, updated:nowIso}); }
+    if(e.deleted) return e; const o=Object.assign({}, e, {updated:nowIso});
+    if(Object.prototype.hasOwnProperty.call(patch,'cat')) o.cat=line(patch.cat,CAPS.cat); if(Object.prototype.hasOwnProperty.call(patch,'fav')) o.fav=patch.fav===true; n++; return o; });
+  return {entries:n?out:entries, n}; }
 /* === VAULT-FORMAT END === */
 
 /* ============================================================
@@ -870,6 +885,7 @@ function renameCatEntries(entries, from, to, nowIso){ if(from===to) return {entr
 const App = (function(){
   let DEK=null, KDF=null, WRAP=null, VAULT=null;      // Sitzungszustand — auf lock() alles null
   let editId=null, editing=false, formType='text', mdMode='edit', search='', catFilter=null, favFilter=false, openFilter=false;   // openFilter: nur Checklisten mit offenen Einträgen (v1.1 Punkt 5)
+  let selMode=false, selIds=new Set(), shownIds=[];   // Mehrfachauswahl (v1.1 Punkt 8): nur im RAM, Sperre räumt ab; shownIds = zuletzt gezeigte Zeilen (für „Alle“)
   let clipTimer=null, clipOwnedAt=0, failCount=0, lockedUntil=0, pendingImport=null, kdfTouched=false;
   let pendingUnlock=null, pendingSecret=null, pendingOtpauth='';   // Aegis-Hürde: Schlüssel warten auf den Code / Einrichtung läuft
   let bioGen=0;             // Generation ALLER Pforten (Alien Pass v1.8): jede Sperre erhöht sie, laufende Pforten verwerfen ihr Ergebnis
@@ -1089,7 +1105,7 @@ const App = (function(){
     if(bioRearmDek){ const d=bioRearmDek; bioRearmDek=null; bioArm(d, KDF, WRAP, true).then(ok=>{ if(ok) toast(tr('bio.rearmed')); if(VAULT) renderSettings(); }); } }   // nach Neustart: Slot mit frischem Zufall neu bewaffnen; if(VAULT): während der Neu-Einrichtung gesperrt → sonst TypeError
   function lock(){
     clearIdle(); clearClip(); clearTimeout(autosaveTimer); autosaveTimer=null; applySecure(true);
-    DEK=null; KDF=null; WRAP=null; VAULT=null; editId=null; editing=false; pendingImport=null; search=''; catFilter=null; favFilter=false; openFilter=false;
+    DEK=null; KDF=null; WRAP=null; VAULT=null; editId=null; editing=false; pendingImport=null; search=''; catFilter=null; favFilter=false; openFilter=false; selMode=false; selIds=new Set(); shownIds=[];
     pendingUnlock=null; pendingSecret=null; pendingOtpauth='';
     bioGen++; bioRearmDek=null; bioArmed=false; bioNeedsRearm=false;   // laufende Fingerabdruck-Vorgänge verfallen (Generation)
     clearRendered(); screen('lock'); boot();   // Sperrbildschirm sofort; boot() liest die Datei asynchron nach (Android-Plugin)
@@ -1102,7 +1118,7 @@ const App = (function(){
     ['f-fav','f-pinned','f-md','f-hide','bio-keep','set-secure'].forEach(id=>{ const n=$(id); if(n) n.checked=false; });   // „auch nach Neustart“ nie stehen lassen (ab Werk aus)
     setEntryType('text'); setMdMode('edit'); err('add-err'); err('cp-err'); err('lock-err'); err('setup-err'); err('totp-err'); err('totp-setup-err'); err('bio-err'); bioMsg(''); err('pin-err'); pinMsg('');
     maskInputs(''); closeMenus(); dialogClose(false); hideToast();   // offene Rückfrage verfällt, der Aufrufer sieht false; Toast samt „Rückgängig“ weg
-    hide('help-overlay'); hide('import-pass-box'); hide('totp-setup');
+    hide('help-overlay'); hide('import-pass-box'); hide('totp-setup'); hide('sel-bar'); document.documentElement.classList.remove('selmode');
     doImportVault._busy=false; const ib=$('import-btn'); if(ib){ ib.disabled=false; }
     tab('list');   // sonst stünde nach dem Entsperren die (leere) Papierkorb-Ansicht offen
   }
@@ -1170,7 +1186,7 @@ const App = (function(){
 
   /* ---------- tabs ---------- */
   const TAB_ACTIVE={trash:'list'};   // Ansichten ohne eigenen Tab-Knopf: welcher Knopf markiert bleibt
-  function tab(name){
+  function tab(name){ if(selMode&&name!=='list') selCancel();
     if(name!=='add'&&editing&&!(DESK&&name==='list')) closeEditor();   // Editor verlassen = speichern (Autosave), nie still verwerfen; am Desktop bleibt er neben der Liste offen
     const mark=TAB_ACTIVE[name]||name;
     document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===mark));
@@ -1232,6 +1248,29 @@ const App = (function(){
       const b=el('button','chip edit','✎'); b.dataset.action='renameCat'; b.title=tr('chip.rename'); b.setAttribute('aria-label',tr('chip.rename')); pair.appendChild(b); }
     if(hasNone) mk(tr('chip.none'),'',catFilter===''?'on':'');
   }
+  /* ---------- Mehrfachauswahl (v1.1 Punkt 8): Knopf „Auswählen“ → Kästchen je Zeile, Leiste unten mit Papierkorb / Kategorie… / Favorit ----------
+     Auswahl nur im RAM (selIds). Massenänderungen laufen über bulkEdit (rein) → persist → Auswahlmodus endet; Papierkorb bekommt EIN „Rückgängig“ für alle. */
+  function selStart(){ if(!VAULT||selMode) return; if(editing) doneEditor(); selMode=true; selIds=new Set(); document.documentElement.classList.add('selmode'); tab('list'); renderList(); }
+  function selCancel(){ if(!selMode) return; selMode=false; selIds=new Set(); document.documentElement.classList.remove('selmode'); hide('sel-bar'); if(VAULT) renderList(); }
+  function toggleSel(id){ if(!selMode||!byId(id)) return; if(selIds.has(id)) selIds.delete(id); else selIds.add(id); renderList(); }
+  function selAll(){ if(!selMode) return; shownIds.forEach(id=>selIds.add(id)); renderList(); }
+  function selNone(){ if(!selMode) return; selIds=new Set(); renderList(); }
+  function renderSelBar(){ const bar=$('sel-bar'); if(!bar) return; if(!selMode){ bar.classList.add('hidden'); return; } bar.classList.remove('hidden');
+    const n=selIds.size, picked=[...selIds].map(byId).filter(Boolean); $('sel-count').textContent=tr(n===1?'sel.count1':'sel.count',{n});
+    ['sel-trash','sel-cat','sel-fav'].forEach(id=>{ $(id).disabled=n===0; }); const allFav=n>0&&picked.every(e=>e.fav); $('sel-fav').textContent=tr(allFav?'sel.unfav':'sel.fav'); $('sel-fav').dataset.arg=allFav?'0':'1'; }
+  function selSnapshot(){ return {ids:new Set(selIds), snap:VAULT.entries.slice()}; }
+  async function selDelete(){ if(!VAULT||!selMode||!selIds.size) return; const n=selIds.size, over=Math.max(0, trash().length+n-MAX_TRASH);
+    const yes=await ask(tr(over?'confirm.selDeleteFull':'confirm.selDelete',{n,d:TRASH_DAYS,m:MAX_TRASH,o:over}),{ok:'dlg.toTrash',danger:true}); if(!yes||!VAULT||!selMode) return;
+    const {ids,snap}=selSnapshot(); const r=bulkEdit(VAULT.entries, ids, {deleted:true}, nowIso()); if(!r.n) return; VAULT.entries=r.entries; selCancel();
+    persist().then(()=>{ if(!VAULT) return; renderList(); toast(tr('toast.selTrashed',{n:r.n}),{action:{label:tr('toast.undo'),fn:()=>undoBulk(ids)},ms:UNDO_MS}); }).catch(e=>{ rollback(snap)(e); if(VAULT&&!(e&&e.locked)){ renderList(); toast(tr('err.saveFailed')); } }); }
+  function undoBulk(ids){ if(!VAULT) return; const snap=VAULT.entries.slice(); const r=bulkEdit(VAULT.entries, ids, {deleted:null}, nowIso()); if(!r.n) return toast(tr('toast.undoGone')); VAULT.entries=r.entries;
+    persist().then(()=>{ if(!VAULT) return; renderTrash(); renderList(); toast(tr('toast.selRestored',{n:r.n})); }).catch(rollback(snap)); }
+  async function selCat(){ if(!VAULT||!selMode||!selIds.size) return; const n=selIds.size, picked=[...selIds].map(byId).filter(Boolean); const common=picked.length&&picked.every(e=>e.cat===picked[0].cat)?picked[0].cat:'';
+    const v=await ask(tr('confirm.selCat',{n}),{ok:'dlg.ok',input:{value:common,placeholder:tr('dlg.catPh'),max:CAPS.cat}}); if(v===null||!VAULT||!selMode) return; const to=line(v,CAPS.cat);
+    const {ids,snap}=selSnapshot(); const r=bulkEdit(VAULT.entries, ids, {cat:to}, nowIso()); if(!r.n) return; VAULT.entries=r.entries; selCancel();
+    persist().then(()=>{ if(!VAULT) return; renderList(); toast(to?tr(r.n===1?'toast.catRenamed1':'toast.catRenamed',{n:r.n,c:to}):tr(r.n===1?'toast.catCleared1':'toast.catCleared',{n:r.n})); }).catch(e=>{ rollback(snap)(e); if(VAULT&&!(e&&e.locked)){ renderList(); toast(tr('err.saveFailed')); } }); }
+  function selFav(on){ if(!VAULT||!selMode||!selIds.size) return; const fav=on!=='0'; const {ids,snap}=selSnapshot(); const r=bulkEdit(VAULT.entries, ids, {fav}, nowIso()); if(!r.n) return; VAULT.entries=r.entries; selCancel();
+    persist().then(()=>{ if(!VAULT) return; renderList(); toast(tr(fav?'toast.selFav':'toast.selUnfav',{n:r.n})); }).catch(e=>{ rollback(snap)(e); if(VAULT&&!(e&&e.locked)){ renderList(); toast(tr('err.saveFailed')); } }); }
   // Kategorie umbenennen (v1.1 Punkt 4): Stift-Chip neben der gefilterten Kategorie → Dialog mit Eingabefeld → renameCatEntries (rein) → persist
   async function renameCat(){ if(!VAULT||typeof catFilter!=='string'||!catFilter) return; const from=catFilter, n=VAULT.entries.filter(e=>e.cat===from&&!isWiped(e)).length;
     const v=await ask(tr(n===1?'confirm.renameCat1':'confirm.renameCat',{c:from,n}),{ok:'dlg.rename',input:{value:from,placeholder:tr('dlg.catPh'),max:CAPS.cat}});
@@ -1261,8 +1300,10 @@ const App = (function(){
     let items=catFilter===null?all:all.filter(e=>e.cat===catFilter); if(favFilter) items=items.filter(e=>e.fav); if(openFilter) items=items.filter(hasOpenItem);   // Filter kombinieren sich
     if(search) items=items.filter(e=>(e.title+'\n'+e.body+'\n'+e.items.map(x=>x.text).join('\n')+'\n'+e.cat).toLowerCase().includes(search));
     if(!items.length){ list.appendChild(el('div','empty',all.length?tr('list.noMatch'):tr('list.empty'))); return; }
+    shownIds=items.map(e=>e.id); if(selMode){ for(const id of [...selIds]) if(!byId(id)) selIds.delete(id); }   // verschwundene (gelöschte) Notizen fallen aus der Auswahl
     for(const e of items){
-      const row=el('div',(editing&&e.id===editId)?'entry sel':'entry'); row.dataset.action='openEditor'; row.dataset.arg=e.id;
+      const row=el('div',(editing&&e.id===editId)?'entry sel':'entry'); row.dataset.action=selMode?'toggleSel':'openEditor'; row.dataset.arg=e.id;
+      if(selMode){ const cb=el('label','chk selbox'); const i=el('input'); i.type='checkbox'; i.checked=selIds.has(e.id); i.tabIndex=-1; cb.appendChild(i); row.appendChild(cb); if(selIds.has(e.id)) row.classList.add('picked'); }
       row.appendChild(el('div','av'+(e.type==='list'?' list':''),e.type==='list'?'☑':((e.title||preview(e)).trim()[0]||'·').toUpperCase()));
       const main=el('div','main'); main.appendChild(el('div','t',titleOf(e)));
       main.appendChild(el('div','u',preview(e)));
@@ -1274,6 +1315,7 @@ const App = (function(){
       if(e.cat&&catFilter===null) meta.appendChild(el('span','pill cat',e.cat));
       main.appendChild(meta); row.appendChild(main); list.appendChild(row);
     }
+    renderSelBar();
     // Dezente Summe am Listenende: nur lebende Notizen (Papierkorb zählt nicht), bei Filter/Suche „n von t“
     list.appendChild(el('div','list-count',items.length===all.length?(all.length===1?tr('list.count1'):tr('list.count',{n:all.length})):tr('list.countOf',{n:items.length,t:all.length})));
   }
@@ -1876,7 +1918,7 @@ const App = (function(){
   function renderAll(){ renderList(); renderSettings(); renderBackupMsg(); }
   function kdfChanged(){ kdfTouched=true; }
 
-  return {boot,doSetup,doUnlock,doTotp,cancelTotp,lock,lockNow,tab,dialogOk,renameCat,toastAction,hideToast,dialogCancel,dialogOpen,dialogKey,
+  return {boot,doSetup,doUnlock,doTotp,cancelTotp,lock,lockNow,tab,dialogOk,renameCat,selStart,selCancel,toggleSel,selAll,selNone,selDelete,selCat,selFav,toastAction,hideToast,dialogCancel,dialogOpen,dialogKey,
     newEntry,openEditor,doneEditor,copyCurrent,deleteCurrent,editorChanged,changeEntryType,mdModeEdit,mdModeView,mdToggle,mdCheat,mdExample,insertDate,
     addItemRow,itemEnter,removeItemRow,itemChanged,sortDone,resetDone,
     renderList,setCatFilter,clearCatFilter,toggleFavFilter,toggleOpenFilter,openCatMenu,toggleCatMenu,catInput,pickCat,
@@ -1912,7 +1954,7 @@ document.addEventListener('input',ev=>{
 document.addEventListener('keydown',ev=>{
   if(App.deskKey(ev)){ ev.preventDefault(); return; }
   if(App.dialogKey(ev)){ ev.preventDefault(); return; }
-  if(ev.key==='Escape'){ App.closeMenus(); App.closeHelp(); return; }
+  if(ev.key==='Escape'){ App.closeMenus(); App.closeHelp(); App.selCancel(); return; }
   if(ev.key!=='Enter') return;
   const elx=ev.target.closest('[data-enter]'); if(!elx) return;
   const fn=App[elx.dataset.enter]; if(typeof fn==='function'){ ev.preventDefault(); fn(elx.dataset.arg, elx); }

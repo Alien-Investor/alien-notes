@@ -26,7 +26,7 @@ const V = new Function(region + `
     encryptBody,decryptBody,serializeFile,parseFile,kdfOk,KDF_DEFAULT,KDF_BOUNDS,MAX_ENTRIES,MAX_FILE_BYTES,MAX_READ_BYTES,emptyVault,sanitizeEntry,sanitizeEntries,sanitizeVault,sanitizeSettings,
     SETTINGS_DEFAULT,SETTINGS_ALLOWED,BG_NEVER,normalizeTotp,otpauthUri,sanitizeItems,ITEMS_MAX,ENTRY_TYPES,CAPS,mergeEntries,winner,canon,purgeTombstones,tombstone,
     totpCode,totpRemaining,genWords,passStrength,passCheck,MAX_TOMBSTONES,liveCount,tombFrom,isWiped,wipeTrash,shapeIncoming,TRASH_DAYS,MAX_TRASH,TOMBSTONE_DAYS,ts,
-    dupKey,entryType,line,bioKey,parseBioBlob,serializeBioBlob,bioWrapOk,wrapTag,mdParse,mdInline,noteText,linesToItems,itemsToBody,snImport,snId,htmlToText,lexToMd,zipEntries,zipSlice,zipFindSn,ZIP_NAME_SN,renameCatEntries,bodyJson};`)();
+    dupKey,entryType,line,bioKey,parseBioBlob,serializeBioBlob,bioWrapOk,wrapTag,mdParse,mdInline,noteText,linesToItems,itemsToBody,snImport,snId,htmlToText,lexToMd,zipEntries,zipSlice,zipFindSn,ZIP_NAME_SN,renameCatEntries,bodyJson,bulkEdit};`)();
 
 let pass=0, fail=0; const ok=(c,m)=>{ if(c){pass++;console.log('  ✓',m);} else {fail++;console.log('  ✗ FEHLER:',m);} };
 const throwsWith=async(fn,code,m)=>{ try{ await fn(); ok(false,m+' (kein Fehler)'); }catch(e){ ok(e&&e.message===code,m+' → '+(e&&e.message)); } };
@@ -601,6 +601,19 @@ console.log('\n[17] Kategorie umbenennen (renameCatEntries): lebend + Papierkorb
   const r1=V.renameCatEntries(list,'Gibtsnicht','X',NOW); ok(r1.n===0&&r1.entries===list,'unbekannte Kategorie: nichts');
   const rw=V.renameCatEntries(list,'','Neu',NOW); ok(rw.n===1&&rw.entries[3]===list[3]&&V.isWiped(rw.entries[3])&&rw.entries[4].cat==='Neu','„ohne Kategorie“ umbenennen: die gewipte Marke bleibt gewipt, nur der lebende Eintrag zieht um');
   const r2=V.renameCatEntries(list,'Alt','',NOW); ok(r2.n===2&&r2.entries[0].cat===''&&Object.keys(r2.entries[0]).length===FIELDS&&V.canon(V.sanitizeEntry(r2.entries[0],Date.parse(NOW)))===V.canon(r2.entries[0]),'leer = ohne Kategorie, Eintrag bleibt sanitizer-stabil ('+FIELDS+' Felder)');
+}
+
+console.log('\n[18] Mehrfachauswahl (bulkEdit): Papierkorb, Rückgängig, Kategorie, Favorit — nur Getroffene, nie gewipte Marken, updated=jetzt, neues Array');
+{ const NOW='2026-09-25T12:00:00.000Z', mk=(id,extra)=>V.sanitizeEntry(Object.assign({id,type:'text',cat:'A',title:'t'+id,body:'b',created:'2026-01-01T00:00:00.000Z',updated:'2026-01-02T00:00:00.000Z'},extra||{}),Date.parse(NOW));
+  const list=[mk('0000000000000001'),mk('0000000000000002',{fav:true}),mk('0000000000000003',{deleted:'2026-01-03T00:00:00.000Z'}),V.tombFrom(mk('0000000000000004',{deleted:'2026-01-03T00:00:00.000Z'})),mk('0000000000000005')];
+  const ids=new Set(['0000000000000001','0000000000000002','0000000000000003','0000000000000004','fremd']);
+  const d=V.bulkEdit(list,ids,{deleted:true},NOW); ok(d.n===2&&d.entries!==list&&d.entries[0].deleted===NOW&&d.entries[0].updated===NOW&&d.entries[1].deleted===NOW&&d.entries[2]===list[2]&&d.entries[3]===list[3]&&d.entries[4]===list[4],'Papierkorb: nur die 2 lebenden Getroffenen, schon Gelöschtes/Gewiptes/Fremdes unberührt');
+  const u=V.bulkEdit(d.entries,ids,{deleted:null},NOW); ok(u.n===3&&u.entries[0].deleted===null&&u.entries[1].deleted===null&&u.entries[2].deleted===null&&u.entries[3]===list[3]&&V.isWiped(u.entries[3]),'Rückgängig: alle 3 Papierkorb-Einträge mit Inhalt zurück, gewipte Marke bleibt gewipt');
+  const c=V.bulkEdit(list,ids,{cat:'  Neu  '},NOW); ok(c.n===2&&c.entries[0].cat==='Neu'&&c.entries[1].cat==='Neu'&&c.entries[2]===list[2]&&list[0].cat==='A','Kategorie: nur lebende, über line() getrimmt, Eingabe nicht mutiert');
+  const f=V.bulkEdit(list,ids,{fav:true},NOW); ok(f.n===2&&f.entries[0].fav===true&&f.entries[1].fav===true&&f.entries[0].updated===NOW,'Favorit setzen (auch beim schon markierten: zählt, updated)');
+  const g=V.bulkEdit(list,ids,{fav:'ja'},NOW); ok(g.entries[1].fav===false,'fav nur echtes true');
+  const z=V.bulkEdit(list,new Set(),{deleted:true},NOW); ok(z.n===0&&z.entries===list,'leere Auswahl: nichts');
+  ok(d.entries.every(e=>Object.keys(e).length===FIELDS&&V.canon(V.sanitizeEntry(e,Date.parse(NOW)))===V.canon(e)),'Ergebnisse sanitizer-stabil ('+FIELDS+' Felder)');
 }
 
 console.log(`\n${pass} ok, ${fail} Fehler`); process.exit(fail?1:0);

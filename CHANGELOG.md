@@ -28,6 +28,9 @@ den Inhalt weiterhin. Neues Feld im Datei-Format (ältere Fassungen lesen die Da
 
 Schriftgröße: drei Stufen unter Einstellungen → Darstellung (Normal, Groß, Sehr groß), gilt für das Gerät wie die Darstellung selbst.
 
+Mehrere Notizen auf einmal: der ☑-Knopf neben dem Papierkorb blendet Kästchen ein; gewählte Notizen lassen sich gemeinsam in den Papierkorb legen
+(ein „Rückgängig“ für alle), in eine Kategorie setzen oder als Favorit markieren. Suche und Chips wirken dabei weiter, „Alle“ nimmt die gezeigten.
+
 ## v0.1 — 2026-09-24
 
 Grundgerüst aus Alien Pass v1.8: Repo, App-Design-Kit, Datei-Format `AINV1` (Argon2id + AES-256-GCM, eigene Datei-Endung `.notes`),
