@@ -1,5 +1,17 @@
 # Changelog — Alien Notes
 
+## v1.5 — 2026-09-26
+
+Härtung ohne Änderung an Oberfläche, Datei-Format oder Notizen, nachgezogen aus Alien Pass 1.14/1.15.
+- **Behoben:** Seit 1.4 bekommt die WebView keinen Autofill-Manager mehr. Android versucht aber beim Schließen einer App, eine unterbrochene
+  Autofill-Speichern-Abfrage wiederherzustellen, wenn die App mit bestimmten Zusatzdaten gestartet wurde — und rechnet dabei fest mit einem
+  Manager. Jede andere App hätte Alien Notes mit diesen Zusatzdaten öffnen und beim Schließen abstürzen lassen können. Die App entfernt sie
+  jetzt beim Start, bevor Android sie liest. Der Bauvorgang prüft zusätzlich an der fertigen APK, dass alle Autofill-Riegel im Programmcode stecken.
+- **Import:** Wird die App gesperrt und gleich wieder entsperrt, während eine gewählte Datei noch gelesen, entpackt oder entschlüsselt wird,
+  verwirft sie diesen Import, statt ihn in die neue Sitzung zu tragen. Wird sie nur gesperrt, läuft der Import wie seit 1.2 nach dem Entsperren
+  weiter (jetzt auch, wenn die Sperre beim Entpacken eines Standard-Notes-ZIPs kam). Eine neu eingerichtete Notizen-Datei übernimmt keine
+  vorher gewählte Datei. Handbuch: beim `.notes`-Backup folgt nach dem Entsperren die Passphrase-Abfrage der Datei.
+
 ## v1.4 — 2026-09-26
 
 Härtung ohne Änderung an Oberfläche, Datei-Format oder Notizen, nachgezogen aus Alien Pass 1.12.

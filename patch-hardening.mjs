@@ -6,7 +6,8 @@
 //   3) MainActivity: FLAG_SECURE (kein Screenshot/Recording, keine Recents-Vorschau) + WebView vom Android-Autofill-Framework
 //      ausgenommen (v1.4, aus Alien Pass v1.12: fremde Autofill-Dienste wie ein Passwort-Manager sehen die Passphrase-Felder sonst und
 //      bieten an, sie zu speichern; autocomplete="off" im HTML hält das nicht auf). Wirksam ist erst getSystemService("autofill") → null
-//      (Chromium fragt das View-Flag nicht ab; Gerätetest Alien Pass 26.09.2026), das Flag bleibt als zweite Schicht.
+//      (Chromium fragt das View-Flag nicht ab; Gerätetest Alien Pass 26.09.2026), das Flag bleibt als zweite Schicht. Seit v1.5 (aus Alien Pass
+//      v1.15) entfernt dropAutofillRestore() die Restore-Extras aus jedem Intent — sonst NullPointerException in Activity.restoreAutofillSaveUi().
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 
 const MANIFEST = 'android/app/src/main/AndroidManifest.xml';
@@ -59,6 +60,7 @@ const JAVA_DIR = 'android/app/src/main/java/org/alieninvestor/notes';
 const MAIN = JAVA_DIR + '/MainActivity.java';
 const MAIN_SRC = `package org.alieninvestor.notes;
 
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -66,8 +68,24 @@ import android.view.WindowManager;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+    // Gegenstück zum Hebel unten (v1.5, aus Alien Pass v1.15): Activity.restoreAutofillSaveUi() ruft getAutofillManager() OHNE Null-Prüfung,
+    // ausgelöst allein durch diese Intent-Extras (finish/onBackPressed/onStop/startActivity, Android 8.1+). Jede App könnte Alien Notes mit ihnen starten und
+    // beim Schließen abstürzen lassen (NullPointerException, ggf. mitten im Speichern) — deshalb vor super.onCreate/onNewIntent entfernen.
+    private static void dropAutofillRestore(Intent i) {
+        if (i == null) return;
+        i.removeExtra("android.view.autofill.extra.RESTORE_SESSION_TOKEN");
+        i.removeExtra("android.view.autofill.extra.RESTORE_CROSS_ACTIVITY");
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        dropAutofillRestore(intent);
+        super.onNewIntent(intent);
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        dropAutofillRestore(getIntent());
         registerPlugin(SecureClipPlugin.class);
         registerPlugin(BiometricPlugin.class);
         registerPlugin(SecureScreenPlugin.class);
@@ -527,7 +545,8 @@ for (const [file, src, label] of [[MAIN, MAIN_SRC, 'MainActivity (FLAG_SECURE + 
 if (!changed) console.log('MainActivity + SecureClipPlugin + BiometricPlugin + SecureScreenPlugin + VaultStorePlugin bereits aktuell.');
 const jm = readFileSync(MAIN, 'utf8'), jb = readFileSync(BIO, 'utf8');
 const js = readFileSync(SEC, 'utf8'), jv = readFileSync(VS, 'utf8');
-if (!jm.includes('getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE)') || !jm.includes('setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS)') || !jm.includes('if ("autofill".equals(name)) return null;') || !jm.includes('registerPlugin(SecureClipPlugin.class)') || !jm.includes('registerPlugin(BiometricPlugin.class)') || !jm.includes('registerPlugin(SecureScreenPlugin.class)') || !jm.includes('registerPlugin(VaultStorePlugin.class)')
+if (!jm.includes('getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE)') || !jm.includes('setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS)') || !jm.includes('if ("autofill".equals(name)) return null;') || !jm.includes('return super.getSystemService(name);') || /\/\/[^\n]*if \("autofill"\.equals/.test(jm) || /\/\/[^\n]*dropAutofillRestore\(|\/\*/.test(jm)
+  || !jm.includes('dropAutofillRestore(getIntent());') || !jm.includes('dropAutofillRestore(intent);') || !jm.includes('i.removeExtra("android.view.autofill.extra.RESTORE_SESSION_TOKEN");') || !jm.includes('i.removeExtra("android.view.autofill.extra.RESTORE_CROSS_ACTIVITY");') || !jm.includes('registerPlugin(SecureClipPlugin.class)') || !jm.includes('registerPlugin(BiometricPlugin.class)') || !jm.includes('registerPlugin(SecureScreenPlugin.class)') || !jm.includes('registerPlugin(VaultStorePlugin.class)')
   // VaultStore: atomar (fsync + rename), Groesse geprueft, privater App-Ordner, genau drei Methoden
   || !jv.includes('getFD().sync()') || !jv.includes('renameTo(f)') || !jv.includes('f.length() != b.length') || !jv.includes('getFilesDir()') || (jv.match(/@PluginMethod/g) || []).length !== 3
   // SecureScreen: beide Richtungen vorhanden, Default AN, kein anderer Weg als set()
