@@ -35,7 +35,8 @@ description: |
   - Copy puts the whole note into the clipboard; auto-clear after 15/30/60 s (default 30 s, can be switched off) and on lock; copied content
     is flagged sensitive so the Android 13+ system preview hides it
   - Locking, more relaxed than a password manager: by default no lock after inactivity and in the background only after 30 minutes
-    (both adjustable up to "never" / "immediately"); "Lock now" clears the key and everything on screen at once; the file is always encrypted
+    (both adjustable up to "never" / "immediately"); "Lock now" clears the key and everything on screen at once; the file is always encrypted.
+    With "immediately" the app also locks while the file picker is open — the chosen file is imported after unlocking (since 1.2)
   - Trash: deleted notes stay restorable for 30 days, up to 200 at a time; shows only title, type and date, never the content;
     device-local — a deletion travels to your other devices when merging, the content does not
   - Encrypted .notes backup and merge between devices (newer change wins, deletions carried for a year), also between phone and Linux desktop
