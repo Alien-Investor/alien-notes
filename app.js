@@ -16,7 +16,7 @@ const FONT_KEY='ai-notes-font', FONT_SIZES=['m','l','xl'];
    ============================================================ */
 const LS_KEY = 'ai-notes-vault';
 const LANG_KEY = 'ai-notes-lang';
-const APP_VERSION = '1.1';   // Anzeige in den Einstellungen; muss VERSION_NAME entsprechen (build-www.sh setzt es aus VERSION, roundtrip-test.mjs prüft es)
+const APP_VERSION = '1.2';   // Anzeige in den Einstellungen; muss VERSION_NAME entsprechen (build-www.sh setzt es aus VERSION, roundtrip-test.mjs prüft es)
 
 /* ===== KIT: i18n — Deutsch ist Quelle im HTML (data-i18n / data-i18n-html / data-i18n-ph), Englisch im I18N-Dict,
    dynamische Texte per tr(key,{params}) aus T {de,en}. ===== */
@@ -126,11 +126,11 @@ const I18N = {
   "help.h3":"Markdown preview",
   "help.p3":"Every text note (not checklists) has a “Markdown preview” switch. Editing always stays the plain text field; the preview renders a small subset: headings (<code>#</code> to <code>###</code>), <strong>bold</strong> (<code>**…**</code>), <em>italic</em> (<code>*…*</code>), lists (<code>-</code>, <code>1.</code> — numbered ones always start at 1), boxes (<code>- [ ]</code>, <code>- [x]</code>), code (<code>`…`</code>, ``` blocks or 4 spaces of indentation — so no indented sub-items), rules (<code>---</code>). Links are deliberately shown as text, never clickable — the app has no network anyway.",
   "help.h4":"Locking",
-  "help.p4":"Unlike a password manager, the notes stay open by default: no lock after inactivity, and in the background only after 30 minutes. Both can be set under Settings, up to “never”. The background lock applies when you return after the chosen time; until then the key stays in memory. “Never” honestly means: no lock on return either — the key stays until the system ends the process or you quit the app. The file on the device is always encrypted, whatever you choose. “Lock now” clears the key and everything on screen immediately. The Android app forbids screenshots by default and hides the preview in the app switcher (can be switched off in Settings).",
+  "help.p4":"Unlike a password manager, the notes stay open by default: no lock after inactivity, and in the background only after 30 minutes. Both can be set under Settings, up to “never”. The background lock applies when you return after the chosen time; until then the key stays in memory. “Never” honestly means: no lock on return either — the key stays until the system ends the process or you quit the app. The file on the device is always encrypted, whatever you choose. “Lock now” clears the key and everything on screen immediately. With “immediately” the app also locks while the file picker is open — the chosen file (<code>.notes</code> or Standard Notes backup) is then imported after unlocking, it is not lost. The Android app forbids screenshots by default and hides the preview in the app switcher (can be switched off in Settings).",
   "help.hTrash":"Trash",
   "help.pTrash":"Deleted notes go to the trash for <strong>30 days</strong> — the icon right of the <strong>+</strong> in the search row; the number next to it says how much is in there. It shows only <strong>title, type and date of deletion</strong>. <strong>The trash holds 200 notes</strong>; once it is full the next deletion destroys the oldest one immediately and for good, and the confirmation tells you which one. <strong>Honestly:</strong> while a note sits in the trash it is also part of every backup of this device. To get rid of something right away use “Delete permanently” or “Empty trash”. <strong>The trash is device-local:</strong> a deletion travels to your other devices when merging, the <em>content</em> does not. So you can only restore on the device where you deleted.",
   "help.h7":"Backup & sync",
-  "help.l7":"<li><strong>Create backup</strong> writes a <code>.notes</code> file (encrypted with your passphrase). It can safely go into Syncthing, onto a stick or into a backup.</li><li><strong>Import</strong> merges: per note the newer change wins, deletions are carried over (for one year). The file may use a different passphrase — your local one stays.</li><li>With two devices: export on both regularly and import the other's backup. Both sides end up at the same state.</li><li>Alien Pass and Alien Notes use the same file format family but separate files: a <code>.vault</code> file is refused here, a <code>.notes</code> file there — they never share keys.</li>",
+  "help.l7":"<li><strong>Create backup</strong> writes a <code>.notes</code> file (encrypted with your passphrase). It can safely go into Syncthing, onto a stick or into a backup.</li><li><strong>Import</strong> merges: per note the newer change wins, deletions are carried over (for one year). The file may use a different passphrase — your local one stays.</li><li>With two devices: export on both regularly and import the other's backup. Both sides end up at the same state.</li><li>Alien Pass and Alien Notes use the same file format family but separate files: a <code>.vault</code> file is refused here, a <code>.notes</code> file there — they never share keys.</li><li><strong>If “Lock in background” is set to “immediately”</strong>, the app locks when the file picker opens. The chosen file is not lost: after unlocking, the import continues with exactly this file (backup as well as Standard Notes).</li>",
   "help.h8":"Clipboard",
   "help.l8":"<li>“Copy” puts the whole note into the clipboard (title, text or checklist as “- [x] …” lines).</li><li>The app clears the clipboard after the chosen time (default 30 s) and when it locks. Notes are not always secret, so this can be switched off in Settings.</li><li>The Android app flags copied content as <strong>sensitive</strong>: the system preview shown when copying hides the content (Android 13+).</li>",
   "help.h9":"Security in detail",
@@ -329,6 +329,7 @@ const T = {
   "bk.stale":{de:"⚠ Letztes Backup vor {d} Tagen — seitdem {n} Änderung(en).",en:"⚠ Last backup {d} days ago — {n} change(s) since."},
   "bk.last":{de:"Letztes Backup: {d}",en:"Last backup: {d}"},
   "bk.readErr":{de:"Datei konnte nicht gelesen werden.",en:"Could not read the file."},
+  "imp.deferred":{de:"Datei gewählt — zum Importieren entsperren.",en:"File chosen — unlock to import."},
   "bk.merged":{de:"Zusammengeführt: {a} neu, {u} aktualisiert, {d} gelöscht ({t} Löschmarken in der Datei).",en:"Merged: {a} new, {u} updated, {d} deleted ({t} deletion markers in the file)."},
   "bk.wiped":{de:"{n} eigene Papierkorb-Notizen wurden dabei geleert.",en:"{n} of your own trash notes were emptied in the process."},
   "bk.mergeFail":{de:"Falsche Passphrase oder beschädigte Datei.",en:"Wrong passphrase or damaged file."},
@@ -1120,7 +1121,7 @@ const App = (function(){
   // Beim Verlassen eines Gate-Bildschirms: wurde das Fenster schon während Argon2 versteckt, galt onHidden noch für „gesperrt“ —
   // bei „sofort“ jetzt nachholen statt die Notizen offen zu lassen (Audit run-7, Härtung)
   function leaveGate(){ if(DESK&&clipOwnedAt) clearClip(); if(bgAway&&settings().bgLock===0){ lock(); toast(tr('toast.autolocked')); return true; } return false; }
-  function enterApp(){ if(leaveGate()) return; applySecure(settings().secure!==0); screen('app'); tab('list'); renderAll(); resetIdle();
+  function enterApp(){ if(leaveGate()) return; applySecure(settings().secure!==0); screen('app'); tab('list'); renderAll(); resetIdle(); runPendingFile();
     if(storedLen>MAX_FILE_BYTES) toast(tr('toast.fileOver',{m:MAX_FILE_BYTES/1048576}));   // Datei über der Schreibgrenze (älterer Build oder fremde Datei): ehrlich sagen, was noch gespeichert wird
     if(bioRearmDek){ const d=bioRearmDek; bioRearmDek=null; bioArm(d, KDF, WRAP, true).then(ok=>{ if(ok) toast(tr('bio.rearmed')); if(VAULT) renderSettings(); }); } }   // nach Neustart: Slot mit frischem Zufall neu bewaffnen; if(VAULT): während der Neu-Einrichtung gesperrt → sonst TypeError
   function lock(){
@@ -1594,9 +1595,20 @@ const App = (function(){
       renderBackupHint();
     }finally{ exportVault._busy=false; }
   }
+  // Nachgeholter Import (aus Alien Pass v1.10, Gerätetest 26.09.2026): der Datei-Picker ist eine fremde Android-Activity — bei „Sperren im Hintergrund:
+  // sofort“ sperrt die App beim Öffnen des Pickers, die Datei kam bisher in eine gesperrte App und wurde STILL verworfen (Import unmöglich). Jetzt: nur
+  // den Dateiverweis merken (Handle, kein Inhalt; nichts wird gelesen, solange die App zu ist), Toast auf dem Sperrbildschirm, nach dem Entsperren
+  // (enterApp) im Sicherung-Tab denselben Handler mit derselben Datei aufrufen. Verfällt nach PENDING_FILE_MS ohne Entsperren. Die Sperr-Regel selbst
+  // bleibt unangetastet — bewusst KEINE Schonfrist mit offenem Schlüssel im Hintergrund (Entscheidung Nutzer 26.09.2026). Gilt für `.notes` UND Standard-Notes.
+  let pendingFile=null; const PENDING_FILE_MS=5*60000;
+  function deferFile(ev){ const t=ev&&ev.target, f=t&&t.files&&t.files[0]; if(!f||VAULT) return false;
+    pendingFile={id:t.id, file:f, at:Date.now()}; try{ t.value=''; }catch(_){} toast(tr('imp.deferred'),{ms:8000}); return true; }
+  function runPendingFile(){ const p=pendingFile; pendingFile=null; if(!p||!VAULT||Date.now()-p.at>PENDING_FILE_MS) return;
+    const fn=p.id==='vault-file'?importVault:p.id==='sn-file'?importSn:null; if(!fn) return;
+    tab('backup'); fn({target:{id:p.id, files:[p.file], value:''}}); }
   function pickFile(id){ const n=$(id); if(n) n.click(); }
   function importVault(ev){
-    const f=ev&&ev.target&&ev.target.files&&ev.target.files[0]; if(!f) return; const input=ev.target; $('import-msg').textContent='';
+    const f=ev&&ev.target&&ev.target.files&&ev.target.files[0]; if(!f) return; if(!VAULT){ deferFile(ev); return; } const input=ev.target; $('import-msg').textContent='';
     const r=new FileReader(); r.onerror=()=>{ $('import-msg').textContent=tr('bk.readErr'); input.value=''; };
     r.onload=()=>{ input.value=''; try{ pendingImport=parseFile(String(r.result)); }catch(e){ pendingImport=null; $('import-msg').textContent=fileErrMsg(e); return; }
       show('import-pass-box'); setTimeout(()=>$('import-pass').focus(),80); };
@@ -1635,7 +1647,7 @@ const App = (function(){
     for(;;){ const {done,value}=await rd.read(); if(done) break; n+=value.byteLength; if(n>MAX_FILE_BYTES){ try{ await rd.cancel(); }catch(_){} throw new Error('toolarge'); } chunks.push(value); }
     const out=new Uint8Array(n); let o=0; for(const c of chunks){ out.set(c,o); o+=c.byteLength; } return out; }
   function importSn(ev){
-    const f=ev&&ev.target&&ev.target.files&&ev.target.files[0]; if(!f) return; const input=ev.target; $('sn-msg').textContent='';
+    const f=ev&&ev.target&&ev.target.files&&ev.target.files[0]; if(!f) return; if(!VAULT){ deferFile(ev); return; } const input=ev.target; $('sn-msg').textContent='';
     if(f.size>2*MAX_FILE_BYTES){ $('sn-msg').textContent=tr('err.fileLarge'); input.value=''; return; }   // ZIP darf doppelt so groß sein (Items/ ist eine Zweitkopie), der entpackte Eintrag bleibt bei 20 MB
     const r=new FileReader(); r.onerror=()=>{ $('sn-msg').textContent=tr('bk.readErr'); input.value=''; };
     r.onload=async()=>{ input.value=''; if(!VAULT||importSn._busy) return; let res;

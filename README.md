@@ -119,6 +119,7 @@ Schlüsselableitung schafft, und schlägt eine passende Argon2-Stufe vor.
 - **Sperre, lockerer als beim Passwort-Manager:** ab Werk keine Sperre nach Inaktivität und im Hintergrund erst nach 30 Minuten (beides
   einstellbar bis „nie“ bzw. „sofort“). Die Hintergrund-Sperre greift, wenn du nach der gewählten Zeit zurückkehrst; bis dahin bleibt der
   Schlüssel im Arbeitsspeicher. „Jetzt sperren“ löscht Schlüssel und alles Angezeigte sofort. Die Datei auf dem Gerät ist immer verschlüsselt.
+  Bei „sofort“ sperrt die App auch, während der Datei-Picker offen ist; die gewählte Datei wird nach dem Entsperren importiert (seit 1.2).
 - **Papierkorb**: Gelöschtes bleibt **30 Tage** wiederherstellbar, höchstens **200 Notizen** gleichzeitig; er zeigt nur Titel, Typ und
   Löschdatum, nie den Inhalt. „Endgültig löschen“ und „Papierkorb leeren“ vernichten sofort. Der Papierkorb ist gerätelokal: beim
   Zusammenführen wandert die Löschung auf die anderen Geräte, der Inhalt nicht.

@@ -1,5 +1,13 @@
 # Changelog — Alien Notes
 
+## v1.2 — unveröffentlicht
+
+Gerätetest-Fund aus Alien Pass, hier nachgezogen: Bei „Sperren im Hintergrund: sofort“ war der Import unmöglich. Der Datei-Picker ist eine
+eigene Android-Ansicht, die App sperrte beim Öffnen und verwarf die gewählte Datei still. Jetzt merkt sie sich die Datei (nur den Verweis,
+gelesen wird nichts, solange die App zu ist), zeigt auf dem Sperrbildschirm „Datei gewählt — zum Importieren entsperren“ und importiert nach
+dem Entsperren genau diese Datei — im Sicherung-Tab, für `.notes`-Backups wie für Standard-Notes-Backups. Der Verweis verfällt nach fünf
+Minuten ohne Entsperren. Die Sperre selbst bleibt, wie sie ist: kein Schlüssel im Speicher, während die App im Hintergrund liegt.
+
 ## v1.1 — 2026-09-26
 
 Rückfragen (Löschen und endgültig Löschen, Papierkorb leeren, Umwandeln, Haken zurücksetzen, schwache Passphrase, Import-Datei mit hohem
