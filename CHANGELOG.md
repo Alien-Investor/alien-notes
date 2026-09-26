@@ -1,5 +1,13 @@
 # Changelog — Alien Notes
 
+## v1.4 — 2026-09-26
+
+Härtung ohne Änderung an Oberfläche, Datei-Format oder Notizen, nachgezogen aus Alien Pass 1.12.
+- **Neu:** Die App nimmt ihre Felder vom Android-Autofill-Framework aus. Bisher meldete die WebView jedes Passwortfeld an den systemweiten
+  Autofill-Dienst — ist dort ein Passwort-Manager eingerichtet, bot er sich in den Passphrase-Feldern von Alien Notes an und konnte anbieten,
+  die Passphrase zu speichern. Das Attribut `autocomplete="off"` im HTML hält das nicht auf, darum jetzt nativ: Die App gibt der WebView keinen
+  Autofill-Manager mehr (Quelltext wie bisher in `patch-hardening.mjs`). Alien Notes hat weiterhin keinen eigenen Autofill-Dienst.
+
 ## v1.3 — 2026-09-26
 
 Kleine Korrektur aus dem Alltag, nachgezogen aus Alien Pass 1.11. Am Datei-Format, an der Verschlüsselung und an deinen Notizen ändert sich nichts.

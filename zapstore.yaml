@@ -53,7 +53,8 @@ description: |
   - Linux desktop edition (Flatpak without network permission and without file access, GPG-signed checksum) — see the Codeberg release
   - No INTERNET permission; only USE_BIOMETRIC and USE_FINGERPRINT (up to Android 8.1) for the fingerprint sensor
     (plus the AndroidX-generated signature permission that grants nothing),
-    allowBackup=false + data extraction rules (no cloud, adb or D2D backup)
+    allowBackup=false + data extraction rules (no cloud, adb or D2D backup),
+    WebView excluded from the Android autofill framework (a third-party autofill service never sees the passphrase fields, since 1.4)
   - Strict CSP: connect-src 'none', no inline script; Markdown rendered only via createElement/textContent; bundled Argon2 (hash-wasm)
     hash-checked in the build; internal security audit of the new surface before release (no independent audit)
   - German / English, offline in-app manual, open source (MIT)

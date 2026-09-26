@@ -3,7 +3,10 @@
 //   Alien Notes (aus Alien Pass v1.8 übernommen; neu: SecureScreenPlugin für den FLAG_SECURE-Schalter).
 //   1) AndroidManifest: allowBackup=false (keine ADB-/Cloud-Backups der Tresor-Daten)
 //   2) AndroidManifest: INTERNET-Permission ENTFERNEN (App kann nachweisbar nicht funken)
-//   3) MainActivity: FLAG_SECURE (kein Screenshot/Recording, keine Recents-Vorschau)
+//   3) MainActivity: FLAG_SECURE (kein Screenshot/Recording, keine Recents-Vorschau) + WebView vom Android-Autofill-Framework
+//      ausgenommen (v1.4, aus Alien Pass v1.12: fremde Autofill-Dienste wie ein Passwort-Manager sehen die Passphrase-Felder sonst und
+//      bieten an, sie zu speichern; autocomplete="off" im HTML hält das nicht auf). Wirksam ist erst getSystemService("autofill") → null
+//      (Chromium fragt das View-Flag nicht ab; Gerätetest Alien Pass 26.09.2026), das Flag bleibt als zweite Schicht.
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 
 const MANIFEST = 'android/app/src/main/AndroidManifest.xml';
@@ -56,7 +59,9 @@ const JAVA_DIR = 'android/app/src/main/java/org/alieninvestor/notes';
 const MAIN = JAVA_DIR + '/MainActivity.java';
 const MAIN_SRC = `package org.alieninvestor.notes;
 
+import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 import android.view.WindowManager;
 import com.getcapacitor.BridgeActivity;
 
@@ -71,6 +76,24 @@ public class MainActivity extends BridgeActivity {
         // Kein Screenshot/Screen-Recording, keine Vorschau im App-Switcher (Recents) — ab Werk und auf dem Sperrbildschirm IMMER;
         // eine entsperrte Sitzung darf die Flagge über SecureScreenPlugin.set(false) aufheben (Einstellung, Entscheidung 24.09.2026)
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+        // Kein Android-Autofill (API 26+): Die WebView meldet sonst jedes Passwortfeld an den systemweiten Autofill-Dienst — eine
+        // fremde App, die den Inhalt zum Speichern anbieten könnte. autocomplete="off" im HTML hält das nicht auf. Die App hat
+        // bewusst keinen eigenen Autofill-Dienst, darum braucht sie das Framework auch nicht.
+        if (Build.VERSION.SDK_INT >= 26) {
+            View webView = getBridge().getWebView();
+            webView.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS);
+        }
+    }
+
+    // Wirksame Schicht (Gerätetest Alien Pass v1.12/v1.13, GrapheneOS 26.09.2026): das Flag oben prüft Chromiums WebView-AutofillProvider
+    // nicht, und notifyViewEntered für virtuelle Views fragt isImportantForAutofill nicht ab — Proton Pass bot sich weiter an. Chromiums
+    // AutofillManagerWrapper holt den Manager per context.getSystemService(AutofillManager.class) über den WebView-Context (= diese
+    // Activity); liefert der null, ist isDisabled() true und alle notify*-Aufrufe sind No-ops. Context.AUTOFILL_MANAGER_SERVICE ist nicht
+    // öffentlich, darum das Literal "autofill" (API 26+).
+    @Override
+    public Object getSystemService(String name) {
+        if ("autofill".equals(name)) return null;   // Dienstname des AutofillManager (API 26+, Konstante ist nicht öffentlich)
+        return super.getSystemService(name);
     }
 }
 `;
@@ -497,14 +520,14 @@ public class VaultStorePlugin extends Plugin {
 }
 `;
 let changed = false;
-for (const [file, src, label] of [[MAIN, MAIN_SRC, 'MainActivity (FLAG_SECURE + Plugin-Registrierung)'], [CLIP, CLIP_SRC, 'SecureClipPlugin'], [BIO, BIO_SRC, 'BiometricPlugin'], [SEC, SEC_SRC, 'SecureScreenPlugin'], [VS, VS_SRC, 'VaultStorePlugin']]) {
+for (const [file, src, label] of [[MAIN, MAIN_SRC, 'MainActivity (FLAG_SECURE + kein Autofill + Plugin-Registrierung)'], [CLIP, CLIP_SRC, 'SecureClipPlugin'], [BIO, BIO_SRC, 'BiometricPlugin'], [SEC, SEC_SRC, 'SecureScreenPlugin'], [VS, VS_SRC, 'VaultStorePlugin']]) {
   const cur = existsSync(file) ? readFileSync(file, 'utf8') : '';
   if (cur !== src) { writeFileSync(file, src); changed = true; console.log(label + ': geschrieben.'); }
 }
 if (!changed) console.log('MainActivity + SecureClipPlugin + BiometricPlugin + SecureScreenPlugin + VaultStorePlugin bereits aktuell.');
 const jm = readFileSync(MAIN, 'utf8'), jb = readFileSync(BIO, 'utf8');
 const js = readFileSync(SEC, 'utf8'), jv = readFileSync(VS, 'utf8');
-if (!jm.includes('getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE)') || !jm.includes('registerPlugin(SecureClipPlugin.class)') || !jm.includes('registerPlugin(BiometricPlugin.class)') || !jm.includes('registerPlugin(SecureScreenPlugin.class)') || !jm.includes('registerPlugin(VaultStorePlugin.class)')
+if (!jm.includes('getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE)') || !jm.includes('setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS)') || !jm.includes('if ("autofill".equals(name)) return null;') || !jm.includes('registerPlugin(SecureClipPlugin.class)') || !jm.includes('registerPlugin(BiometricPlugin.class)') || !jm.includes('registerPlugin(SecureScreenPlugin.class)') || !jm.includes('registerPlugin(VaultStorePlugin.class)')
   // VaultStore: atomar (fsync + rename), Groesse geprueft, privater App-Ordner, genau drei Methoden
   || !jv.includes('getFD().sync()') || !jv.includes('renameTo(f)') || !jv.includes('f.length() != b.length') || !jv.includes('getFilesDir()') || (jv.match(/@PluginMethod/g) || []).length !== 3
   // SecureScreen: beide Richtungen vorhanden, Default AN, kein anderer Weg als set()

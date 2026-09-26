@@ -171,7 +171,9 @@ Schlüsselableitung schafft, und schlägt eine passende Argon2-Stufe vor.
   Notizen, keine Links, keine Bilder. Der Parser ist eigener, kleiner Code mit linearer Laufzeit (eine Laufzeitfalle in der
   Überschriften-Erkennung wurde im internen Audit gefunden und behoben).
 - **Sperre**: Schlüssel und alle Anzeigen werden aus dem Speicher entfernt; jede Sperre wartet vorher einen laufenden Speichervorgang ab.
-  Nach Fehlversuchen greift eine Wartezeit. Nativer Code beschränkt sich auf vier kleine, im Repo im Klartext einsehbare Stücke: FLAG_SECURE,
+  Nach Fehlversuchen greift eine Wartezeit. **Kein Autofill, auch kein fremdes** (seit 1.4): Die App nimmt ihre WebView vom Android-Autofill-Framework
+  aus — ein Passwort-Manager, der als Autofill-Dienst eingerichtet ist, sieht die Passphrase-Felder nicht und kann nicht anbieten, sie zu speichern.
+  Nativer Code beschränkt sich auf vier kleine, im Repo im Klartext einsehbare Stücke: FLAG_SECURE,
   Zwischenablage-Plugin, Fingerabdruck-Plugin und Dateispeicher (alle als Quelltext in `patch-hardening.mjs`; der Vendor-Hash-Check steht in
   `build-www.sh`, ebenfalls Klartext).
 - **Fingerabdruck-Entsperren, Aegis-Hürde, PIN am Desktop:** wortgleich aus Alien Pass übernommen und dort ausführlich eingeordnet — siehe das
