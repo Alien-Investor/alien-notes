@@ -368,7 +368,7 @@ html.desk .no-desk{display:none;}
         </select>
           <div id="cm-set-clip" class="combo-menu hidden"></div>
         </div>
-        <p class="muted" style="margin-top:8px" data-i18n="set.clipNote">Notizen sind nicht immer geheim, deshalb lässt sich das abschalten. In der Android-App wird Kopiertes als „sensibel“ markiert — die System-Vorschau zeigt den Inhalt dann nicht an (Android 13+). Die App leert die Zwischenablage nach der eingestellten Zeit — auch im Hintergrund, solange Android die App nicht eingefroren hat (das passiert meist nach dem zweiten App-Wechsel); spätestens beim Zurückkehren in die App und beim Sperren. Ab Android 13 leert das System die Zwischenablage zusätzlich nach etwa einer Stunde selbst, auf älteren Versionen nicht.</p>
+        <p class="muted" style="margin-top:8px" data-i18n="set.clipNote">Notizen sind nicht immer geheim, deshalb lässt sich das abschalten. In der Android-App wird Kopiertes als „sensibel“ markiert — die System-Vorschau zeigt den Inhalt dann nicht an (Android 13+). Die App leert die Zwischenablage nach der eingestellten Zeit — auch im Hintergrund, solange Android die App nicht eingefroren hat (das passiert meist nach dem zweiten App-Wechsel); spätestens beim Zurückkehren in die App und beim Sperren. Ausnahme: Bei „Sperren im Hintergrund: sofort“ bleibt das Kopierte bis zum Ablauf der eingestellten Zeit stehen, damit es sich noch in eine andere App einfügen lässt; der Schlüssel selbst ist sofort weg. Ab Android 13 leert das System die Zwischenablage zusätzlich nach etwa einer Stunde selbst, auf älteren Versionen nicht.</p>
         <div style="margin-top:14px">
           <button class="btn ghost" data-action="lockNow"><svg class="ic" viewBox="0 0 24 24"><rect x="4.5" y="10" width="15" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> <span data-i18n="set.lockNow">Jetzt sperren</span></button>
         </div>
@@ -529,7 +529,7 @@ html.desk .no-desk{display:none;}
     <h2 data-i18n="help.h8">Zwischenablage</h2>
     <ul data-i18n-html="help.l8">
       <li>„Kopieren“ legt die ganze Notiz in die Zwischenablage (Titel, Text oder Checkliste als „- [x] …“-Zeilen).</li>
-      <li>Die App leert die Zwischenablage nach der eingestellten Zeit (Standard 30 s) und beim Sperren. Notizen sind nicht immer geheim, deshalb lässt sich das in den Einstellungen abschalten.</li>
+      <li>Die App leert die Zwischenablage nach der eingestellten Zeit (Standard 30 s) und beim Sperren. Bei „Sperren im Hintergrund: sofort“ sperrt die App beim App-Wechsel sofort, die kopierte Notiz bleibt aber bis zum Ablauf der eingestellten Zeit stehen — so lässt sie sich noch in eine andere App einfügen. Notizen sind nicht immer geheim, deshalb lässt sich das in den Einstellungen abschalten.</li>
       <li>Die Android-App markiert Kopiertes als <strong>sensibel</strong>: Die System-Vorschau beim Kopieren zeigt den Inhalt nicht (Android 13+).</li>
     </ul>
     <h2 data-i18n="help.h9">Sicherheit im Detail</h2>

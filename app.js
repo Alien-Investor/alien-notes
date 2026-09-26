@@ -16,7 +16,7 @@ const FONT_KEY='ai-notes-font', FONT_SIZES=['m','l','xl'];
    ============================================================ */
 const LS_KEY = 'ai-notes-vault';
 const LANG_KEY = 'ai-notes-lang';
-const APP_VERSION = '1.2';   // Anzeige in den Einstellungen; muss VERSION_NAME entsprechen (build-www.sh setzt es aus VERSION, roundtrip-test.mjs prüft es)
+const APP_VERSION = '1.3';   // Anzeige in den Einstellungen; muss VERSION_NAME entsprechen (build-www.sh setzt es aus VERSION, roundtrip-test.mjs prüft es)
 
 /* ===== KIT: i18n — Deutsch ist Quelle im HTML (data-i18n / data-i18n-html / data-i18n-ph), Englisch im I18N-Dict,
    dynamische Texte per tr(key,{params}) aus T {de,en}. ===== */
@@ -71,7 +71,7 @@ const I18N = {
   "set.bgLock":"Lock in background after","set.bg0":"immediately","set.bg60":"1 minute","set.bg300":"5 minutes","set.bg1800":"30 minutes","set.bgNever":"never",
   "set.lockNote":"By default the app does not lock after inactivity, and in the background only after 30 minutes. The background lock applies when you return after the chosen time; until then the key stays in memory. “Never” honestly means: no lock on return either — the key stays until the system ends the process or you quit the app; the file on the device is always encrypted anyway. Changes in the editor are saved as you type, before locking.",
   "set.clip":"Clear clipboard after","set.c15":"15 seconds","set.c30":"30 seconds","set.c60":"1 minute","set.cOff":"only on lock (off)",
-  "set.clipNote":"Notes are not always secret, so this can be switched off. In the Android app copied text is flagged as “sensitive” — the system preview then hides it (Android 13+). The app clears the clipboard after the chosen time — also in the background, as long as Android has not frozen the app (usually after the second app switch); at the latest when you return to the app and when it locks. From Android 13 the system additionally clears the clipboard after about an hour, older versions do not.",
+  "set.clipNote":"Notes are not always secret, so this can be switched off. In the Android app copied text is flagged as “sensitive” — the system preview then hides it (Android 13+). The app clears the clipboard after the chosen time — also in the background, as long as Android has not frozen the app (usually after the second app switch); at the latest when you return to the app and when it locks. Exception: with “Lock in background: immediately” the copied item stays until the chosen time runs out, so you can still paste it into another app; the key itself is gone immediately. From Android 13 the system additionally clears the clipboard after about an hour, older versions do not.",
   "set.lockNow":"Lock now",
   "set.totpTitle":"Aegis hurdle (TOTP on unlock)",
   "set.totpOffIntro":"Extra hurdle on unlock: after the passphrase a 6-digit code from <strong>Aegis</strong> is required. <strong>Honestly:</strong> the key lives inside the notes file itself — whoever has the file <em>and</em> the passphrase does not need the code. The hurdle helps against someone who peeked at your passphrase and holds your unlocked phone.",
@@ -132,7 +132,7 @@ const I18N = {
   "help.h7":"Backup & sync",
   "help.l7":"<li><strong>Create backup</strong> writes a <code>.notes</code> file (encrypted with your passphrase). It can safely go into Syncthing, onto a stick or into a backup.</li><li><strong>Import</strong> merges: per note the newer change wins, deletions are carried over (for one year). The file may use a different passphrase — your local one stays.</li><li>With two devices: export on both regularly and import the other's backup. Both sides end up at the same state.</li><li>Alien Pass and Alien Notes use the same file format family but separate files: a <code>.vault</code> file is refused here, a <code>.notes</code> file there — they never share keys.</li><li class=\"no-desk\"><strong>If “Lock in background” is set to “immediately”</strong>, the Android app locks when the file picker opens. The chosen file is not lost: unlock within five minutes and the import continues with exactly this file (backup as well as Standard Notes).</li>",
   "help.h8":"Clipboard",
-  "help.l8":"<li>“Copy” puts the whole note into the clipboard (title, text or checklist as “- [x] …” lines).</li><li>The app clears the clipboard after the chosen time (default 30 s) and when it locks. Notes are not always secret, so this can be switched off in Settings.</li><li>The Android app flags copied content as <strong>sensitive</strong>: the system preview shown when copying hides the content (Android 13+).</li>",
+  "help.l8":"<li>“Copy” puts the whole note into the clipboard (title, text or checklist as “- [x] …” lines).</li><li>The app clears the clipboard after the chosen time (default 30 s) and when it locks. With “Lock in background: immediately” the app locks as soon as you switch away, but the copied note stays until the chosen time runs out, so you can still paste it into another app. Notes are not always secret, so this can be switched off in Settings.</li><li>The Android app flags copied content as <strong>sensitive</strong>: the system preview shown when copying hides the content (Android 13+).</li>",
   "help.h9":"Security in detail",
   "help.l9":"<li><strong>Key derivation:</strong> Argon2id (default 64 MiB, 3 passes) from your passphrase — memory-hard, so expensive for GPU attacks on a stolen file.</li><li><strong>Encryption:</strong> AES-256-GCM (WebCrypto). A random data key encrypts the notes; the passphrase only wraps that key. The file header is authenticated too — tampering is detected.</li><li><strong>Device:</strong> the Android app requests exactly two normal permissions, both for the fingerprint sensor: USE_BIOMETRIC and USE_FINGERPRINT (the latter only up to Android 8.1, brought in by the AndroidX biometric library). No internet, no storage, no contacts. Besides these the APK only carries the AndroidX-generated signature permission DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION, which grants nothing. It forbids screenshots and app-switcher preview (FLAG_SECURE, can be switched off) and excludes itself from cloud, adb and device-to-device backups.</li><li><strong>Third-party code:</strong> only the Argon2 library hash-wasm (MIT) and the EFF word list, both bundled and hash-checked in the build. No CDN, no tracker.</li><li><strong>Limits:</strong> no images or attachments, no sharing of plaintext, no per-note passwords. A passphrase cannot be recovered.</li>"
 };
@@ -1125,8 +1125,12 @@ const App = (function(){
   function enterApp(){ if(leaveGate()) return; applySecure(settings().secure!==0); screen('app'); tab('list'); renderAll(); resetIdle(); runPendingFile();
     if(storedLen>MAX_FILE_BYTES) toast(tr('toast.fileOver',{m:MAX_FILE_BYTES/1048576}));   // Datei über der Schreibgrenze (älterer Build oder fremde Datei): ehrlich sagen, was noch gespeichert wird
     if(bioRearmDek){ const d=bioRearmDek; bioRearmDek=null; bioArm(d, KDF, WRAP, true).then(ok=>{ if(ok) toast(tr('bio.rearmed')); if(VAULT) renderSettings(); }); } }   // nach Neustart: Slot mit frischem Zufall neu bewaffnen; if(VAULT): während der Neu-Einrichtung gesperrt → sonst TypeError
-  function lock(){
-    clearIdle(); clearClip(); clearTimeout(autosaveTimer); autosaveTimer=null; applySecure(true);
+  // keepClip (v1.3, aus Alien Pass v1.11): nur die Sofort-Sperre beim Verstecken (bgLock=0) setzt es — Kopiertes bleibt dann bis zum laufenden Zeitgeber
+  // stehen (der native Pfad löscht auch im Hintergrund), sonst wäre Kopieren in eine andere App mit „sofort“ unmöglich (Gerätetest Alien Pass 26.09.2026).
+  // Ohne Zeitgeber („nur beim Sperren“) und bei jeder anderen Sperre wird wie bisher sofort geleert. Der Schlüssel selbst geht in jedem Fall sofort weg.
+  // `===true`: lock steht im App-Export — ein künftiges data-action="lock" reichte sonst ein Event als truthy keepClip durch (Diff-Review Alien Pass v1.11).
+  function lock(keepClip){
+    clearIdle(); if(!(keepClip===true&&clipOwnedAt&&clipTimer)) clearClip(); clearTimeout(autosaveTimer); autosaveTimer=null; applySecure(true);
     DEK=null; KDF=null; WRAP=null; VAULT=null; editId=null; editing=false; pendingImport=null; search=''; catFilter=null; favFilter=false; openFilter=false; selMode=false; selIds=new Set(); shownIds=[];
     pendingUnlock=null; pendingSecret=null; pendingOtpauth='';
     bioGen++; bioRearmDek=null; bioArmed=false; bioNeedsRearm=false;   // laufende Fingerabdruck-Vorgänge verfallen (Generation)
@@ -1153,21 +1157,21 @@ const App = (function(){
   // Sperren mit Editor-Sicherung: erst den Autosave-Persist zu Ende laufen lassen (AES-GCM, Millisekunden), DANN sperren — sonst
   // verwirft persist() den Stand als „tote Sitzung“ und die letzte Änderung wäre weg. Ohne offenen Editor sperrt es im nächsten Mikrotask.
   // Sperre wartet den eigenen Commit UND alle laufenden Persists ab (Kette inflight), höchstens 5 s — sonst verwarf lock() einen laufenden Autosave still (Audit run-1 #1).
-  function lockSaving(toastKey){ const p=commitEditor(true); const all=Promise.all([p&&p.then?p:Promise.resolve(), inflight]).then(()=>{},()=>{});
-    Promise.race([all, new Promise(r=>setTimeout(r,5000))]).then(()=>{ if(!DEK&&!pendingUnlock) return; lock(); if(toastKey) toast(tr(toastKey)); }); }
+  function lockSaving(toastKey, keepClip){ const p=commitEditor(true); const all=Promise.all([p&&p.then?p:Promise.resolve(), inflight]).then(()=>{},()=>{});
+    Promise.race([all, new Promise(r=>setTimeout(r,5000))]).then(()=>{ if(!DEK&&!pendingUnlock) return; lock(keepClip===true); if(toastKey) toast(tr(toastKey)); }); }
   function activity(){ if(!DEK&&!pendingUnlock) return; const n=Date.now(); if(n-lastActivity<5000) return; lastActivity=n; resetIdle(); }
   ['click','keydown','touchstart','scroll','mousemove'].forEach(ev=>document.addEventListener(ev, activity, {passive:true}));
   let bgAway=false;
   function onHidden(){
     if(bgAway) return; bgAway=true;
     hiddenAt=Date.now(); clearGateInputs(); if(DESK&&!DEK&&clipOwnedAt) clearClip();
-    if((DEK||pendingUnlock)&&settings().bgLock===0){ lockSaving(); }   // „sofort“: Editor-Stand sichern, dann sperren; getippte Passphrasen nie stehen lassen
+    if((DEK||pendingUnlock)&&settings().bgLock===0){ lockSaving(null, true); }   // „sofort“: Editor-Stand sichern, dann sperren; getippte Passphrasen nie stehen lassen; Kopiertes bleibt bis zum Zeitgeber (v1.3)
     else if(DEK&&editing) commitEditor(true);                          // sonst nur den Editor-Stand sichern, bevor Android die App einfriert
   }
   function onShown(){
     if(!bgAway) return; bgAway=false;
     const away=hiddenAt?Date.now()-hiddenAt:0; hiddenAt=0;
-    if(clipOwnedAt&&(clipDue||(settings().clipClear>0&&Date.now()-clipOwnedAt>=settings().clipClear*1000))) clearClip();
+    if(clipOwnedAt&&(clipDue||(clipDeadline&&Date.now()>=clipDeadline))) clearClip();   // Frist aus armClip(), nicht settings(): gesperrt kennt settings() die Einstellung nicht mehr (v1.3)
     if(!DEK&&!pendingUnlock){ if(bioArmed&&bioAuto&&!$('screen-lock').classList.contains('hidden')) doBio(); return; }   // zurück auf dem Sperrbildschirm: Fingerabdruck anbieten
     const s=settings();   // BG_NEVER (-1): nie durch Hintergrund sperren — die Idle-Regel gilt trotzdem, wenn gesetzt
     if((s.bgLock>0&&away>s.bgLock*1000)||(s.autolock>0&&away>s.autolock*60000)){ lockSaving('toast.autolocked'); }
@@ -1179,16 +1183,16 @@ const App = (function(){
 
   /* ---------- Zwischenablage (synchron im Klick-Handler aufrufen!) — wortgleich Alien Pass ---------- */
   function fallbackCopy(text){ let ta=null; try{ ta=document.createElement('textarea'); ta.value=text; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); return document.execCommand('copy'); }catch(_){ return false; } finally{ if(ta){ ta.value=''; ta.remove(); } } }
-  let clipDue=false, clipTries=0;   // Löschen war fällig, konnte aber (Hintergrund/kein Fokus) noch nicht ausgeführt werden
+  let clipDue=false, clipTries=0, clipDeadline=0;   // Löschen war fällig, konnte aber (Hintergrund/kein Fokus) noch nicht ausgeführt werden; clipDeadline = Wanduhr-Frist der Kopie (0 = keine)
   const CLIP_MAX_TRIES=600;          // ~10 min Wiederholung im Vordergrund, dann aufgeben (Android leert spätestens nach 1 h selbst)
-  function armClip(){ if(clipTimer){ clearTimeout(clipTimer); clipTimer=null; } clipOwnedAt=Date.now(); clipDue=false; clipTries=0; const s=settings().clipClear; if(s>0) clipTimer=setTimeout(clearClip, s*1000); }
+  function armClip(){ if(clipTimer){ clearTimeout(clipTimer); clipTimer=null; } clipOwnedAt=Date.now(); clipDue=false; clipTries=0; const s=settings().clipClear; clipDeadline=s>0?clipOwnedAt+s*1000:0; if(s>0) clipTimer=setTimeout(clearClip, s*1000); }
   function clearClip(){
     if(clipTimer){ clearTimeout(clipTimer); clipTimer=null; }
     if(!clipOwnedAt) return; clipDue=true;
     const bg=document.hidden||(typeof document.hasFocus==='function'&&!document.hasFocus());
     if(bg&&!SC){ clipTimer=setTimeout(clearClip,1000); return; }     // Web-API braucht Fokus → vertagen; nativ (Android) darf ohne Fokus schreiben
-    if(!bg&&++clipTries>CLIP_MAX_TRIES){ clipOwnedAt=0; clipDue=false; return; }   // Versuche nur im Vordergrund zählen (Audit run-1 #2)
-    const ok=()=>{ clipOwnedAt=0; clipDue=false; clipTries=0; };
+    if(!bg&&++clipTries>CLIP_MAX_TRIES){ clipOwnedAt=0; clipDue=false; clipDeadline=0; return; }   // Versuche nur im Vordergrund zählen (Audit run-1 #2)
+    const ok=()=>{ clipOwnedAt=0; clipDue=false; clipTries=0; clipDeadline=0; };
     const retry=()=>{ if(!bg&&fallbackCopy(' ')) ok(); else clipTimer=setTimeout(clearClip,1000); };
     let p=null; try{ p=SC?SC.clear():(navigator.clipboard&&navigator.clipboard.writeText(' ')); }catch(_){ p=null; }
     if(p&&p.then) p.then(ok,retry); else retry();

@@ -1,14 +1,23 @@
 # Changelog — Alien Notes
 
+## v1.3 — 2026-09-26
+
+Kleine Korrektur aus dem Alltag, nachgezogen aus Alien Pass 1.11. Am Datei-Format, an der Verschlüsselung und an deinen Notizen ändert sich nichts.
+- **Behoben:** Stand „Sperren im Hintergrund“ auf „sofort“, ließ sich eine kopierte Notiz nie in eine andere App einfügen — der App-Wechsel
+  sperrte Alien Notes und leerte dabei sofort die Zwischenablage. Jetzt bleibt das Kopierte bei der Sofort-Sperre bis zum Ablauf der eingestellten
+  Zeit stehen (ab Werk 30 s) und wird wie bisher auch im Hintergrund gelöscht. Der Schlüssel im Speicher geht weiterhin sofort weg. Steht
+  „Zwischenablage leeren“ auf „nur beim Sperren“, leert die Sperre wie bisher sofort. Handbuch entsprechend ergänzt.
+- **Nachgereicht zum Import nach dem Entsperren (1.2):** Der gemerkte Dateiverweis verfällt auch dann nach fünf Minuten, wenn die Uhr zwischendurch
+  zurückgestellt wurde. Eine nach der Wahl geänderte Datei meldet „Datei konnte nicht gelesen werden.“ statt still zu verschwinden.
+
 ## v1.2 — 2026-09-26
 
 Gerätetest-Fund aus Alien Pass, hier nachgezogen: Bei „Sperren im Hintergrund: sofort“ war der Import unmöglich. Der Datei-Picker ist eine
 eigene Android-Ansicht, die App sperrte beim Öffnen und verwarf die gewählte Datei still. Jetzt merkt sie sich die Datei (nur den Verweis,
 gelesen wird nichts, solange die App zu ist), zeigt auf dem Sperrbildschirm „Datei gewählt — zum Importieren entsperren“ und setzt den Import
 nach dem Entsperren mit genau dieser Datei fort — im Sicherung-Tab, für `.notes`-Backups (dann mit der Passphrase-Abfrage der Datei) wie für
-Standard-Notes-Backups. Der Verweis verfällt nach fünf Minuten ohne Entsperren (dann sagt es ein Hinweis), auch wenn die Uhr zwischendurch
-zurückgestellt wurde. Die Sperre selbst bleibt, wie sie ist: Bei „sofort“ liegt kein Schlüssel im Speicher, während die App im Hintergrund ist.
-Eine nach der Wahl geänderte Datei meldet „Datei konnte nicht gelesen werden.“ statt still zu verschwinden.
+Standard-Notes-Backups. Der Verweis verfällt nach fünf Minuten ohne Entsperren (dann sagt es ein Hinweis). Die Sperre selbst bleibt, wie sie ist: Bei „sofort“ liegt
+kein Schlüssel im Speicher, während die App im Hintergrund ist.
 Aus der internen Review dieser Änderung: Kam eine Sperre, während eine gerade gewählte Datei noch gelesen wurde (etwa „Jetzt sperren“), zeigte die
 gesperrte App bisher das Passphrase-Feld der Datei oder ließ ein Standard-Notes-Backup still fallen — beides wird jetzt ebenfalls nach dem Entsperren nachgeholt.
 

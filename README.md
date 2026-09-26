@@ -115,7 +115,8 @@ Schlüsselableitung schafft, und schlägt eine passende Argon2-Stufe vor.
 - **„Rückgängig“ nach dem Löschen** (sechs Sekunden), **„Keine Vorschau“** je Notiz (die Liste zeigt nur den Titel), **drei Schriftgrößen**, und
   jede Rückfrage ist ein Dialog im App-Design — der Android-Systemdialog erbt den Screenshot-Schutz nicht (seit 1.1).
 - **Kopieren** legt die ganze Notiz in die Zwischenablage; die App leert sie nach der eingestellten Zeit (ab Werk 30 s, abschaltbar) und beim
-  Sperren. In der Android-App ist Kopiertes als **sensibel** markiert — die System-Vorschau zeigt den Inhalt nicht (Android 13+).
+  Sperren. Einzige Ausnahme: Bei „Sperren im Hintergrund: sofort“ bleibt das Kopierte bis zum Ablauf der Zeit stehen, damit es sich noch in eine
+  andere App einfügen lässt (seit 1.3). In der Android-App ist Kopiertes als **sensibel** markiert — die System-Vorschau zeigt den Inhalt nicht (Android 13+).
 - **Sperre, lockerer als beim Passwort-Manager:** ab Werk keine Sperre nach Inaktivität und im Hintergrund erst nach 30 Minuten (beides
   einstellbar bis „nie“ bzw. „sofort“). Die Hintergrund-Sperre greift, wenn du nach der gewählten Zeit zurückkehrst; bis dahin bleibt der
   Schlüssel im Arbeitsspeicher. „Jetzt sperren“ löscht Schlüssel und alles Angezeigte sofort. Die Datei auf dem Gerät ist immer verschlüsselt.

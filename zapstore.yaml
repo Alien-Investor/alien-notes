@@ -33,7 +33,8 @@ description: |
   - "Undo" after deleting (six seconds), "no preview" per note (the list shows only the title), three font sizes, and every confirmation is
     an in-app dialog — the Android system dialog does not inherit the screenshot protection
   - Copy puts the whole note into the clipboard; auto-clear after 15/30/60 s (default 30 s, can be switched off) and on lock; copied content
-    is flagged sensitive so the Android 13+ system preview hides it
+    is flagged sensitive so the Android 13+ system preview hides it. With "Lock in background: immediately" the copied note stays until the
+    chosen time runs out so it can still be pasted into another app (since 1.3)
   - Locking, more relaxed than a password manager: by default no lock after inactivity and in the background only after 30 minutes
     (both adjustable up to "never" / "immediately"); "Lock now" clears the key and everything on screen at once; the file is always encrypted.
     With "immediately" the Android app also locks while the file picker is open — unlock within five minutes and the import continues with the chosen file (since 1.2)
