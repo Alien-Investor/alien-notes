@@ -633,4 +633,78 @@ console.log('\n[18] Mehrfachauswahl (bulkEdit): Papierkorb, Rückgängig, Katego
   ok(d.entries.every(e=>Object.keys(e).length===FIELDS&&V.canon(V.sanitizeEntry(e,Date.parse(NOW)))===V.canon(e)),'Ergebnisse sanitizer-stabil ('+FIELDS+' Felder)');
 }
 
+console.log('\n[19] Standard-Notes-Fuzz: zufällige Backups durch snImport — jeder Eintrag sanitizer-stabil, geklemmt, sichtbar, ohne Steuerzeichen, Geheimnisse nie im Ergebnis');
+{ // Deterministisch (LCG-Seed wie Alien Pass [26]), damit ein Fehlschlag reproduzierbar bleibt. Alphabet: Steuerzeichen, NUL, BOM, Nullbreite, Bidi,
+  // HTML-Splitter, Entities, Markdown-/Task-Präfixe, Punkte (Tag-Altform), Emoji, Zeitstempel kaputt/Zukunft/Textform. Geheime Notizen (Authenticator,
+  // Tabelle — über noteType, editorIdentifier oder SN|Component) tragen einen Marker, der nirgends im Ergebnis stehen darf.
+  let seed=20260928; const rnd=()=>{ seed=(seed*1103515245+12345)&0x7fffffff; return seed/0x7fffffff; }; const pick=a=>a[Math.floor(rnd()*a.length)];
+  const NUL=String.fromCharCode(0), NOW=Date.parse('2026-09-28T12:00:00Z'), NOWISO=new Date(NOW).toISOString(), maxT=NOW+120000;
+  const A=['a','b','Ä',' ','\t','\n','\r','\r\n',NUL,'\u0007','\u001b','\u007f','\u0085','﻿','​','‎','‮','⁠','🙂','.','/','#','- ','- [x] ','- [ ] ','* ','1. ','> ','```','**','`',
+    '<','>','</p>','<br>','<li>','<td>','&amp;','&#0;','&#x110000;','&#55296;','&lt;','&','"','\\','x'.repeat(300),' '.repeat(50)];
+  const fld=(n)=>{ let s=''; const k=Math.floor(rnd()*(n||8)); for(let i=0;i<k;i++) s+=pick(A); return s; };
+  const D=['2026-01-01T10:00:00.000Z','2026-01-01T10:00:00Z','Thu Jan 01 2026 10:00:00 GMT+0000 (UTC)','2099-01-01T00:00:00.000Z','1969-12-31T23:59:59.000Z','2020-13-45T99:99:99Z','',
+    'irgendwann','0','99999999999999','+275760-09-13T00:00:00.000Z',null,42,{}];
+  const UU=['00000000-0000-4000-8000-0000000000a1','00000000-0000-4000-8000-0000000000a2','AAAAAAAA-BBBB-4CCC-8DDD-EEEEEEEEEEEE','kurz','','x'.repeat(40),'n1','n2',null,7];
+  const TU=['t1','t2','t3','00000000-0000-4000-8000-0000000000b1',''];
+  const LT=['root','paragraph','heading','quote','list','listitem','code','code-highlight','horizontalrule','table','tablerow','tablecell','text','linebreak','tab','link','autolink','hashtag',
+    'unencrypted-image','inline-file','snfile','snbubble','youtube','tweet','collapsible-container','collapsible-title','collapsible-content','mark','overflow','unbekannt'];
+  const lex=d=>{ const n={type:pick(LT)}; if(rnd()<0.6) n.text=fld(6); if(rnd()<0.3) n.format=Math.floor(rnd()*32); if(rnd()<0.2) n.url=pick(['https://x.org',fld(3),5]);
+    if(rnd()<0.2) n.listType=pick(['number','bullet','check','x']); if(rnd()<0.2) n.checked=pick([true,false,'true']); if(rnd()<0.1) n.start=pick([0,3,-1,1.5,'2']);
+    if(rnd()<0.1) n.tag=pick(['h1','h2','h6','hx',3]); if(rnd()<0.1) n.language=fld(3); if(rnd()<0.1) n.alt=fld(3);
+    if(d<4&&rnd()<0.7){ n.children=[]; const k=Math.floor(rnd()*4); for(let i=0;i<k;i++) n.children.push(rnd()<0.05?pick([null,3,'s',[]]):lex(d+1)); } return n; };
+  const KINDS=['plain-text','markdown','code','rich-text','super','task','authentication','spreadsheet','was-auch-immer',undefined];
+  const EDS=Object.keys({'com.standardnotes.plain-text':1,'com.standardnotes.super-editor':1,'org.standardnotes.token-vault':1,'org.standardnotes.standard-sheets':1,'org.standardnotes.code-editor':1,
+    'org.standardnotes.plus-editor':1,'org.standardnotes.simple-markdown-editor':1,'org.standardnotes.simple-task-editor':1}).concat(['com.example.editor',undefined]);
+  const SECRET_ED=['org.standardnotes.token-vault','org.standardnotes.standard-sheets'];
+  const txt=kind=>{ const r=rnd(); if(kind==='super'&&r<0.7){ const t=JSON.stringify({root:lex(0)}); return rnd()<0.1?t.slice(0,Math.floor(rnd()*t.length)):t; }
+    if(kind==='task'&&r<0.7){ let s=''; const k=Math.floor(rnd()*6); for(let i=0;i<k;i++) s+=pick(['- [ ] ','- [x] ','* ','','  '])+fld(4)+pick(['\n','\r\n','\r']); return s; }
+    return fld(12); };
+  let files=0, notes=0, secrets=0, errs=0, err=null; const t0=Date.now();
+  for(let f=0;f<20000&&!err;f++){
+    const items=[], secretUuids=[]; const n=Math.floor(rnd()*10);
+    for(let i=0;i<n;i++){ const r=rnd();
+      if(r<0.6){ const kind=pick(KINDS), ed=pick(EDS), uuid=pick(UU); let secret=kind==='authentication'||kind==='spreadsheet'||SECRET_ED.includes(ed);
+        if(!secret&&rnd()<0.05&&typeof uuid==='string'){ secret=true; items.push({uuid:'c'+i,content_type:'SN|Component',content:rnd()<0.5?{identifier:pick(SECRET_ED),associatedItemIds:[uuid]}:{package_info:{identifier:pick(SECRET_ED)},associatedItemIds:[uuid,5]}}); }
+        const c={title:rnd()<0.8?fld(6):pick([null,5,{}]), text:secret?'GEHEIMNIS'+fld(3)+'MARKE':txt(kind), references:[]};
+        if(kind!==undefined) c.noteType=kind; if(ed!==undefined) c.editorIdentifier=ed;
+        if(rnd()<0.3) c.references.push({uuid:pick(TU),content_type:'Tag'}); if(rnd()<0.05) c.references.push(null,{uuid:5});
+        if(rnd()<0.15) c.trashed=pick([true,'true',1]); if(rnd()<0.15) c.starred=pick([true,'ja']); if(rnd()<0.1) c.pinned=true; if(rnd()<0.05) c.archived=true;
+        if(rnd()<0.4) c.appData={'org.standardnotes.sn':{client_updated_at:pick(D),pinned:pick([true,false,'true']),archived:rnd()<0.1}};
+        const it={uuid,content_type:'Note',content:c}; if(rnd()<0.8) it.created_at=pick(D); if(rnd()<0.8) it.updated_at=pick(D);
+        if(rnd()<0.03) it.deleted=true; if(rnd()<0.03) it.content=pick(['004:abc:def',null]);
+        if(secret){ secrets++; if(typeof it.content==='object'&&it.content) secretUuids.push(uuid); }
+        items.push(it); }
+      else if(r<0.85){ const refs=[]; const k=Math.floor(rnd()*3); for(let j=0;j<k;j++) refs.push(rnd()<0.5?{uuid:pick(UU),content_type:'Note'}:{uuid:pick(TU),content_type:'Tag',reference_type:'TagToParentTag'});
+        items.push({uuid:pick(TU),content_type:'Tag',content:{title:rnd()<0.9?fld(5)+pick(['','.',NUL+'.'])+fld(3):7,references:refs}}); }
+      else items.push(pick([null,42,'string',[],{content_type:'SN|File',uuid:'f',content:{}},{content_type:'SN|SmartTag',content:{title:'Alle'}},{uuid:'u',content_type:'Note'}]));
+    }
+    let raw=JSON.stringify(rnd()<0.05?{version:'004',items,keyParams:{}}:{version:'004',items}); if(rnd()<0.03) raw=raw.slice(0,Math.floor(rnd()*raw.length));
+    const budget=pick([undefined,0,1,200]);
+    try{ let r; try{ r=V.snImport(raw,{now:NOW,trashBudget:budget}); }catch(x){ if(['snjson','snformat','snencrypted'].includes(x&&x.message)){ errs++; continue; } throw x; }
+      files++; const out=JSON.stringify(r.entries), s=r.stats;
+      if(out.includes('GEHEIMNIS')||out.includes('MARKE')) throw new Error('Geheimnis im Ergebnis');
+      if(s.notes+s.lists+s.trashed!==r.entries.length) throw new Error('Statistik passt nicht: '+JSON.stringify(s));
+      if(budget!=null&&s.trashed>budget) throw new Error('Papierkorb über Budget');
+      if(JSON.stringify(V.snImport(raw,{now:NOW,trashBudget:budget}))!==JSON.stringify(r)) throw new Error('nicht deterministisch');
+      for(const e of r.entries){ notes++;
+        if(Object.keys(e).length!==FIELDS||V.canon(V.sanitizeEntry(e,NOW))!==V.canon(e)) throw new Error('nicht sanitizer-stabil: '+JSON.stringify(e).slice(0,160));
+        if(!/^[0-9a-f]{16}$/.test(e.id)||!V.ENTRY_TYPES.includes(e.type)||(e.md&&e.type!=='text')) throw new Error('ID/Typ/md: '+JSON.stringify(e).slice(0,160));
+        if(Date.parse(e.updated)>maxT||Date.parse(e.created)>maxT||Date.parse(e.updated)<Date.parse(e.created)||(e.deleted!==null&&e.deleted!==NOWISO)) throw new Error('Zeitstempel: '+e.created+' / '+e.updated+' / '+e.deleted);
+        if(e.title.length>V.CAPS.title||e.body.length>V.CAPS.body||e.cat.length>V.CAPS.cat||e.items.length>V.ITEMS_MAX) throw new Error('Cap verletzt');
+        if(/[\u0000-\u001f\u007f-\u009f​-‏‪-‮⁠-⁯﻿]/.test(e.title+e.cat+e.items.map(x=>x.text).join(''))) throw new Error('Steuerzeichen in Titel/Kategorie/Zeile: '+JSON.stringify(e.title+'|'+e.cat));
+        if(!e.title&&(e.type==='text'?!V.line(e.body,V.CAPS.body):!e.items.length)) throw new Error('unsichtbarer Eintrag: '+JSON.stringify(e).slice(0,160)); }
+      const m=V.mergeEntries([],r.entries); if(new Set(m.entries.map(e=>e.id)).size!==m.entries.length) throw new Error('Merge lässt doppelte IDs stehen'); }
+    catch(x){ err=x.message+' | '+(process.env.FUZZ_FULL?raw:raw.slice(0,300)); }
+  }
+  ok(!err,'20000 zufällige Backups ('+files+' gelesen, '+errs+' mit Fehlercode abgewiesen, '+notes+' Einträge, '+secrets+' Geheimnisse) ohne Wurf: sanitizer-stabil, geklemmt, sichtbar, ohne Steuerzeichen, deterministisch'+(err?' — '+err:''));
+  ok(notes>20000&&secrets>15000&&errs>1000&&Date.now()-t0<15000,'Fuzz erreicht genug Einträge, Geheimnisse und Fehlerfälle in unter 15 s ('+(Date.now()-t0)+' ms)');
+  // Fund des Fuzz-Laufs (28.09.2026): Text nur aus Steuer-/Nullbreitenzeichen (Rich-Text „BOM + DEL“: htmlToText trimmt das BOM, DEL bleibt) überlebte den
+  // trim()-Guard und kam als Notiz ohne Titel und ohne sichtbaren Text an — jetzt „leer“ übersprungen; ein unsichtbarer Vorlauf vor dem Text frisst den Titel nicht mehr
+  { const NUL=String.fromCharCode(0), one=(text,noteType,title)=>V.snImport(JSON.stringify({version:'004',items:[{uuid:'00000000-0000-4000-8000-0000000000a2',content_type:'Note',content:{title:title||'',text,noteType,references:[]}}]}),{now:NOW});
+    const a=one('\uFEFF\u007f','rich-text'), b=one('\u200b\n'+NUL+'\u202e','plain-text'), c=one('\u200b'.repeat(250)+'Text dahinter','plain-text'), d=one('\u200b','plain-text','Titel');
+    ok(a.entries.length===0&&a.stats.skipped.empty===1&&b.entries.length===0&&b.stats.skipped.empty===1,'Rich-Text/Klartext nur aus unsichtbaren Zeichen → übersprungen („leer“), keine unsichtbare Notiz');
+    ok(c.entries.length===1&&c.entries[0].title==='Text dahinter','250 Nullbreiten vor dem Text: Titel kommt trotzdem aus der ersten sichtbaren Zeile');
+    ok(d.entries.length===1&&d.entries[0].title==='Titel','unsichtbarer Text MIT Titel bleibt (Titel zählt)'); }
+}
+
 console.log(`\n${pass} ok, ${fail} Fehler`); process.exit(fail?1:0);

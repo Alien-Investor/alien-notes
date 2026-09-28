@@ -843,8 +843,10 @@ function snImport(raw, opt){ opt=opt||{}; const now=opt.now||Date.now(); const t
     else if(kind==='super'){ const r=lexToMd(text, st); if(r===null) body=text; else { body=r; md=true; } }
     else { body=text; md=kind==='markdown'; }
     if(body.length>CAPS.body) st.capped.body++;
-    if(!title&&type==='text') title=body.split('\n').map(l=>line(l,CAPS.title)).find(Boolean)||'';   // wie der Editor: erste Zeile wird Titel
-    if(!title&&(type==='text'?!body.trim():!items.length)){ st.skipped.empty++; continue; }
+    // wie der Editor: erste SICHTBARE Zeile wird Titel — erst Steuer-/Nullbreitenzeichen entfernen, dann auf CAPS.title kürzen (sonst verschluckte ein Vorlauf
+    // aus 200 unsichtbaren Zeichen den Text dahinter). Ohne Titel ist eine Text-Notiz damit unsichtbar (Fuzz [19], 28.09.2026: Rich-Text aus BOM + DEL kam als leere Notiz an).
+    if(!title&&type==='text') title=body.split('\n').map(l=>line(l,CAPS.body).slice(0,CAPS.title)).find(Boolean)||'';
+    if(!title&&(type==='text'||!items.length)){ st.skipped.empty++; continue; }
     const updated=snDate(app.client_updated_at, snDate(it.updated_at, nowIso)), created=snDate(it.created_at, updated);
     const e=sanitizeEntry({id:snId(it.uuid), type, cat:catFor(typeof it.uuid==='string'?it.uuid:'', Array.isArray(c.references)?c.references:[]), title, body, items,
       fav:c.starred===true, pinned:app.pinned===true||c.pinned===true, md, created, updated, deleted:c.trashed===true?nowIso:null}, now);   // Papierkorb: Frist läuft ab jetzt, sonst wipeTrash sofort
