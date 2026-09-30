@@ -5,7 +5,16 @@
 # Trockenlauf ohne Amber (unsignierte Events):
 #   SIGN_WITH=npub1cnlymdm5jz8eayycwynhze4s2zh9n0y04atce8ahxl5qfkptplls0s40hp zsp publish zapstore.yaml --offline
 
-repository: https://codeberg.org/Alien-Investor/alien-notes
+repository: https://github.com/Alien-Investor/alien-notes
+# APK von der eigenen Download-Seite (seit 30.09.2026 ab v1.5, Muster Sachwert-Tresor v3.6.4; GitHub ist nur Spiegel). Die Seite schreibt make-release.sh mit genau einem Link auf die aktuelle APK.
+release_source:
+  version:
+    url: https://api.alien-investor.org/downloads/alien-notes/
+    selector: "a"
+    match: "alien-notes-([0-9]+(?:\\.[0-9]+)+)\\.apk"
+  asset_url: https://api.alien-investor.org/downloads/alien-notes/alien-notes-{version}.apk
+# Nur die APK (im GitHub-Release liegt auch das Flatpak)
+match: '.*\.apk$'
 pubkey: npub1cnlymdm5jz8eayycwynhze4s2zh9n0y04atce8ahxl5qfkptplls0s40hp
 
 name: Alien Notes
@@ -50,7 +59,7 @@ description: |
     own keys — Alien Pass rejects a notes file and vice versa
   - Notes file in the private app folder, written atomically (temp file, fsync, rename) — never a half-written file; 20 MB file limit
     enforced on save as well, an oversized file still opens so you can tidy up
-  - Linux desktop edition (Flatpak without network permission and without file access, GPG-signed checksum) — see the Codeberg release
+  - Linux desktop edition (Flatpak without network permission and without file access, GPG-signed checksum) — on the download page and in the GitHub release
   - No INTERNET permission; only USE_BIOMETRIC and USE_FINGERPRINT (up to Android 8.1) for the fingerprint sensor
     (plus the AndroidX-generated signature permission that grants nothing),
     allowBackup=false + data extraction rules (no cloud, adb or D2D backup),

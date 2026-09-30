@@ -6,22 +6,42 @@ Die Android-App fordert **keine Internet-Berechtigung** an — nur die zwei norm
 Die Desktop-Fassung läuft als Flatpak **ohne Netzwerk-Berechtigung und ohne Zugriff auf deine Dateien**.
 Deine Notizen verlassen das Gerät nie im Klartext.
 
-Schwester-App von [Alien Pass](https://codeberg.org/Alien-Investor/alien-pass) und dem
-[Sachwert-Tresor](https://codeberg.org/Alien-Investor/sachwert-tresor) — gleiche Architektur, gleiche Härtung, gleicher Alien-Investor-Stil.
+Schwester-App von [Alien Pass](https://github.com/Alien-Investor/alien-pass) und dem
+[Sachwert-Tresor](https://github.com/Alien-Investor/sachwert-tresor) — gleiche Architektur, gleiche Härtung, gleicher Alien-Investor-Stil.
 
 ## 📲 Installieren (Android / GrapheneOS)
 
-Bewusst **nicht im Google Play Store**. Verteilung über signierte Releases hier auf Codeberg
-und im [Zap Store](https://zapstore.dev). Empfohlen über **[Obtainium](https://github.com/ImranR98/Obtainium)**:
+Bewusst **nicht im Google Play Store**. Verteilung über signierte Releases von der eigenen Download-Adresse
+[api.alien-investor.org/downloads/alien-notes/](https://api.alien-investor.org/downloads/alien-notes/) und im
+[Zap Store](https://zapstore.dev/apps/org.alieninvestor.notes). Jedes Release liegt zusätzlich als Spiegel hier auf
+[GitHub](https://github.com/Alien-Investor/alien-notes/releases).
+Empfohlen über **[Obtainium](https://github.com/ImranR98/Obtainium)** (automatische Updates, ohne Google), in Obtainium **„App hinzufügen“**:
 
-1. In Obtainium **„App hinzufügen"** → diese Repo-URL eintragen:
+1. **„Quell-URL der App“**:
    ```
-   https://codeberg.org/Alien-Investor/alien-notes
+   https://api.alien-investor.org/downloads/alien-notes/
    ```
-2. Quell-Typ wird als **Forgejo/Gitea** erkannt → **Hinzufügen** → **Installieren**.
-3. Updates meldet Obtainium automatisch.
+2. Unter **„Zusatzoptionen für HTML“** → **„Versionsextraktion per RegEx“**:
+   ```
+   alien-notes-([0-9]+(\.[0-9]+)+)\.apk$
+   ```
+3. **„Zu verwendende Gruppe abgleichen“**: `$1`
+4. **„Expected signing certificate hashes“** (so heißt es auch in der deutschen Fassung):
+   ```
+   F3:68:F9:0B:F8:DF:8C:55:BB:6C:28:6D:32:25:BA:8A:F4:45:22:7B:A6:9B:36:00:DF:BB:F6:A1:44:09:BA:7C
+   ```
+5. Mit dem **„+“** hinzufügen → **Installieren**. Updates meldet Obtainium automatisch.
 
-**Ohne Obtainium:** [Neuestes Release](https://codeberg.org/Alien-Investor/alien-notes/releases/latest) → `.apk` laden und installieren.
+Die RegEx braucht Obtainium, um auf einer Download-Seite die Versionsnummer aus dem Dateinamen zu lesen; ohne sie kann es die
+installierte Version nicht vergleichen. Der Zertifikats-Hash ist eine harte Sperre: Eine APK mit anderem Schlüssel installiert Obtainium nicht.
+Zum Kopieren und mit „In Obtainium öffnen“ (alles vorbelegt): [Obtainium-Blatt auf der Website](https://alien-investor.org/alien-notes.html#obtainium).
+
+> **Noch mit der Codeberg-Adresse eingerichtet?** Dort erscheinen keine Releases mehr. Obtainium kann die Quelle einer App nicht bearbeiten, deshalb einmalig:
+> vorher ein `.notes`-Backup anlegen, den Eintrag „Alien Notes“ entfernen und im Dialog nur **„Aus Obtainium entfernen“** eingeschaltet lassen
+> (**„Vom Gerät deinstallieren“ aus**, das löscht App und Notizen), dann wie oben neu hinzufügen. Obtainium erkennt die installierte App,
+> Signatur und Paket-ID bleiben gleich.
+
+**Ohne Obtainium:** [Download-Seite](https://api.alien-investor.org/downloads/alien-notes/) → `.apk` laden und installieren.
 
 **Signatur-Fingerprint** (SHA-256 des Signatur-Zertifikats, über alle Versionen gleich — mit
 [AppVerifier](https://github.com/soupslurpr/AppVerifier) prüfen):
@@ -36,8 +56,8 @@ f368f90bf8df8c55bb6c286d3225ba8af445227ba69b3600dfbbf6a14409ba7c
 ## 🖥️ Installieren (Linux-Desktop, Flatpak)
 
 Derselbe Code wie auf dem Handy, verpackt mit Electron als **Flatpak** (x86_64). Das Dateiformat ist identisch: Backups vom Handy lassen
-sich am Desktop importieren und umgekehrt. Verteilung als Datei mit GPG-signierter Prüfsumme im [Codeberg-Release](https://codeberg.org/Alien-Investor/alien-notes/releases) —
-nicht auf Flathub, kein automatisches Update.
+sich am Desktop importieren und umgekehrt. Verteilung als Datei mit GPG-signierter Prüfsumme im [GitHub-Release](https://github.com/Alien-Investor/alien-notes/releases)
+und auf der eigenen Download-Adresse (siehe Schritt 1) — nicht auf Flathub, kein automatisches Update.
 
 **Voraussetzung:** Flatpak mit dem Flathub-Remote (für die Laufzeit `org.freedesktop.Platform` 25.08, die flatpak beim Installieren nachlädt):
 ```
@@ -45,6 +65,13 @@ flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/fl
 ```
 
 **1. Drei Dateien aus dem Release laden:** `alien-notes-X.Y-linux-x86_64.flatpak`, `SHA256SUMS`, `SHA256SUMS.asc`.
+Dieselben Dateien liegen auch auf der eigenen Download-Adresse: `SHA256SUMS` und `SHA256SUMS.asc` unter
+`https://api.alien-investor.org/downloads/alien-notes/`, das Bundle unter dem Namen, der in `SHA256SUMS` steht:
+```
+curl -fLO https://api.alien-investor.org/downloads/alien-notes/SHA256SUMS
+curl -fLO https://api.alien-investor.org/downloads/alien-notes/SHA256SUMS.asc
+curl -fLO https://api.alien-investor.org/downloads/alien-notes/$(awk '{print $2}' SHA256SUMS)
+```
 
 **2. Signatur prüfen.** Die Pakete sind mit dem GPG-Release-Schlüssel von Alien Investor signiert
 ([`alien-investor-release-key.asc`](alien-investor-release-key.asc) hier im Repo, derselbe Schlüssel wie bei Alien Pass und Sachwert-Tresor).
@@ -177,7 +204,7 @@ Schlüsselableitung schafft, und schlägt eine passende Argon2-Stufe vor.
   Zwischenablage-Plugin, Fingerabdruck-Plugin und Dateispeicher (alle als Quelltext in `patch-hardening.mjs`; der Vendor-Hash-Check steht in
   `build-www.sh`, ebenfalls Klartext).
 - **Fingerabdruck-Entsperren, Aegis-Hürde, PIN am Desktop:** wortgleich aus Alien Pass übernommen und dort ausführlich eingeordnet — siehe das
-  [Alien-Pass-README](https://codeberg.org/Alien-Investor/alien-pass#sicherheit). Kurz: Der Fingerabdruck-Slot liegt außerhalb der Datei im
+  [Alien-Pass-README](https://github.com/Alien-Investor/alien-pass#sicherheit). Kurz: Der Fingerabdruck-Slot liegt außerhalb der Datei im
   Android-Keystore und verlangt nach Neustart, Passphrase-Wechsel und neuem Fingerabdruck die Passphrase; die Aegis-Hürde hilft gegen jemanden,
   der die Passphrase abgeschaut hat und das entsperrte Handy hält, ist aber kein zweiter Faktor; die Desktop-PIN schützt nur eine Schlüsselkopie
   im Arbeitsspeicher, höchstens 24 Stunden.

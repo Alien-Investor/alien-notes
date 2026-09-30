@@ -6,7 +6,7 @@
 .gitignore !filter !diff
 .git-crypt/** !filter !diff
 
-# Öffentliche Nutzer-Doku (bewusst KLARTEXT, rendert auf der Codeberg-Startseite —
+# Öffentliche Nutzer-Doku (bewusst KLARTEXT, rendert auf der GitHub-Startseite —
 # enthält KEINE Geheimnisse). Build-/Keystore-/Deploy-Interna liegen verschlüsselt in BUILD.md/CLAUDE.md.
 /README.md !filter !diff
 /CHANGELOG.md !filter !diff
