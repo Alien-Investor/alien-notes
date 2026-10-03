@@ -16,7 +16,7 @@ const FONT_KEY='ai-notes-font', FONT_SIZES=['m','l','xl'];
    ============================================================ */
 const LS_KEY = 'ai-notes-vault';
 const LANG_KEY = 'ai-notes-lang';
-const APP_VERSION = '1.5';   // Anzeige in den Einstellungen; muss VERSION_NAME entsprechen (build-www.sh setzt es aus VERSION, roundtrip-test.mjs prüft es)
+const APP_VERSION = '1.6';   // Anzeige in den Einstellungen; muss VERSION_NAME entsprechen (build-www.sh setzt es aus VERSION, roundtrip-test.mjs prüft es)
 
 /* ===== KIT: i18n — Deutsch ist Quelle im HTML (data-i18n / data-i18n-html / data-i18n-ph), Englisch im I18N-Dict,
    dynamische Texte per tr(key,{params}) aus T {de,en}. ===== */
@@ -364,6 +364,7 @@ function applyI18n(){
   });
   document.documentElement.setAttribute('lang',LANG);
   const lb=document.getElementById('lang-btn'); if(lb) lb.textContent=(LANG==='de'?'DE':'EN');
+  const dl=document.getElementById('donate-link'); if(dl) dl.href='https://alien-investor.org/'+(LANG==='en'?'en/':'')+'spenden.html';   // Desktop-Hülle: genau diese zwei in LINKS
   document.querySelectorAll('.pw-eye').forEach(b=>{ b.title=tr('pw.toggle'); });
   if(typeof App!=='undefined'&&App.syncCombos) App.syncCombos();   // Optionen tragen data-i18n → Knopfbeschriftung nachziehen
 }
@@ -836,17 +837,17 @@ function snImport(raw, opt){ opt=opt||{}; const now=opt.now||Date.now(); const t
     if(edKind==='authentication'||edKind==='spreadsheet') kind=edKind; else if(compKind.has(it.uuid)) kind=compKind.get(it.uuid);
     if(kind==='authentication'){ st.skipped.auth++; continue; }   // 2FA-Geheimnisse: nie übernehmen, nie anfassen
     if(kind==='spreadsheet'){ st.skipped.sheet++; continue; }
-    const text=(typeof c.text==='string'?c.text:'').replace(/\r\n?/g,'\n'); let title=line(c.title,CAPS.title);
+    const text=(typeof c.text==='string'?c.text:'').replace(/\r\n?/g,'\n'); let title=line(c.title,CAPS.body).slice(0,CAPS.title);   // erst Unsichtbares entfernen, dann kürzen (Release-Audit v1.6 C-1)
     let type='text', body='', items=[], md=false;
     if(kind==='task'){ type='list'; const ls=text.split('\n').filter(l=>l.trim()); items=linesToItems(text); if(ls.length>ITEMS_MAX) st.capped.items++; if(ls.some(l=>l.length>CAPS.item+6)) st.capped.item++; }
     else if(kind==='rich-text') body=htmlToText(text);
     else if(kind==='super'){ const r=lexToMd(text, st); if(r===null) body=text; else { body=r; md=true; } }
     else { body=text; md=kind==='markdown'; }
-    if(body.length>CAPS.body) st.capped.body++;
     // wie der Editor: erste SICHTBARE Zeile wird Titel — erst Steuer-/Nullbreitenzeichen entfernen, dann auf CAPS.title kürzen (sonst verschluckte ein Vorlauf
     // aus 200 unsichtbaren Zeichen den Text dahinter). Ohne Titel ist eine Text-Notiz damit unsichtbar (Fuzz [19], 28.09.2026: Rich-Text aus BOM + DEL kam als leere Notiz an).
     if(!title&&type==='text') title=body.split('\n').map(l=>line(l,CAPS.body).slice(0,CAPS.title)).find(Boolean)||'';
     if(!title&&(type==='text'||!items.length)){ st.skipped.empty++; continue; }
+    if(body.length>CAPS.body) st.capped.body++;                       // erst nach dem Leer-Guard zählen: eine übersprungene Notiz ist nicht „gekürzt“ (Release-Audit v1.6 C-4)
     const updated=snDate(app.client_updated_at, snDate(it.updated_at, nowIso)), created=snDate(it.created_at, updated);
     const e=sanitizeEntry({id:snId(it.uuid), type, cat:catFor(typeof it.uuid==='string'?it.uuid:'', Array.isArray(c.references)?c.references:[]), title, body, items,
       fav:c.starred===true, pinned:app.pinned===true||c.pinned===true, md, created, updated, deleted:c.trashed===true?nowIso:null}, now);   // Papierkorb: Frist läuft ab jetzt, sonst wipeTrash sofort
@@ -1115,7 +1116,15 @@ const App = (function(){
   // Sperr-/Setup-/Import-Eingaben leeren und maskieren — beim Verstecken der App und nach jedem Fehlversuch (Gate-Hygiene, Audit run-2 #1)
   function clearGateInputs(){ ['lock-pass','lock-pin','setup-pass1','setup-pass2','import-pass','totp-code','bio-pass','cp-cur','cp1','cp2','pin-new','pin-rep','pin-pass'].forEach(id=>{ const n=$(id); if(n) n.value=''; }); maskInputs('#screen-lock'); maskInputs('#screen-setup'); maskInputs('#tab-settings'); maskInputs('#tab-backup'); err('lock-err'); pinMsg(''); bioMsg(''); }   // auch die Passphrase-Felder in den Einstellungen (Audit run-3); Fehlversuch-Hinweise ebenso (Audit run-8 #8)
   /* ===== KIT: Auge im Passwortfeld ===== */
-  function setEye(b,on){ b.setAttribute('aria-pressed',on?'true':'false'); b.dataset.showpass.split(',').forEach(id=>{ const f=$(id); if(f) f.type=on?'text':'password'; }); }
+  // Auge beim Tippen (v1.6, aus Alien Pass v1.17): Chromium setzt beim type-Wechsel die Auswahl auf 0, Chromium 152 (Electron) nach einem echten
+  // Mausklick sogar erst VERSPÄTET (selectionchange nach dem click) — darum sofort UND per setTimeout wiederherstellen, nur bei unverändertem Fokus/Typ/Wert.
+  function setEye(b,on){ b.setAttribute('aria-pressed',on?'true':'false'); b.dataset.showpass.split(',').forEach(id=>{ const f=$(id); if(!f) return;
+    const keep=document.activeElement===f, s=f.selectionStart, e=f.selectionEnd, d=f.selectionDirection||'none', v=f.value, ty=on?'text':'password';
+    f.type=ty; if(!keep||s==null) return;
+    // Beim Aufdecken eine Markierung nicht als Klartext-Markierung wiederherstellen (X11 legt markierten Text in PRIMARY) — Cursor ans Ende (Release-Audit v1.6 B-V1)
+    const s2=on&&s!==e?e:s;
+    const put=()=>{ if(document.activeElement===f&&f.type===ty&&f.value===v) try{ f.setSelectionRange(s2,e,d); }catch(_){} };
+    put(); setTimeout(put,0); }); }
   function togglePass(_,b){ if(b) setEye(b,b.getAttribute('aria-pressed')!=='true'); }
   function maskInputs(scope){ document.querySelectorAll((scope||'')+' [data-showpass]').forEach(b=>setEye(b,false)); }
   function eyeWrap(inp){ const w=el('div','pw-wrap'), b=el('button','pw-eye'); b.type='button'; b.dataset.showpass=inp.id; b.setAttribute('aria-pressed','false'); b.title=tr('pw.toggle');

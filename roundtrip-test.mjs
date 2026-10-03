@@ -704,7 +704,13 @@ console.log('\n[19] Standard-Notes-Fuzz: zufällige Backups durch snImport — j
     const a=one('\uFEFF\u007f','rich-text'), b=one('\u200b\n'+NUL+'\u202e','plain-text'), c=one('\u200b'.repeat(250)+'Text dahinter','plain-text'), d=one('\u200b','plain-text','Titel');
     ok(a.entries.length===0&&a.stats.skipped.empty===1&&b.entries.length===0&&b.stats.skipped.empty===1,'Rich-Text/Klartext nur aus unsichtbaren Zeichen → übersprungen („leer“), keine unsichtbare Notiz');
     ok(c.entries.length===1&&c.entries[0].title==='Text dahinter','250 Nullbreiten vor dem Text: Titel kommt trotzdem aus der ersten sichtbaren Zeile');
-    ok(d.entries.length===1&&d.entries[0].title==='Titel','unsichtbarer Text MIT Titel bleibt (Titel zählt)'); }
+    ok(d.entries.length===1&&d.entries[0].title==='Titel','unsichtbarer Text MIT Titel bleibt (Titel zählt)');
+    // Release-Audit v1.6 C-1: das TITELFELD kürzte vor dem Entfernen — 200 Nullbreiten + „Wichtig“ verlor den Titel (leer → übersprungen bzw. Titel aus dem Text)
+    const e=one('','plain-text','\u200b'.repeat(200)+'Wichtig'), f=one('Inhalt','plain-text','\u200b'.repeat(200)+'Wichtig');
+    ok(e.entries.length===1&&e.entries[0].title==='Wichtig'&&f.entries.length===1&&f.entries[0].title==='Wichtig','Titelfeld mit 200 Nullbreiten vor dem Titel: Titel bleibt erhalten');
+    // C-4: eine „leer“ übersprungene Notiz zählt nicht als gekürzt
+    const g=one('\u200b'.repeat(100001),'plain-text');
+    ok(g.entries.length===0&&g.stats.skipped.empty===1&&g.stats.capped.body===0,'übersprungene leere Notiz über 100.000 Zeichen zählt nicht als „gekürzt“'); }
 }
 
 console.log(`\n${pass} ok, ${fail} Fehler`); process.exit(fail?1:0);

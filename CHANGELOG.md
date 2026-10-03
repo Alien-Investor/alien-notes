@@ -1,5 +1,20 @@
 # Changelog — Alien Notes
 
+## v1.6 — 2026-10-03
+
+Vor allem für die Linux-Desktop-Fassung. Am Datei-Format, an der Verschlüsselung und an deinen Notizen ändert sich nichts.
+- **Desktop:** Die Scrollbalken sind jetzt schmal und in Neon-Farbe statt in Grau — an der Seite, im Handbuch, in der Editor-Spalte und
+  in jeder anderen scrollbaren Fläche, in beiden Darstellungen.
+- **Desktop, behoben:** Der Link „Energie aufladen · Spenden“ im Fuß tat in der Desktop-App nichts. Er öffnet jetzt die Spendenseite im
+  Standard-Browser des Systems (auf Englisch die englische Seite). Die App öffnet nach außen nur genau diese beiden Adressen, alle anderen
+  Links und Weiterleitungen bleiben gesperrt.
+- **Behoben:** Ein Klick auf das Auge im Passphrase-Feld setzte den Cursor an den Anfang — wer weitertippte, schrieb an die falsche Stelle.
+  Der Cursor bleibt jetzt stehen, wo er war.
+- **Standard-Notes-Import, behoben:** Eine Notiz, deren Text nur aus unsichtbaren Steuerzeichen bestand, kam als leere, unsichtbare Notiz an.
+  Sie wird jetzt übersprungen und in der Import-Meldung unter „sonstige Elemente“ mitgezählt. Ein Titel, vor dem viele unsichtbare Zeichen
+  stehen, geht nicht mehr verloren.
+- Desktop-App mit der aktuellen Browser-Engine (Electron 44.5.1).
+
 ## v1.5 — 2026-09-26
 
 Härtung ohne Änderung an Oberfläche, Datei-Format oder Notizen, nachgezogen aus Alien Pass 1.14/1.15.

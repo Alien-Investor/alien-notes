@@ -1,8 +1,8 @@
 'use strict';
 // Alien Notes Desktop — Hauptprozess.
-// Lädt ausschließlich die gebündelte App über app://aliennotes/ — kein Netz, keine Navigation, keine fremden Fenster.
+// Lädt ausschließlich die gebündelte App über app://aliennotes/ — kein Netz, keine Navigation, keine fremden Fenster; nur die Links in LINKS gehen an den System-Browser.
 // Im Flatpak nimmt zusätzlich das System das Netz weg (keine --share=network); diese Datei ist die zweite Schicht.
-const {app,BrowserWindow,protocol,session,ipcMain,clipboard,ClipboardItem,Menu,powerMonitor,dialog}=require('electron');
+const {app,BrowserWindow,protocol,session,ipcMain,clipboard,ClipboardItem,Menu,powerMonitor,dialog,shell}=require('electron');
 const path=require('path'); const fs=require('fs'); const crypto=require('crypto');
 const {writeFull,writeAtomic}=require('./atomic.js');
 
@@ -17,6 +17,15 @@ const FILE_MAX=20*1024*1024;   // wie MAX_FILE_BYTES in app.js
 // Notizen als eigene Datei statt im Browser-Speicher. Im Flatpak liegt XDG_DATA_HOME unter ~/.var/app/<id>/data.
 const DATA_DIR=path.join(process.env.XDG_DATA_HOME||path.join(app.getPath('home'),'.local','share'),'alien-notes');
 const VAULT_FILE=path.join(DATA_DIR,'notes.ainv');
+// Links der Oberfläche, die im System-Browser aufgehen dürfen (OpenURI-Portal, kein Flatpak-Recht nötig). Exakter Vergleich, keine Präfixe.
+const LINKS=new Set(['https://alien-investor.org/spenden.html','https://alien-investor.org/en/spenden.html']);
+function linkOk(u){
+  if(typeof u!=='string') return false;
+  try{ return LINKS.has(new URL(u).href); }catch(_){ return false; }
+}
+// Weiter geht der geprüfte href (nicht der Rohstring) und höchstens ein Link je Sekunde — sonst könnte eine Schleife im Renderer Hunderte Browser-Tabs öffnen (Release-Audit v1.6 A-B1/B2)
+let lastOut=0;
+function openOutside(u){ const t=Date.now(); if(!linkOk(u)||t-lastOut<1000) return; lastOut=t; shell.openExternal(new URL(u).href).catch(()=>{}); }
 
 // Fernsteuerung verweigern: die Fuses sperren nur --inspect (Node), nicht Chromiums DevTools-Protokoll
 for(const s of ['remote-debugging-port','remote-debugging-pipe','remote-debugging-address','remote-allow-origins'])
@@ -119,12 +128,12 @@ else {
     return path.basename(r.filePath);
   });
 
-  // Jede Webansicht: keine Navigation, keine neuen Fenster, keine <webview>
+  // Jede Webansicht: keine Navigation, keine neuen Fenster, keine <webview>. Bekannte Links gehen an den System-Browser.
   app.on('web-contents-created',(_e,wc)=>{
-    wc.on('will-navigate',ev=>ev.preventDefault());
+    wc.on('will-navigate',(ev,url)=>{ ev.preventDefault(); openOutside(url); });
     wc.on('will-redirect',ev=>ev.preventDefault());
     wc.on('will-attach-webview',ev=>ev.preventDefault());
-    wc.setWindowOpenHandler(()=>({action:'deny'}));
+    wc.setWindowOpenHandler(({url})=>{ openOutside(url); return {action:'deny'}; });
     wc.setWebRTCIPHandlingPolicy('disable_non_proxied_udp');
   });
 

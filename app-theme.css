@@ -32,6 +32,15 @@ body::before{content:'';position:fixed;inset:0;background-image:
  radial-gradient(1px 1px at 90% 80%,rgba(0,255,204,.25) 0%,transparent 100%);
  pointer-events:none;z-index:0;}
 body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.15) 2px,rgba(0,0,0,.15) 4px);pointer-events:none;z-index:1;}
+/* Scrollbalken im Neon-Look statt Chromium-Grau (Desktop-Hüllen/Electron, Brave). Daumen mit transparentem Rand + padding-box,
+   damit er in Karten wie auf dem Seitenhintergrund schwebt. Android-WebView blendet Overlay-Balken ohnehin aus. Firefox → scrollbar-color. */
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-track{background:rgba(0,255,204,.04);}
+::-webkit-scrollbar-thumb{background:var(--neon-mid);border:2px solid transparent;background-clip:padding-box;border-radius:6px;}
+::-webkit-scrollbar-thumb:hover{background:var(--neon);background-clip:padding-box;}
+::-webkit-scrollbar-corner{background:transparent;}
+::-webkit-scrollbar-button{display:none;}
+@supports not selector(::-webkit-scrollbar){html{scrollbar-color:var(--neon-mid) transparent;scrollbar-width:thin;}}
 .container{position:relative;z-index:2;max-width:900px;margin:0 auto;padding:24px 16px 60px;}
 a{color:var(--neon);}
 .hidden{display:none!important;}
