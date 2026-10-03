@@ -16,7 +16,7 @@ const FONT_KEY='ai-notes-font', FONT_SIZES=['m','l','xl'];
    ============================================================ */
 const LS_KEY = 'ai-notes-vault';
 const LANG_KEY = 'ai-notes-lang';
-const APP_VERSION = '1.6';   // Anzeige in den Einstellungen; muss VERSION_NAME entsprechen (build-www.sh setzt es aus VERSION, roundtrip-test.mjs prüft es)
+const APP_VERSION = '1.7';   // Anzeige in den Einstellungen; muss VERSION_NAME entsprechen (build-www.sh setzt es aus VERSION, roundtrip-test.mjs prüft es)
 
 /* ===== KIT: i18n — Deutsch ist Quelle im HTML (data-i18n / data-i18n-html / data-i18n-ph), Englisch im I18N-Dict,
    dynamische Texte per tr(key,{params}) aus T {de,en}. ===== */
@@ -907,7 +907,7 @@ const App = (function(){
   let DEK=null, KDF=null, WRAP=null, VAULT=null;      // Sitzungszustand — auf lock() alles null
   let editId=null, editing=false, formType='text', mdMode='edit', search='', catFilter=null, favFilter=false, openFilter=false;   // openFilter: nur Checklisten mit offenen Einträgen (v1.1 Punkt 5)
   let selMode=false, selIds=new Set(), shownIds=[];   // Mehrfachauswahl (v1.1 Punkt 8): nur im RAM, Sperre räumt ab; shownIds = zuletzt gezeigte Zeilen (für „Alle“)
-  let clipTimer=null, clipOwnedAt=0, failCount=0, lockedUntil=0, pendingImport=null, kdfTouched=false;
+  let clipTimer=null, clipOwnedAt=0, clipCopied=false, failCount=0, lockedUntil=0, pendingImport=null, kdfTouched=false;
   let pendingUnlock=null, pendingSecret=null, pendingOtpauth='';   // Aegis-Hürde: Schlüssel warten auf den Code / Einrichtung läuft
   let bioGen=0;             // Generation ALLER Pforten (Alien Pass v1.8): jede Sperre erhöht sie, laufende Pforten verwerfen ihr Ergebnis
   const DESK = window.AlienDesktop || null;   // Desktop-Hülle (Schritt 5), sonst null
@@ -1143,7 +1143,8 @@ const App = (function(){
   // Ohne Zeitgeber („nur beim Sperren“) und bei jeder anderen Sperre wird wie bisher sofort geleert. Der Schlüssel selbst geht in jedem Fall sofort weg.
   // `===true`: lock steht im App-Export — ein künftiges data-action="lock" reichte sonst ein Event als truthy keepClip durch (Diff-Review Alien Pass v1.11).
   function lock(keepClip){
-    clearIdle(); if(!(keepClip===true&&clipOwnedAt&&clipTimer)) clearClip(); clearTimeout(autosaveTimer); autosaveTimer=null; applySecure(true);
+    // Stehen bleibt nur eine echte KOPIE (clipCopied) — eine bloße Markierung (Maus, Tab, Taste) startet die Frist auch, wird beim Sperren aber gelöscht (Release-Audit v1.7 R2-N1)
+    clearIdle(); if(!(keepClip===true&&clipCopied&&clipOwnedAt&&clipTimer)) clearClip(); clearTimeout(autosaveTimer); autosaveTimer=null; applySecure(true);
     DEK=null; KDF=null; WRAP=null; VAULT=null; editId=null; editing=false; pendingImport=null; search=''; catFilter=null; favFilter=false; openFilter=false; selMode=false; selIds=new Set(); shownIds=[];
     pendingUnlock=null; pendingSecret=null; pendingOtpauth='';
     bioGen++; bioRearmDek=null; bioArmed=false; bioNeedsRearm=false;   // laufende Fingerabdruck-Vorgänge verfallen (Generation)
@@ -1204,8 +1205,8 @@ const App = (function(){
     if(!clipOwnedAt) return; clipDue=true;
     const bg=document.hidden||(typeof document.hasFocus==='function'&&!document.hasFocus());
     if(bg&&!SC){ clipTimer=setTimeout(clearClip,1000); return; }     // Web-API braucht Fokus → vertagen; nativ (Android) darf ohne Fokus schreiben
-    if(!bg&&++clipTries>CLIP_MAX_TRIES){ clipOwnedAt=0; clipDue=false; clipDeadline=0; return; }   // Versuche nur im Vordergrund zählen (Audit run-1 #2)
-    const ok=()=>{ clipOwnedAt=0; clipDue=false; clipTries=0; clipDeadline=0; };
+    if(!bg&&++clipTries>CLIP_MAX_TRIES){ clipOwnedAt=0; clipCopied=false; clipDue=false; clipDeadline=0; return; }   // Versuche nur im Vordergrund zählen (Audit run-1 #2)
+    const ok=()=>{ clipOwnedAt=0; clipCopied=false; clipDue=false; clipTries=0; clipDeadline=0; };
     const retry=()=>{ if(!bg&&fallbackCopy(' ')) ok(); else clipTimer=setTimeout(clearClip,1000); };
     let p=null; try{ p=SC?SC.clear():(navigator.clipboard&&navigator.clipboard.writeText(' ')); }catch(_){ p=null; }
     if(p&&p.then) p.then(ok,retry); else retry();
@@ -1213,7 +1214,7 @@ const App = (function(){
   function copyText(text, whatKey){
     if(!text) return toast(tr('copy.empty'));
     const what=tr(whatKey), s=settings().clipClear;
-    const done=()=>{ if(!DEK){ clipOwnedAt=Date.now(); clearClip(); return; } armClip(); toast(s>0?tr('copy.done',{what,s}):tr('copy.doneNoClear',{what})); };
+    const done=()=>{ if(!DEK){ clipOwnedAt=Date.now(); clearClip(); return; } armClip(); clipCopied=true; toast(s>0?tr('copy.done',{what,s}):tr('copy.doneNoClear',{what})); };
     const web=()=>{ let p=null; try{ p=navigator.clipboard&&navigator.clipboard.writeText(text); }catch(_){ p=null; }
       if(p&&p.then) p.then(done).catch(()=>{ fallbackCopy(text)?done():toast(tr('copy.manual')); });
       else fallbackCopy(text)?done():toast(tr('copy.manual')); };
@@ -1566,20 +1567,43 @@ const App = (function(){
     // AUCH maskierte Felder (type=password) melden: Chromium legt ihre Markierung im KLARTEXT in die X11-Auswahl (Messung 23.09.2026, Electron 44, X11)
     const selText=()=>{ const a=document.activeElement;
       if(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA')&&typeof a.selectionStart==='number') return a.value.substring(a.selectionStart,a.selectionEnd);
-      const g=window.getSelection(); return g?String(g):''; };
+      // Liegt der Fokus nicht im Feld (Klick auf einen Knopf), liefert getSelection() für ein markiertes Passwortfeld dessen PUNKTE — als Meldung überschrieben
+      // sie den Hash des echten Werts in PRIMARY, Sperren und Frist ließen ihn liegen (Alien Pass Gerätetest 03.10.2026). Chromium beschreibt diese Auswahl als LEERE
+      // Range an der Stelle des Feldes, String() liefert trotzdem die Punkte. Dann das Feld dort auflösen und seinen echten markierten Wert nehmen — so stimmt
+      // der Hash, und Strg+C/Strg+X laufen weiter über die Brücke statt über Chromium ohne KDE-Hinweis (Pass-Audit Runde 4); sonst nichts.
+      const g=window.getSelection(); if(!g||!g.rangeCount) return '';
+      const r=g.getRangeAt(0);
+      if(r.collapsed){ const n=r.startContainer&&r.startContainer.childNodes?r.startContainer.childNodes[r.startOffset]:null;
+        if(n&&(n.tagName==='INPUT'||n.tagName==='TEXTAREA')&&typeof n.selectionStart==='number'&&n.selectionStart!==n.selectionEnd) return n.value.substring(n.selectionStart,n.selectionEnd);
+        return ''; }
+      return String(g); };
     // Auch auf Sperr-/Einrichtungsbildschirm (DEK null): eine markierte Passphrase läge sonst unbegrenzt in der Auswahl — beim Verlassen des Bildschirms wird gelöscht (leaveGate)
-    const onSel=()=>{ const t=selText(); if(!t) return;
-      let p=null; try{ p=DESK.clip.selected(t); }catch(_){ p=null; }
-      if(p&&p.then) p.then(()=>{ if(!clipOwnedAt) armClip(); },()=>{}); };
+    // Frist SYNCHRON vor der Meldung scharf machen: ein Klick auf „Jetzt sperren“ meldet per mouseup und sperrt im selben Klick — mit armClip erst in der
+    // IPC-Antwort fand lock() noch kein clipOwnedAt, und die Markierung lag bis zum Ablauf der Frist in PRIMARY (Release-Audit v1.7 B-N2). Die IPC ist geordnet:
+    // das clear() der Sperre kommt in der Hülle nach dieser Meldung an. Scheitert die Meldung, löscht der Zeitgeber nur eigene Hashes (harmlos).
+    const report=t=>{ if(!t) return;
+      if(!clipOwnedAt) armClip();
+      try{ const p=DESK.clip.selected(t); if(p&&p.catch) p.catch(()=>{}); }catch(_){} };
+    const onSel=()=>report(selText());
     document.addEventListener('mouseup',onSel);
     // Strg+C auf Markiertem: nicht Chromium kopieren lassen (ohne KDE-Hinweis, ohne Löschen → Klipper-Verlauf), sondern über die Brücke
     document.addEventListener('copy',ev=>{ const t=selText(); if(!t) return; ev.preventDefault(); copyText(t,'what.sel'); });
     // Strg+X / Shift+Entf ebenso (Audit run-7 #1); danach die Markierung im Feld entfernen: execCommand('delete') hält Rückgängig intakt
     document.addEventListener('cut',ev=>{ const a=document.activeElement, t=selText(); if(!t) return; ev.preventDefault(); copyText(t,'what.sel');
-      if(!a||(a.tagName!=='INPUT'&&a.tagName!=='TEXTAREA')||a.readOnly||a.disabled) return;
+      if(!a||(a.tagName!=='INPUT'&&a.tagName!=='TEXTAREA')||typeof a.selectionStart!=='number'||a.readOnly||a.disabled) return;   // Fokus auf Kästchen/Knopf: nur kopieren (setRangeText warf dort, Release-Audit v1.7 B-N1)
       let done=false; try{ done=document.execCommand('delete'); }catch(_){}
       if(!done){ a.setRangeText('',a.selectionStart,a.selectionEnd,'end'); a.dispatchEvent(new Event('input',{bubbles:true})); } });
     document.addEventListener('keyup',ev=>{ if(ev.shiftKey||ev.key==='Shift'||((ev.ctrlKey||ev.metaKey)&&(ev.key||'').toLowerCase()==='a')) onSel(); });
+    // Fokus in ein Feld (Tab, focus()/select(), Rückkehr aus dem Dialog) kann dessen ganzen Inhalt markieren — Chromium legt ihn auch aus type=password in PRIMARY
+    // (Alien Pass v1.18, Release-Audit B-1). Nach JEDER Fokusbewegung melden, nicht erst beim Loslassen von Tab: gehaltenes Tab wanderte sonst auf einen
+    // Knopf weiter (keyup dort → nichts zu melden), und Weitertippen vor dem Loslassen hob die Markierung auf, bevor sie gemeldet war (Pass-Audit Runde 2).
+    // Im Timer direkt vom Feld lesen (ein Feld behält seine Markierung nach dem Blur): wandert der Fokus vor dem Timer schon weiter, wird trotzdem gemeldet,
+    // und der Timer des nächsten Feldes überschreibt den Hash in der richtigen Reihenfolge. Nur Textfelder (Kästchen/Regler haben kein selectionStart).
+    document.addEventListener('focusin',ev=>{ const a=ev.target; if(!a||(a.tagName!=='INPUT'&&a.tagName!=='TEXTAREA')||typeof a.selectionStart!=='number') return;
+      setTimeout(()=>{ try{ report(a.value.substring(a.selectionStart,a.selectionEnd)); }catch(_){} },0); });
+    // Vor jeder Taste synchron (Capture, vor der Standardaktion): Weitertippen klappt die Markierung zusammen, PRIMARY behält sie aber — Blink zieht Eingaben
+    // dem Timer vor, bei Auto-Type kam die Taste sonst vor der focusin-Meldung (Pass-Audit Runde 3)
+    document.addEventListener('keydown',onSel,true);
   }
   const BIO = (isNative && CAP.Plugins && CAP.Plugins.Biometric) ? CAP.Plugins.Biometric : null;   // Fingerabdruck-Plugin (patch-hardening.mjs), Web: kein Slot
   const SEC = (isNative && CAP.Plugins && CAP.Plugins.SecureScreen) ? CAP.Plugins.SecureScreen : null;   // FLAG_SECURE zur Laufzeit (patch-hardening.mjs)

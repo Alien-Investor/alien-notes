@@ -1,5 +1,22 @@
 # Changelog — Alien Notes
 
+## v1.7 — 2026-10-03
+
+Kleine Verbesserungen an der Linux-Desktop-Fassung, nachgezogen aus Alien Pass 1.18. Am Datei-Format, an der Verschlüsselung und an deinen
+Notizen ändert sich nichts.
+- **Desktop — Tab ins Passphrase-Feld:** Springt man mit Tab in ein gefülltes Passphrase-Feld, markiert der Browser den Inhalt, und unter X11
+  landet er in der Auswahl für den Mittelklick. Die App meldet das jetzt der Hülle (auch bei gehaltener Tab-Taste oder sofortigem Weitertippen),
+  die die Auswahl wie bei der Maus mit der Kopier-Frist bzw. beim Sperren wieder löscht.
+- **Desktop — markierte Passphrase nach einem Klick:** War eine Passphrase im Feld markiert und klickte man danach woanders hin, zum Beispiel auf
+  „Einstellungen“, blieb sie in der Mittelklick-Auswahl liegen: Weder die Kopier-Frist noch das Sperren löschten sie. Jetzt wird sie wie vorgesehen
+  gelöscht. Strg+C auf einer solchen Markierung läuft weiter über die geschützte Zwischenablage.
+- **Desktop — lange Notizen:** Notizen über 20.000 Zeichen ließen sich am Desktop nicht kopieren, und war eine solche Notiz markiert, blieb sie
+  nach dem Sperren in der Mittelklick-Auswahl. Beides geht jetzt bis zur vollen Notizlänge.
+- **Desktop — Markieren und sofort sperren:** Wer etwas markierte und direkt danach „Jetzt sperren“ klickte, ließ die Markierung bis zum Ende der
+  Kopier-Frist stehen. Sie wird jetzt beim Sperren gelöscht.
+- **Desktop — Spendenlink:** Nach einem Zurückstellen der Systemuhr blieb der Link bis zur alten Uhrzeit wirkungslos. Die Sperre gegen eine
+  Link-Flut misst jetzt mit einer Uhr, die nicht zurückspringt.
+
 ## v1.6 — 2026-10-03
 
 Vor allem für die Linux-Desktop-Fassung. Am Datei-Format, an der Verschlüsselung und an deinen Notizen ändert sich nichts.

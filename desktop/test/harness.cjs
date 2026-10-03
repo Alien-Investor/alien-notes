@@ -40,7 +40,8 @@ async function fresh(){
   for(const u of ['https://alien-investor.org/spenden.html','https://alien-investor.org/en/spenden.html'])
     { const o=await tryOpen(u,'open'); R('Link extern geöffnet: '+u, o.length===1&&o[0]===u, o); }
   { const o=await tryOpen('https://alien-investor.org/en/spenden.html','nav');
-    R('Link per Navigation extern, Seite bleibt', o.length===1&&onApp(), o); }
+    R('Link per Navigation extern, Seite bleibt', o.length===1&&o[0]==='https://alien-investor.org/en/spenden.html'&&onApp(), o); }
+  { await sleep(1100); R('window.open auf Listen-Link liefert trotzdem kein Fenster (deny)', await js(`window.open('https://alien-investor.org/spenden.html')===null`)&&BrowserWindow.getAllWindows().length===1, BrowserWindow.getAllWindows().length); }
   { const o=await tryOpen('HTTPS://ALIEN-INVESTOR.ORG:443/spenden.html','open');
     R('nicht-kanonische Schreibweise geht als kanonischer href hinaus', o.length===1&&o[0]==='https://alien-investor.org/spenden.html', o); }
   for(const [l,want] of [['de','https://alien-investor.org/spenden.html'],['en','https://alien-investor.org/en/spenden.html']]){
@@ -48,11 +49,28 @@ async function fresh(){
     R('Spenden-Blitz extern geöffnet ('+l+')', opened.length===1&&opened[0]===want&&onApp(), opened.slice()); }
   await js(`setLang('de')`);
   { await sleep(1100); opened.length=0; await js(`for(let i=0;i<20;i++) window.open('https://alien-investor.org/spenden.html')`); await sleep(400);
-    R('Fensterflut gedrosselt (20 × window.open → 1)', opened.length===1, opened.length); }
+    R('Fensterflut gedrosselt (20 × window.open → 1)', opened.length===1&&BrowserWindow.getAllWindows().length===1, {n:opened.length,win:BrowserWindow.getAllWindows().length}); }
   for(const u of ['https://example.org/','https://alien-investor.org/anderes.html','https://alien-investor.org/spenden.html/../x','http://alien-investor.org/spenden.html','https://alien-investor.org.evil.com/spenden.html','file:///etc/passwd','javascript:alert(1)',
-      'https://alien-investor.org/spenden.html?ref=x','https://alien-investor.org/spenden.html#x','https://user:pw@alien-investor.org/spenden.html','https://alien-investor.org:8443/spenden.html','https://www.alien-investor.org/spenden.html','https://alien-investor.org/spenden.html/'])
+      'https://alien-investor.org/spenden.html?ref=x','https://alien-investor.org/spenden.html#x','https://user:pw@alien-investor.org/spenden.html','https://alien-investor.org:8443/spenden.html','https://www.alien-investor.org/spenden.html','https://alien-investor.org/spenden.html/',
+      'https://evilalien-investor.org/spenden.html','https://alien-investor.org/spenden.htmlx','https://evil.example/alien-investor.org/spenden.html','https://evil.example/?u=https://alien-investor.org/spenden.html'])   // Suffix-/Teilstring-Vergleich (Alien Pass Release-Audit v1.18 C M4)
     for(const how of (u.startsWith('javascript:')?['open']:['open','nav']))   // javascript: per location.href liefe IM Renderer (alert blockiert), ist keine Navigation
       { const o=await tryOpen(u,how); R('Link verweigert ('+how+'): '+u, o.length===0&&onApp(), {o,url:win.webContents.getURL()}); }
+  // Handler direkt, ohne Chromium dazwischen (das kanonisiert URLs schon vorher; did-start-navigation taugt nicht als Zähler, es feuert in Electron 44 auch für abgebrochene Navigationen): preventDefault, deny und der geprüfte href (Alien Pass Release-Audit v1.18 C M1–M3)
+  { const h={}; let woh=null; const fake={on:(n,f)=>{ h[n]=f; },setWindowOpenHandler:f=>{ woh=f; },setWebRTCIPHandlingPolicy:()=>{}};
+    try{ app.emit('web-contents-created',{},fake); }catch(e){ R('Handler direkt: Ausnahme',false,String(e)); }
+    await sleep(1100); opened.length=0; let pd=0;
+    if(h['will-navigate']) h['will-navigate']({preventDefault:()=>pd++},' HTTPS://ALIEN-INVESTOR.ORG:443/en/../spenden.html\t');
+    R('will-navigate (direkt): preventDefault + kanonischer href', pd===1&&opened.length===1&&opened[0]==='https://alien-investor.org/spenden.html', {pd,opened:opened.slice()});
+    await sleep(1100); opened.length=0; pd=0;
+    if(h['will-navigate']) h['will-navigate']({preventDefault:()=>pd++},'https://example.org/');
+    R('will-navigate (direkt): fremde Adresse → preventDefault, nichts geöffnet', pd===1&&opened.length===0, {pd,opened:opened.slice()});
+    await sleep(1100); opened.length=0; const r=woh?woh({url:'https://alien-investor.org/en/spenden.html'}):null;
+    R('setWindowOpenHandler (direkt): deny auch für Listen-Links', !!r&&r.action==='deny'&&opened.length===1, {r,opened:opened.slice()});
+    await sleep(1100); opened.length=0; let n=0; for(let i=0;i<3;i++){ if(woh) woh({url:'https://alien-investor.org/spenden.html'}); await sleep(400); n=opened.length; }
+    R('Bremse: drei Links im Abstand von 400 ms → 1', n===1, n);
+    // Zurückgestellte Systemuhr legt den Link nicht still (monotone Uhr, Alien Pass Release-Audit v1.18 A-2; Release-Audit v1.7 A-1): main.js läuft im selben Realm
+    const dn=Date.now; Date.now=()=>dn()-3600e3; await sleep(1100); opened.length=0; if(woh) woh({url:'https://alien-investor.org/spenden.html'}); Date.now=dn;
+    R('Bremse übersteht eine zurückgestellte Uhr (1 h)', opened.length===1, opened.slice()); }
   const ses=session.defaultSession;
   const st=async u=>{ try{ return (await ses.fetch(u)).status; }catch(e){ return 'FEHLER'; } };
   R('Protokoll liefert index.html', await st('app://aliennotes/index.html')===200);
@@ -184,6 +202,113 @@ async function restart(){
   win.webContents.sendInputEvent({type:'keyDown',keyCode:'A',modifiers:['control']}); win.webContents.sendInputEvent({type:'keyUp',keyCode:'A',modifiers:['control']}); await sleep(200);
   await eye();
   { const c=await cur(); R('Auge auf bei markierter Passphrase: keine Klartext-Markierung, Cursor am Ende', c.t==='text'&&c.s===c.e&&c.e===c.v.length&&c.foc, {s:c.s,e:c.e,t:c.t,len:c.v.length}); }
+  // Fokus-Markierung (v1.7, aus Alien Pass v1.18 B-1): Tab in die gefüllte, maskierte neue Passphrase markiert den ganzen Inhalt, Chromium legt ihn in PRIMARY
+  // → muss gemeldet und beim Sperren gelöscht werden. Je Test ein eigener Wert (der Auge-Test oben hat 'abcdeYfX' per Strg+A schon gemeldet).
+  // Tab-Reihenfolge: cp-cur, dessen Auge, cp1, dessen Auge — der Fokus startet auf dem Auge von cp-cur.
+  const unlock=async()=>{ await fill('lock-pass',PP); await click('#unlock-btn'); await until(visible('screen-app')); await js(`App.tab('settings')`); await sleep(300); };
+  const prepTab=async V=>{ if((await cur()).t!=='password') await eye();
+    await js(`(()=>{ const p=document.getElementById('cp1'); p.value=${JSON.stringify(V)}; p.dispatchEvent(new Event('input',{bubbles:true})); const b=document.querySelector('[data-showpass="cp-cur"]'); b.scrollIntoView({block:'center'}); b.focus(); return true; })()`); await sleep(150); };
+  const realClick=async sel=>{ const r=await js(`(()=>{const b=document.querySelector(${JSON.stringify(sel)}); b.scrollIntoView({block:'center'}); const q=b.getBoundingClientRect(); return {x:Math.round(q.left+q.width/2),y:Math.round(q.top+q.height/2)};})()`);
+    win.webContents.sendInputEvent({type:'mouseDown',x:r.x,y:r.y,button:'left',clickCount:1}); win.webContents.sendInputEvent({type:'mouseUp',x:r.x,y:r.y,button:'left',clickCount:1}); await sleep(400); };
+  { const V='tab-wert-'+process.pid; await prepTab(V);
+    await clipboard.selection.writeText('vorher-tab-'+process.pid);
+    press('Tab'); await sleep(500);
+    const c=await cur(); R('Tab ins Passwortfeld: Feld maskiert und ganz markiert (Ausgangslage)', c.t==='password'&&c.foc&&c.s===0&&c.e===c.v.length&&c.v===V, {s:c.s,e:c.e,t:c.t,foc:c.foc});
+    R('Tab ins Passwortfeld: Chromium legt den Wert in PRIMARY (Messung)', (await clipboard.selection.readText())===V);
+    await js(`App.lockNow(); true`); await sleep(600);
+    R('Tab ins Passwortfeld: nach dem Sperren nicht mehr in PRIMARY (gemeldet + gelöscht)', (await clipboard.selection.readText())==='');
+    await clipboard.selection.clear(); }
+  // Wie am Gerät (Alien Pass 03.10.2026): Tab ins Passwortfeld, (Fensterwechsel, zurück,) echte Klicks auf „Einstellungen“ und „Jetzt sperren“.
+  // In Notes leert der Fensterwechsel die getippte Passphrase (Gate-Hygiene) — dann gibt es keine Punkte mehr. Die Punkte-Falle (Klick auf einen Knopf, leere Range
+  // am Feld, String() = Punkte überschreibt den Hash) zeigt sich hier OHNE Fensterwechsel (gemessen 03.10.2026: Range an div.pw-wrap, 13 Punkte).
+  for(const sw of [true,false]){ await unlock(); const V='geraet-'+(sw?'w':'o')+'-'+process.pid; await prepTab(V);
+    await clipboard.selection.writeText('vorher-geraet-'+process.pid);
+    press('Tab'); await sleep(500);
+    const inP=(await clipboard.selection.readText())===V;
+    if(sw){ win.blur(); await sleep(400); win.focus(); await sleep(400); }
+    await realClick('button.tab[data-tab="settings"]'); await realClick('button[data-action="lockNow"]'); await sleep(500);
+    R('Wie am Gerät (Tab, '+(sw?'Fensterwechsel, ':'ohne Fensterwechsel, ')+'Klick Einstellungen + Jetzt sperren): Wert war in PRIMARY und ist danach weg', inP&&(await js(visible('screen-lock')))&&(await clipboard.selection.readText())==='', {inP,prim:(await clipboard.selection.readText()).length});
+    await clipboard.selection.clear(); }
+  // Markiertes Feld, Fokus per Mausklick woanders (Kästchen), dann Strg+C: Kopie über die Brücke mit KDE-Hinweis, nicht Chromium selbst (Pass-Audit Runde 4)
+  { await fill('lock-pass',PP); await click('#unlock-btn'); await until(visible('screen-app'));
+    await click('button[data-action="newEntry"]'); await sleep(400);
+    const V='kopie-'+process.pid;
+    await js(`(()=>{ const u=document.getElementById('f-title'); u.value=${JSON.stringify(V)}; u.focus(); u.select(); return true; })()`); await sleep(200);
+    await realClick('#f-fav'); await sleep(100);
+    const ae=await js(`document.activeElement&&document.activeElement.id`);
+    await clipboard.clear(); win.webContents.copy(); await sleep(500);
+    R('Feld markiert, Klick aufs Kästchen, Strg+C: Kopie über die Brücke (KDE-Hinweis, echter Wert)', ae==='f-fav'&&await clipboard.has(KDE_HINT)&&(await clipboard.readText())===V, {ae,hint:await clipboard.has(KDE_HINT),len:(await clipboard.readText()).length});
+    await js(`AlienDesktop.clip.clear()`); await sleep(200); await clipboard.clear(); await clipboard.selection.clear();
+    await js(`App.doneEditor()`).catch(()=>{}); await sleep(500);   // deterministisch: es bleibt immer genau die Notiz „kopie-PID“ (Release-Audit v1.7 A-3)
+    await js(`App.lockNow(); true`); await sleep(600); }
+  // Gehaltenes Tab (Pass-Audit Runde 2): keyDown wiederholt sich, der Fokus wandert über cp1 weiter auf dessen Auge, keyup kommt erst auf dem Knopf an
+  { await unlock(); const V='halte-tab-'+process.pid; await prepTab(V);
+    await clipboard.selection.writeText('vorher-halt-'+process.pid);
+    win.webContents.sendInputEvent({type:'keyDown',keyCode:'Tab'}); await sleep(120); win.webContents.sendInputEvent({type:'keyDown',keyCode:'Tab'}); await sleep(120);
+    const ae=await js(`(document.activeElement&&(document.activeElement.className||document.activeElement.id))`);
+    win.webContents.sendInputEvent({type:'keyUp',keyCode:'Tab'}); await sleep(400);
+    R('Tab gehalten: Fokus über cp1 hinaus auf das Auge, Wert in PRIMARY (Messung)', /pw-eye/.test(ae)&&(await clipboard.selection.readText())===V, {ae});
+    await js(`App.lockNow(); true`); await sleep(600);
+    R('Tab gehalten: nach dem Sperren nicht mehr in PRIMARY', (await clipboard.selection.readText())==='');
+    await clipboard.selection.clear(); }
+  // Varianten ohne Pause (Pass-Audit Runde 3): zwei Tab-keyDowns direkt hintereinander bzw. Tab + sofort ein Zeichen, je vor dem Loslassen
+  for(const [name,seq] of [['zwei Tabs ohne Pause',['Tab','Tab']],['Tab + sofort getippt',['Tab','char']]]){
+    await unlock(); const V='schnell-'+seq.join('')+'-'+process.pid; await prepTab(V);
+    await clipboard.selection.writeText('vorher-schnell-'+process.pid);
+    for(const k of seq) if(k==='char') win.webContents.sendInputEvent({type:'char',keyCode:'x'}); else win.webContents.sendInputEvent({type:'keyDown',keyCode:'Tab'});
+    win.webContents.sendInputEvent({type:'keyUp',keyCode:'Tab'}); await sleep(400);
+    const inP=(await clipboard.selection.readText())===V;
+    await js(`App.lockNow(); true`); await sleep(600);
+    R('Schnell ('+name+'): Wert war in PRIMARY und ist nach dem Sperren weg', inP&&(await clipboard.selection.readText())==='', {inP});
+    await clipboard.selection.clear(); }
+  // Nur der Capture-keydown meldet (Release-Audit v1.7 A-2): Strg+A als keyDown OHNE keyUp (kein keyup-Melder, kein focusin, kein mouseup), dann eine echte Taste
+  { await unlock(); const V='keydown-'+process.pid; if((await cur()).t!=='password') await eye();
+    await js(`(()=>{ const p=document.getElementById('cp1'); p.value=${JSON.stringify(V)}; p.scrollIntoView({block:'center'}); p.focus(); p.setSelectionRange(p.value.length,p.value.length); return true; })()`); await sleep(200);
+    await clipboard.selection.writeText('vorher-keydown-'+process.pid);
+    win.webContents.sendInputEvent({type:'keyDown',keyCode:'A',modifiers:['control']}); await sleep(300);
+    const inP=(await clipboard.selection.readText())===V;
+    win.webContents.sendInputEvent({type:'keyDown',keyCode:'X'}); win.webContents.sendInputEvent({type:'char',keyCode:'x'}); win.webContents.sendInputEvent({type:'keyUp',keyCode:'X'}); await sleep(300);
+    await js(`App.lockNow(); true`); await sleep(600);
+    R('Strg+A ohne Loslassen, dann getippt: Capture-keydown meldet, nach dem Sperren nicht mehr in PRIMARY', inP&&(await clipboard.selection.readText())==='', {inP});
+    await clipboard.selection.clear(); }
+  // Markieren und SOFORT per Klick sperren (Release-Audit v1.7 B-N2): mouseup meldet, derselbe Klick sperrt — die Frist muss schon vor der IPC-Antwort stehen
+  { await unlock(); const V='sofort-'+process.pid; if((await cur()).t!=='password') await eye();
+    await js(`(()=>{ const p=document.getElementById('cp1'); p.value=${JSON.stringify(V)}; p.scrollIntoView({block:'center'}); p.focus(); p.setSelectionRange(p.value.length,p.value.length); return true; })()`); await sleep(200);
+    await clipboard.selection.writeText('vorher-sofort-'+process.pid);
+    win.webContents.sendInputEvent({type:'keyDown',keyCode:'A',modifiers:['control']}); await sleep(300);
+    const inP=(await clipboard.selection.readText())===V;
+    await realClick('button[data-action="lockNow"]'); await sleep(600);
+    R('Markiert, dann sofort Klick auf „Jetzt sperren“: beim Sperren aus PRIMARY (nicht erst nach der Frist)', inP&&(await js(visible('screen-lock')))&&(await clipboard.selection.readText())==='', {inP,prim:(await clipboard.selection.readText()).length});
+    await clipboard.selection.clear(); }
+  // Lange Notiz über der alten Brücken-Grenze 20.000 (Release-Audit v1.7 B-M1): Markierung wird gemeldet und beim Sperren gelöscht, „Notiz kopieren“ geht über die Brücke
+  { await unlock(); await click('button[data-action="newEntry"]'); await sleep(400);
+    const L='lang-'+process.pid+'-'+'x'.repeat(60000);
+    await js(`(()=>{ const n=document.getElementById('f-body'); n.value=${JSON.stringify(L)}; n.dispatchEvent(new Event('input',{bubbles:true})); n.focus(); n.setSelectionRange(0,0); return true; })()`); await sleep(200);
+    await clipboard.selection.writeText('vorher-lang-'+process.pid);
+    win.webContents.sendInputEvent({type:'keyDown',keyCode:'A',modifiers:['control']}); win.webContents.sendInputEvent({type:'keyUp',keyCode:'A',modifiers:['control']}); await sleep(500);
+    const inP=(await clipboard.selection.readText())===L;
+    await clipboard.clear(); await js(`App.copyCurrent(); true`); await sleep(600);
+    R('Lange Notiz (60.000 Zeichen): „Notiz kopieren“ über die Brücke (KDE-Hinweis, ganzer Text)', await clipboard.has(KDE_HINT)&&(await clipboard.readText())===L, {hint:await clipboard.has(KDE_HINT),len:(await clipboard.readText()).length});
+    await js(`App.lockNow(); true`); await sleep(1000);
+    R('Lange Notiz markiert (Strg+A): Wert war in PRIMARY und ist nach dem Sperren weg', inP&&(await clipboard.selection.readText())==='', {inP,prim:(await clipboard.selection.readText()).length});
+    R('Lange Notiz: Kopie nach dem Sperren gelöscht', (await clipboard.readText())==='');   // leer, nicht nur „anders“ (Release-Audit v1.7 R2-N3)
+    await clipboard.clear(); await clipboard.selection.clear(); }
+  // Sofort-Sperre (bgLock=0) beim Minimieren lässt nur eine echte Kopie bis zur Frist stehen, keine bloße Markierung (Release-Audit v1.7 R2-N1)
+  { await unlock(); await js(`App.setBgLock('0')`); await sleep(400); const V='sofortsperre-'+process.pid; await prepTab(V);
+    await clipboard.selection.writeText('vorher-sofortsperre-'+process.pid);
+    press('Tab'); await sleep(500);
+    const inP=(await clipboard.selection.readText())===V;
+    win.minimize(); const locked=await until(visible('screen-lock'),5000); await sleep(400); await restoreFocused(); await sleep(400);
+    R('Sofort-Sperre beim Minimieren: per Tab markierte Passphrase sofort aus PRIMARY (nicht erst nach der Frist)', inP&&locked&&(await clipboard.selection.readText())==='', {inP,locked,prim:(await clipboard.selection.readText()).length});
+    await clipboard.selection.clear();
+    // Gegenprobe: eine echte Kopie bleibt bei der Sofort-Sperre bis zur Frist stehen (UI-INVARIANTEN „Sofort-Sperre lässt Kopiertes stehen“)
+    await unlock(); await click('button[data-action="newEntry"]'); await sleep(400);
+    const K='kopie-bleibt-'+process.pid; await js(`(()=>{ const n=document.getElementById('f-body'); n.value=${JSON.stringify(K)}; n.dispatchEvent(new Event('input',{bubbles:true})); return true; })()`); await sleep(200);
+    await clipboard.clear(); await js(`App.copyCurrent(); true`); await sleep(500);
+    win.minimize(); const l2=await until(visible('screen-lock'),5000); await sleep(400); await restoreFocused(); await sleep(400);
+    R('Sofort-Sperre: echte Kopie bleibt bis zur Frist stehen (Gegenprobe)', l2&&(await clipboard.readText())===K, {l2,len:(await clipboard.readText()).length});
+    await unlock(); await js(`AlienDesktop.clip.clear(); App.setBgLock('1800')`); await sleep(400); await clipboard.clear(); await clipboard.selection.clear(); }
+  await unlock();
   await js(`document.getElementById('cp1').value=''; App.tab('list')`).catch(()=>{}); await sleep(300);
 }
 async function background(){
@@ -231,6 +356,7 @@ app.on('browser-window-created',(_e,w)=>{ if(win) return; win=w;
       if(STEP==='fresh') await fresh(); else if(STEP==='restart') await restart(); else if(STEP==='unreadable') await unreadable();
       else if(STEP==='background') await background();
       else if(STEP==='hold'){ R('läuft',true); await sleep(Number(process.env.AP_HOLD||8000)); }
+      if(STEP!=='hold') R('Schritt vollständig',true);   // verify-desktop verlangt die Endmarke (Release-Audit v1.7 A-4)
     }catch(e){ R('Ausnahme im Prüfprogramm',false,String(e&&e.stack||e)); }
     app.exit(0);
   });

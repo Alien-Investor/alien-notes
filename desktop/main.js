@@ -12,7 +12,10 @@ const WWW=path.join(__dirname,'www');
 const TYPES={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8',
   '.svg':'image/svg+xml','.woff2':'font/woff2','.png':'image/png'};
 const KDE_HINT='electron application/osclipboard;format="x-kde-passwordManagerHint"';   // Klipper übernimmt so markierte Einträge nicht
-const CLIP_MAX=20000;
+// Kopieren: ganze Notiz (CAPS.body 100.000 + Titel) bzw. Checkliste (200 × 500) muss passen — mit 20.000 scheiterte „Notiz kopieren“ bei langen Notizen (Release-Audit v1.7 B-M1)
+const CLIP_MAX=128*1024;
+// Markierung wird nur gehasht: eigene, großzügige Grenze — eine abgewiesene Meldung ließ die markierte Notiz nach dem Sperren in PRIMARY liegen (B-M1)
+const SEL_MAX=16*1024*1024;
 const FILE_MAX=20*1024*1024;   // wie MAX_FILE_BYTES in app.js
 // Notizen als eigene Datei statt im Browser-Speicher. Im Flatpak liegt XDG_DATA_HOME unter ~/.var/app/<id>/data.
 const DATA_DIR=path.join(process.env.XDG_DATA_HOME||path.join(app.getPath('home'),'.local','share'),'alien-notes');
@@ -24,8 +27,9 @@ function linkOk(u){
   try{ return LINKS.has(new URL(u).href); }catch(_){ return false; }
 }
 // Weiter geht der geprüfte href (nicht der Rohstring) und höchstens ein Link je Sekunde — sonst könnte eine Schleife im Renderer Hunderte Browser-Tabs öffnen (Release-Audit v1.6 A-B1/B2)
-let lastOut=0;
-function openOutside(u){ const t=Date.now(); if(!linkOk(u)||t-lastOut<1000) return; lastOut=t; shell.openExternal(new URL(u).href).catch(()=>{}); }
+// Monotone Uhr: mit Date.now() bliebe der Knopf nach einem Zurückstellen der Systemuhr bis zum alten Stand tot (Alien Pass Release-Audit v1.18 A-2)
+let lastOut=-Infinity;
+function openOutside(u){ const t=performance.now(); if(!linkOk(u)||t-lastOut<1000) return; lastOut=t; shell.openExternal(new URL(u).href).catch(()=>{}); }
 
 // Fernsteuerung verweigern: die Fuses sperren nur --inspect (Node), nicht Chromiums DevTools-Protokoll
 for(const s of ['remote-debugging-port','remote-debugging-pipe','remote-debugging-address','remote-allow-origins'])
@@ -85,7 +89,7 @@ else {
   });
   ipcMain.handle('clip:selected',async(e,text)=>{   // App meldet markierten Text; gemerkt wird nur der Hash
     if(!fromApp(e)) throw new Error('denied');
-    if(typeof text!=='string'||text.length>CLIP_MAX) throw new Error('bad');
+    if(typeof text!=='string'||text.length>SEL_MAX) throw new Error('bad');
     ownedSel=text?sha(text):null; return true;
   });
   ipcMain.handle('clip:clear',async e=>{ if(!fromApp(e)) throw new Error('denied'); await clearOwned(); return true; });
