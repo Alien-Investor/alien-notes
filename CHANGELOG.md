@@ -8,7 +8,7 @@ Vor allem für die Linux-Desktop-Fassung. Am Datei-Format, an der Verschlüsselu
 - **Desktop, behoben:** Der Link „Energie aufladen · Spenden“ im Fuß tat in der Desktop-App nichts. Er öffnet jetzt die Spendenseite im
   Standard-Browser des Systems (auf Englisch die englische Seite). Die App öffnet nach außen nur genau diese beiden Adressen, alle anderen
   Links und Weiterleitungen bleiben gesperrt.
-- **Behoben:** Ein Klick auf das Auge im Passphrase-Feld setzte den Cursor an den Anfang — wer weitertippte, schrieb an die falsche Stelle.
+- **Desktop, behoben:** Ein Klick auf das Auge im Passphrase-Feld setzte den Cursor an den Anfang — wer weitertippte, schrieb an die falsche Stelle.
   Der Cursor bleibt jetzt stehen, wo er war.
 - **Standard-Notes-Import, behoben:** Eine Notiz, deren Text nur aus unsichtbaren Steuerzeichen bestand, kam als leere, unsichtbare Notiz an.
   Sie wird jetzt übersprungen und in der Import-Meldung unter „sonstige Elemente“ mitgezählt. Ein Titel, vor dem viele unsichtbare Zeichen
