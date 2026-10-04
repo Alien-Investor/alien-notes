@@ -213,7 +213,11 @@ Schlüsselableitung schafft, und schlägt eine passende Argon2-Stufe vor.
   Bibliothek weder `eval` noch Netzzugriffe enthält.
 - **Desktop-Fassung (Linux), ehrlich eingeordnet:** Kein Netz, vom System erzwungen (Flatpak ohne Netzwerk-Berechtigung, zusätzlich
   CSP, Anfrage-Filter und WebRTC ins Leere); keine Dateien außer über den Dateidialog des Systems; Chromium-Sandbox über Flatpaks Käfig,
-  Renderer ohne Node, Electron-Fuses, keine Fernsteuerung, keine DevTools. Grenzen: eigene Browser-Engine (Electron 44, Updates nur mit neuer
+  Renderer ohne Node, Electron-Fuses, keine Fernsteuerung, keine DevTools. Zwischenablage: Kopiertes ist für KDE als Passwort markiert (Klipper
+  nimmt es nicht in den Verlauf, unter Plasma geprüft); die App löscht nur ihre eigene Kopie und in der App markierten Text (unter Linux per
+  Mittelklick einfügbar) — nach der eingestellten Zeit, beim Sperren und beim Beenden. Klipper kann jede Kopie zusätzlich in die Mittelklick-Auswahl
+  spiegeln (Einstellung „Auswahl und Zwischenablage synchronisieren“); die App löscht sie seit 1.8 auch dort. Markierter Text trägt die
+  KDE-Markierung nicht: Wer in Klipper die Auswahl in den Verlauf übernehmen lässt, sollte das abschalten. Grenzen: eigene Browser-Engine (Electron 44, Updates nur mit neuer
   App-Version), **kein Schutz vor Bildschirmfotos**, unter X11 kann jedes Programm Tastatur und Zwischenablage mitlesen, **bei Bildschirmsperre
   und Ruhezustand sperrt die App nicht von selbst** (Strg+L sperrt sofort), kein Fingerabdruck.
 - **Interner Audit** (24.09.2026, Skill-gestützt mit mehreren Prüfern, kein unabhängiges Audit) über die gegenüber Alien Pass neue Fläche:

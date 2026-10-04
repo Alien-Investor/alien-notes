@@ -1,5 +1,31 @@
 # Changelog — Alien Notes
 
+## v1.8 — 2026-10-04
+
+Kleine Korrekturen an der Zwischenablage der Linux-Desktop-Fassung, nachgezogen aus Alien Pass 1.19. Am Datei-Format, an der Verschlüsselung
+und an deinen Notizen ändert sich nichts; auf Android ändert sich am Verhalten nichts (nur die Versionsnummer).
+- **Desktop — kopierte Notiz per Mittelklick:** Unter KDE kann Klipper jede Kopie zusätzlich in die Auswahl für den Mittelklick spiegeln
+  (Einstellung „Auswahl und Zwischenablage synchronisieren“, auf dem Testgerät der Fall). Die App löschte dort bisher nur, was man markiert hatte —
+  eine kopierte Notiz blieb nach Ablauf der Zeit, nach dem Sperren und nach dem Beenden per Mittelklick einfügbar. Jetzt wird sie auch dort
+  gelöscht (nur, solange sie noch von der App stammt).
+- **Desktop — Markierung nach einem Klick neben ein anderes Feld:** Stand in einem anderen Feld noch eine alte Markierung (etwa im Titel, in der
+  Kategorie oder in einem Passphrase-Feld), konnte ein Klick links neben oder knapp über dieses Feld die App dazu bringen, dessen Inhalt statt des
+  markierten Notiztexts zu melden — der Text blieb dann in der Mittelklick-Auswahl liegen. Die Hülle merkt sich jetzt die letzten acht
+  Markierungen statt nur einer.
+- **Desktop — markierte Passphrase beim Fensterwechsel:** Beim Passphrase-Wechsel, beim Einrichten der PIN oder bei der Passphrase eines Backup-Imports leert der
+  Wechsel in ein anderes Fenster die getippten Felder — eine dort markierte Passphrase blieb aber bis zum Ablauf der Zeit in der Mittelklick-Auswahl.
+  Jetzt verschwindet sie mit. Markierter Notiztext bleibt beim Fensterwechsel wie bisher per Mittelklick einfügbar.
+- **Desktop — Markierung während eines Löschens:** Markierte man genau in dem Moment, in dem die Kopier-Frist ablief, konnte die neue Markierung
+  ohne Frist bleiben. Jetzt bekommt sie ihre Frist in jedem Fall.
+- **Desktop — gesperrt:** Eine auf dem Sperr- oder Einrichtungsbildschirm markierte Passphrase verschwindet jetzt auch beim Wechsel in ein
+  anderes Fenster sofort aus der Mittelklick-Auswahl. Wer dort mit Strg+C kopiert (etwa eine neue Passphrase zum Sichern), behält die Kopie
+  jetzt mit einer Frist von 30 Sekunden (gesperrt gilt immer die Vorgabe, auch bei der Aegis-Abfrage), statt dass sie still sofort gelöscht wird;
+  beim Entsperren und beim Abschluss der Einrichtung wird sie gelöscht — vorher einfügen.
+- **Desktop — kleinere Härtungen:** Kopieren, Melden und Löschen laufen in der Hülle streng nacheinander, jeder Zugriff auf die Zwischenablage
+  mit eigener Frist — ein hängendes fremdes Programm hält das Löschen nicht mehr auf, und was nicht sofort gelöscht werden kann, holt die Hülle
+  selbst nach. Eine Kopie, die zu spät ankommt, wird gleich wieder gelöscht. Beim Beenden wird das letzte Löschen abgewartet und, falls es
+  nicht alles erwischt hat, direkt nachgefasst — zusammen höchstens etwa 5 Sekunden.
+
 ## v1.7 — 2026-10-03
 
 Kleine Verbesserungen an der Linux-Desktop-Fassung, nachgezogen aus Alien Pass 1.18. Am Datei-Format, an der Verschlüsselung und an deinen
