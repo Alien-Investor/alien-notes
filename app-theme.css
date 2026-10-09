@@ -33,13 +33,17 @@ body::before{content:'';position:fixed;inset:0;background-image:
  pointer-events:none;z-index:0;}
 body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.15) 2px,rgba(0,0,0,.15) 4px);pointer-events:none;z-index:1;}
 /* Scrollbalken im Neon-Look statt Chromium-Grau (Desktop-Hüllen/Electron, Brave). Daumen mit transparentem Rand + padding-box,
-   damit er in Karten wie auf dem Seitenhintergrund schwebt. Android-WebView blendet Overlay-Balken ohnehin aus. Firefox → scrollbar-color. */
+   damit er in Karten wie auf dem Seitenhintergrund schwebt. Firefox → scrollbar-color. */
+/* Nur bei Maus/Trackpad: ohne die Bedingung zeigte die Mobil-Emulation in Overlays, Modals und Menüs einen festen 10-px-Balken (Ausgaben-Tracker v1.11, Audit c5);
+   Android/Touch behält so den System-Overlay-Balken. */
+@media (hover:hover) and (pointer:fine){
 ::-webkit-scrollbar{width:10px;height:10px;}
 ::-webkit-scrollbar-track{background:rgba(0,255,204,.04);}
 ::-webkit-scrollbar-thumb{background:var(--neon-mid);border:2px solid transparent;background-clip:padding-box;border-radius:6px;}
 ::-webkit-scrollbar-thumb:hover{background:var(--neon);background-clip:padding-box;}
 ::-webkit-scrollbar-corner{background:transparent;}
 ::-webkit-scrollbar-button{display:none;}
+}
 @supports not selector(::-webkit-scrollbar){html{scrollbar-color:var(--neon-mid) transparent;scrollbar-width:thin;}}
 .container{position:relative;z-index:2;max-width:900px;margin:0 auto;padding:24px 16px 60px;}
 a{color:var(--neon);}
@@ -131,7 +135,7 @@ input[type=search]::-webkit-search-cancel-button{-webkit-appearance:none;appeara
 .combo-btn:hover{border-color:var(--neon-mid);}
 .caret{color:var(--text-dim);flex:none;}
 .combo-menu{position:absolute;left:0;right:0;top:100%;margin-top:4px;z-index:60;background:var(--card-bg);border:1px solid var(--neon-mid);border-radius:3px;max-height:190px;overflow-y:auto;box-shadow:0 0 14px rgba(0,255,204,.2);}
-.combo-opt{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--border);color:var(--text-mid);font-family:'Share Tech Mono',monospace;font-size:.85rem;letter-spacing:1px;padding:10px;cursor:pointer;}
+.combo-opt{display:block;width:100%;overflow-wrap:anywhere;text-align:left;background:none;border:0;border-bottom:1px solid var(--border);color:var(--text-mid);font-family:'Share Tech Mono',monospace;font-size:.85rem;letter-spacing:1px;padding:10px;cursor:pointer;}
 .combo-opt:last-child{border-bottom:0;}
 .combo-opt:hover,.combo-opt.on{color:var(--neon);background:var(--neon-dim);}
 
@@ -193,7 +197,8 @@ input[type=search]::-webkit-search-cancel-button{-webkit-appearance:none;appeara
 .dlg-msg{font-size:.86rem;line-height:1.6;color:var(--neon);white-space:pre-line;overflow-wrap:break-word;}
 .dlg-btns{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap;}
 .dlg-btns .btn{flex:1 1 auto;padding:10px 12px;letter-spacing:1px;font-size:.72rem;}
-.dlg input{margin-top:12px;}   /* Eingabefeld (prompt()-Ersatz, Alien Notes v1.1 Kategorie umbenennen, Gerät 25.09.2026) */
+.dlg .combo{margin-top:12px;}   /* Eingabefeld (prompt()-Ersatz, Alien Notes v1.1 Kategorie umbenennen, Gerät 25.09.2026; seit v1.9 im Kombi-Rahmen) */
+.dlg .combo-menu{position:static;}   /* .dlg scrollt selbst (overflow-y:auto) — absolut gesetzt würde die Liste abgeschnitten; so schiebt sie die Knöpfe nach unten (Alien Pass v1.20) */
 /* ===== Toast mit Knopf („Rückgängig“ nach dem Löschen — Alien Notes v1.1, am Gerät bestätigt 25.09.2026) =====
    toast(msg,{action:{label,fn},ms}); ohne Aktion trägt der Knopf keinen Text. Sperren räumt Toast und Aktion (hideToast). */
 .toast{display:flex;align-items:center;justify-content:center;gap:12px;}

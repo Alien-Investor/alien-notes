@@ -16,7 +16,7 @@ const FONT_KEY='ai-notes-font', FONT_SIZES=['m','l','xl'];
    ============================================================ */
 const LS_KEY = 'ai-notes-vault';
 const LANG_KEY = 'ai-notes-lang';
-const APP_VERSION = '1.8';   // Anzeige in den Einstellungen; muss VERSION_NAME entsprechen (build-www.sh setzt es aus VERSION, roundtrip-test.mjs prüft es)
+const APP_VERSION = '1.9';   // Anzeige in den Einstellungen; muss VERSION_NAME entsprechen (build-www.sh setzt es aus VERSION, roundtrip-test.mjs prüft es)
 
 /* ===== KIT: i18n — Deutsch ist Quelle im HTML (data-i18n / data-i18n-html / data-i18n-ph), Englisch im I18N-Dict,
    dynamische Texte per tr(key,{params}) aus T {de,en}. ===== */
@@ -122,7 +122,7 @@ const I18N = {
   "help.p1":"A <strong>local, encrypted notes app</strong> for notes and checklists. Runs fully <strong>offline</strong> — no cloud, no server, no telemetry, no account. The Android app does not even have an internet permission. Your notes never leave the device in plaintext.",
   "help.warn":"⚠ There is no reset and no backdoor. Forget your passphrase and the notes are gone for good. Make regular backups and keep the passphrase safe.",
   "help.h2":"First steps",
-  "help.l2":"<li><strong>Choose a passphrase</strong> — at least 12 characters, better six dice words (the suggest button builds them from the EFF list). Write it down and store it safely.</li><li><strong>+</strong> creates a note. The title may stay empty — the first line of the text serves as the title. There is no save button: the app saves while you type and when you leave the note.</li><li><strong>Checklists:</strong> switch a note to “Checklist” — every line becomes an entry with a box; “Done to the bottom” sorts ticked entries down. Switching back turns the entries into “- [ ] …” or “- [x] …” lines.</li><li><strong>Categories</strong> work like folders: type one freely (suggestions from existing ones). The list filters via the chips at the top; the ★ chip shows favourites only, the ☐ chip only checklists with open items (both combine with a category). Pinned notes always sit at the top. <strong>No preview:</strong> the checkbox in the editor makes the list show only the title — against onlookers. <strong>Rename:</strong> tap the category chip, then the pencil ✎ next to it — every note of that category moves (including the trash); an empty name means “no category”.</li><li><strong>Several at once:</strong> the ☑ button next to the trash turns on checkboxes; tap rows to pick them (search and chips keep working, “All” picks every row shown; already picked notes stay picked even when a filter hides them). The bar at the bottom moves the picked notes to the trash (one “Undo” for all, at most 200 at once — that is what the trash holds), sets a category or the favourite mark.</li><li><strong>Appearance:</strong> Settings → Appearance offers Black/Soft and three font sizes. Both are device settings — not in the file, not in the backup.</li><li>The search covers title, text, checklist entries and category.</li>",
+  "help.l2":"<li><strong>Choose a passphrase</strong> — at least 12 characters, better six dice words (the suggest button builds them from the EFF list). Write it down and store it safely.</li><li><strong>+</strong> creates a note. The title may stay empty — the first line of the text serves as the title. There is no save button: the app saves while you type and when you leave the note.</li><li><strong>Checklists:</strong> switch a note to “Checklist” — every line becomes an entry with a box; “Done to the bottom” sorts ticked entries down. Switching back turns the entries into “- [ ] …” or “- [x] …” lines. Long entries wrap. Enter starts a new entry (in the middle of the text it splits it), pasted text with several lines becomes several entries.</li><li><strong>Categories</strong> work like folders: type one freely (suggestions from existing ones). The list filters via the chips at the top; the ★ chip shows favourites only, the ☐ chip only checklists with open items (both combine with a category). Pinned notes always sit at the top. <strong>No preview:</strong> the checkbox in the editor makes the list show only the title — against onlookers. <strong>Rename:</strong> tap the category chip, then the pencil ✎ next to it — every note of that category moves (including the trash); an empty name means “no category”.</li><li><strong>Several at once:</strong> the ☑ button next to the trash turns on checkboxes; tap rows to pick them (search and chips keep working, “All” picks every row shown; already picked notes stay picked even when a filter hides them). The bar at the bottom moves the picked notes to the trash (one “Undo” for all, at most 200 at once — that is what the trash holds), sets a category (existing ones are right there to pick, or just type a new one) or the favourite mark.</li><li><strong>Appearance:</strong> Settings → Appearance offers Black/Soft and three font sizes. Both are device settings — not in the file, not in the backup.</li><li>The search covers title, text, checklist entries and category.</li>",
   "help.h3":"Markdown preview",
   "help.p3":"Every text note (not checklists) has a “Markdown preview” switch. Editing always stays the plain text field; the preview renders a small subset: headings (<code>#</code> to <code>###</code>), <strong>bold</strong> (<code>**…**</code>), <em>italic</em> (<code>*…*</code>), lists (<code>-</code>, <code>1.</code> — numbered ones always start at 1), boxes (<code>- [ ]</code>, <code>- [x]</code>), code (<code>`…`</code>, ``` blocks or 4 spaces of indentation — so no indented sub-items), rules (<code>---</code>). Links are deliberately shown as text, never clickable — the app has no network anyway.",
   "help.h4":"Locking",
@@ -300,7 +300,7 @@ const T = {
   "sn.done":{de:"Übernommen: {a} neu, {u} aktualisiert, {t} in den Papierkorb. Jetzt die Backup-Datei löschen.",en:"Imported: {a} new, {u} updated, {t} into the trash. Now delete the backup file."},
   "sn.doneToast":{de:"Standard-Notes-Import fertig",en:"Standard Notes import done"},
   "dlg.rename":{de:"Umbenennen",en:"Rename"},
-  "dlg.catPh":{de:"Neuer Name (leer = ohne Kategorie)",en:"New name (empty = no category)"},
+  "dlg.catPh":{de:"Neuer Name (leer = ohne Kategorie)",en:"New name (empty = no category)"},"dlg.catPhSel":{de:"Kategorie (leer = ohne)",en:"Category (empty = none)"},
   "chip.rename":{de:"Kategorie umbenennen",en:"Rename category"},
   "confirm.renameCat1":{de:"Kategorie „{c}“ umbenennen? Betrifft 1 Notiz. Gibt es den neuen Namen schon, wird die Notiz dort eingeordnet. Leer lassen heißt „ohne Kategorie“.",en:"Rename category “{c}”? Affects 1 note. If the new name already exists, the note joins that category. Leave empty for “no category”."},
   "toast.catRenamed1":{de:"1 Notiz jetzt in „{c}“",en:"1 note now in “{c}”"},
@@ -721,9 +721,10 @@ function mdParse(text){
     if(/^\s{0,3}```/.test(l)){ flushP(); flushL(); const buf=[]; i++; while(i<lines.length&&!/^\s{0,3}```/.test(lines[i])) buf.push(lines[i++]); i++; out.push({type:'code',text:buf.join('\n')}); continue; }
     if(/^\s{0,3}(?:-{3,}|\*{3,}|_{3,})\s*$/.test(l)){ flushP(); flushL(); out.push({type:'hr'}); i++; continue; }
     // Überschrift: lineare Erkennung, schließende # per Schleife — die frühere Regex mit lazy Gruppe vor zwei \s* war kubisch (Audit run-1 #5)
-    if((m=/^\s{0,3}(#{1,3})[ \t]+(.*)$/.exec(l))){ let t=m[2].trimEnd(); let k=t.length; while(k>0&&t[k-1]==='#') k--; if(k<t.length&&(k===0||/\s/.test(t[k-1]))) t=t.slice(0,k).trimEnd();
+    // Überschrift und Liste: [\s\S]* statt .* — ein \u2028/\u2029 am Zeilenende ließ $ scheitern, [ \t]+ bzw. \s+ verfolgte quadratisch zurück (Release-Audit v1.9 B-4)
+    if((m=/^\s{0,3}(#{1,3})[ \t]+([\s\S]*)$/.exec(l))){ let t=m[2].trimEnd(); let k=t.length; while(k>0&&t[k-1]==='#') k--; if(k<t.length&&(k===0||/\s/.test(t[k-1]))) t=t.slice(0,k).trimEnd();
       flushP(); flushL(); out.push({type:'h',level:m[1].length,inline:mdInline(t)}); i++; continue; }
-    if((m=/^\s{0,3}(?:([-*+])|(\d{1,9})[.)])\s+(?:\[([ xX])\]\s+)?(.*)$/.exec(l))){ flushP(); const ordered=!!m[2];
+    if((m=/^\s{0,3}(?:([-*+])|(\d{1,9})[.)])\s+(?:\[([ xX])\]\s+)?([\s\S]*)$/.exec(l))){ flushP(); const ordered=!!m[2];
       if(!list||list.ordered!==ordered){ flushL(); list={type:'list',ordered,items:[]}; }
       list.items.push({inline:mdInline(m[4]), check:m[3]===undefined?null:m[3]!==' '}); i++; continue; }
     if(/^(?: {4}|\t)/.test(l)){ flushP(); flushL(); const buf=[]; while(i<lines.length&&/^(?: {4}|\t)/.test(lines[i])) buf.push(lines[i++].replace(/^(?: {4}|\t)/,'')); out.push({type:'code',text:buf.join('\n')}); continue; }
@@ -734,7 +735,34 @@ function mdParse(text){
 // Klartext einer Notiz fürs Kopieren (SecureClip): Titel, dann Text bzw. Checkliste als „- [x] …“-Zeilen
 function noteText(e){ const first=e.type==='text'?(String(e.body||'').split('\n').map(l=>line(l,CAPS.title)).find(Boolean)||''):''; const head=e.title&&e.title!==first?e.title+'\n\n':''; if(e.type==='list') return head+(e.items||[]).map(x=>'- ['+(x.done?'x':' ')+'] '+x.text).join('\n'); return head+(e.body||''); }
 // Checkliste ↔ Text: Zeilen werden Einträge (Kästchen-Marker verstanden), Einträge werden „- [x] …“-Zeilen
-function linesToItems(body){ return sanitizeItems(String(body||'').split(/\r?\n/).map(l=>{ const m=/^\s*(?:[-*+]\s+)?(?:\[([ xX])\]\s*)?(.*)$/.exec(l); return {text:m?m[2]:l, done:!!(m&&m[1]&&m[1]!==' ')}; })); }
+// [\s\S]* statt .*: „.“ passt nicht auf \r, \u2028, \u2029 — dann lief $ ins Leere und \s* verfolgte quadratisch zurück (40 000 Leerzeichen 0,5 s,
+// eine Million Minuten; v1.9 beim Einfügen gefunden, steckte seit v0.1 in linesToItems). So passt das Muster immer im ersten Anlauf.
+function lineToItem(l){ const m=/^\s*(?:[-*+]\s+)?(?:\[([ xX])\]\s*)?([\s\S]*)$/.exec(l); return {text:m?m[2]:l, done:!!(m&&m[1]&&m[1]!==' ')}; }
+function linesToItems(body){ return sanitizeItems(String(body||'').split(/\r?\n/).map(lineToItem)); }
+/* Checklisten-Punkt im Editor (v1.9, Entscheidung Nutzer 09.10.2026): Mehrzeiliges an der Einfügestelle wird zu mehreren Punkten. head/tail = Text des
+   Punkts vor/hinter der Einfügestelle, text = das Eingefügte, room = wie viele NEUE Punkte noch passen (ITEMS_MAX − vorhandene), cap = CAPS.item.
+   curDone = Haken des Punkts. first = neuer Text des Punkts (head + erste Zeile; an vorhandenen Text roh angehängt wie beim normalen Einfügen, vor leerem
+   head mit Marker wie linesToItems), firstDone = Haken aus deren Marker, wenn der Punkt danach nur Eingefügtes trägt (null = Haken bleibt), rows = neue
+   Punkte darunter (Leerzeilen fallen weg, „- [ ]“/„- [x]“ verstanden), tail hängt am letzten Punkt und nimmt curDone mit (der Haken folgt dem schon
+   vorhandenen Text, wie beim Teilen mit Enter; Release-Audit v1.9 B-2/B-3), caret = Cursor darin vor tail, cut = Zeilen passten nicht mehr. Gekürzt wird
+   nur Eingefügtes, nie mitten in einem Surrogat-Paar — head und tail (schon Getipptes) gehen nie verloren. */
+function splitItemPaste(head, text, tail, room, cap, curDone){
+  head=String(head==null?'':head); tail=String(tail==null?'':tail); room=Math.max(0,Math.floor(+room)||0); cap=Math.max(2,Math.floor(+cap)||CAPS.item);   // ≥ 2: sonst kürzte die Surrogat-Regel einen Punkt auf leer
+  // Zeilen einzeln lesen und nur so viele, wie Platz ist: linear und ohne alle Zeilen anzulegen (Release-Audit v1.9 C-1 — shift() in einer Schleife war bei
+  // 1 MB Leerzeilen quadratisch, 20–50 s Stillstand). „Sichtbar“ heißt wie nach dem Speichern (line(): Steuer- und Nullbreiten-Zeichen fallen weg, C-6).
+  const T=String(text==null?'':text), NL=/\r\n|\r|\n/g; let pos=0;
+  const next=()=>{ if(pos>T.length) return null; NL.lastIndex=pos; const m=NL.exec(T), l=T.slice(pos,m?m.index:T.length); pos=m?NL.lastIndex:T.length+1; return l; };
+  const vis=x=>!!line(x,cap), lead=vis(head), keep=vis(tail);
+  let l0=next(); if(!lead) for(let n; !vis(lineToItem(l0).text)&&(n=next())!==null;) l0=n;   // vor leerem Punkt: führende Leerzeilen weg, die erste echte Zeile kommt in den Punkt
+  const f=lead?{text:l0,done:false}:lineToItem(l0);
+  const fit=(x,n)=>{ n=Math.max(0,n); if(n>0&&n<x.length&&/[\uD800-\uDBFF]/.test(x[n-1])) n--; return x.slice(0,n); };
+  const more=[]; let cut=false;
+  for(let l; (l=next())!==null;){ const x=lineToItem(l), t=x.text.trim(); if(!vis(t)) continue; if(more.length>=room){ cut=true; break; } more.push({text:t,done:x.done}); }
+  const firstDone=!lead&&vis(f.text)&&(more.length||!keep)?f.done:null;
+  if(!more.length){ const mid=fit(f.text,cap-head.length-tail.length); return {first:head+mid+tail,firstDone,rows:[],caret:head.length+mid.length,cut}; }
+  const rows=more.map(x=>({text:fit(x.text,cap),done:x.done})), last=rows[rows.length-1]; last.text=fit(last.text,cap-tail.length); const caret=last.text.length; last.text+=tail;
+  if(keep&&typeof curDone==='boolean') last.done=curDone;
+  return {first:head+fit(f.text,cap-head.length),firstDone,rows,caret,cut}; }
 function itemsToBody(items){ return (items||[]).map(x=>'- ['+(x.done?'x':' ')+'] '+x.text).join('\n'); }
 /* ---------- Standard-Notes-Import (v1.1, rein): entschlüsseltes Backup {version:'004', items:[…]} → fertige Einträge + Statistik ----------
    Format belegt aus standardnotes/app (Commit 000d2d7b, 22.09.2026) und Lexical v0.49.0 — Belege und Regeln in SN-FORMAT.md.
@@ -907,6 +935,7 @@ const App = (function(){
   let DEK=null, KDF=null, WRAP=null, VAULT=null;      // Sitzungszustand — auf lock() alles null
   let editId=null, editing=false, formType='text', mdMode='edit', search='', catFilter=null, favFilter=false, openFilter=false;   // openFilter: nur Checklisten mit offenen Einträgen (v1.1 Punkt 5)
   let selMode=false, selIds=new Set(), shownIds=[];   // Mehrfachauswahl (v1.1 Punkt 8): nur im RAM, Sperre räumt ab; shownIds = zuletzt gezeigte Zeilen (für „Alle“)
+  let flushSelAll=null;   // Desktop: meldet ein noch offenes Strg+A (keyup fehlt, weil per Maus ins andere Fenster gewechselt wurde) — Release-Audit v1.9 Runde 2 a2-5
   let clipTimer=null, clipOwnedAt=0, clipCopied=false, clipGateSel=false, failCount=0, lockedUntil=0, pendingImport=null, kdfTouched=false;
   let pendingUnlock=null, pendingSecret=null, pendingOtpauth='';   // Aegis-Hürde: Schlüssel warten auf den Code / Einrichtung läuft
   let bioGen=0;             // Generation ALLER Pforten (Alien Pass v1.8): jede Sperre erhöht sie, laufende Pforten verwerfen ihr Ergebnis
@@ -946,22 +975,27 @@ const App = (function(){
      Aufrufer prüft danach VAULT/editing selbst nach. Text nur per textContent. ---------- */
   let dlgResolve=null, dlgPrev=null;
   // opt.input={value,placeholder,max}: Dialog mit Eingabefeld (Ersatz für prompt()) — löst dann mit dem Text (über line(), max) oder null auf
+  // input.cats (v1.9, wie Alien Pass v1.20): das Feld wird zur Kategorie-Kombi wie #f-cat — ▾ rechts (nur wenn es Kategorien gibt) und die Liste aller
+  // Kategorien gleich beim Öffnen offen; dialogClose() leert sie per closeMenus() (Kategorienamen sind entschlüsselte Nutzerdaten). Nur „Kategorie…“ der
+  // Mehrfachauswahl; „Kategorie umbenennen“ bleibt ein freies Feld für den neuen Namen (Entscheidung Nutzer 09.10.2026).
   let dlgInput=null;
   function ask(msg, opt){ opt=opt||{}; if(dlgResolve) return Promise.resolve(opt.input?null:false);
     return new Promise(res=>{ dlgResolve=res; dlgPrev=document.activeElement; $('dlg-msg').textContent=msg; dlgInput=opt.input||null;
-      const inp=$('dlg-input'); inp.value=dlgInput?String(dlgInput.value||''):''; inp.placeholder=dlgInput&&dlgInput.placeholder?dlgInput.placeholder:''; inp.maxLength=dlgInput&&dlgInput.max?dlgInput.max:200; inp.classList.toggle('hidden',!dlgInput);
+      const inp=$('dlg-input'); inp.value=dlgInput?String(dlgInput.value||''):''; inp.placeholder=dlgInput&&dlgInput.placeholder?dlgInput.placeholder:''; inp.maxLength=dlgInput&&dlgInput.max?dlgInput.max:200; inp.classList.toggle('hidden',!dlgInput); $('dlg-combo').classList.toggle('hidden',!dlgInput);   // Rahmen mit: sonst +12 px Abstand in jeder Ja/Nein-Rückfrage (Review Pass v1.20 N-1)
+      const catOn=!!(dlgInput&&dlgInput.cats&&cats().length); $('dlg-cat-btn').classList.toggle('hidden',!catOn);
       const b=$('dlg-ok'); b.textContent=tr(opt.ok||'dlg.ok'); b.classList.toggle('danger',!!opt.danger); show('dlg');
-      if(dlgInput){ inp.focus(); inp.select(); } else $('dlg-cancel').focus(); }); }
+      if(dlgInput){ inp.focus(); inp.select(); if(catOn) renderCatMenu(true,'dlg-input'); } else $('dlg-cancel').focus(); }); }
   function dialogClose(v){ const r=dlgResolve; if(!r) return; dlgResolve=null; const inp=$('dlg-input'), wasInput=dlgInput, max=wasInput&&wasInput.max?wasInput.max:200; dlgInput=null;
-    const text=wasInput&&v?line(inp.value,max):null; inp.value=''; inp.classList.add('hidden');   // Eingabe nie stehen lassen (Nutzerdaten)
+    const text=wasInput&&v?line(inp.value,max):null; inp.value=''; inp.classList.add('hidden'); $('dlg-combo').classList.add('hidden'); $('dlg-cat-btn').classList.add('hidden'); closeMenus();   // Eingabe und Liste nie stehen lassen (Nutzerdaten)
     hide('dlg'); $('dlg-msg').textContent=''; $('dlg-ok').classList.remove('danger');
     const f=dlgPrev; dlgPrev=null; if(f&&document.contains(f)&&typeof f.focus==='function'){ try{ f.focus(); }catch(_){} } r(wasInput?text:!!v); }
   function dialogOk(){ dialogClose(true); }
   function dialogCancel(){ dialogClose(false); }
   function dialogOpen(){ return !!dlgResolve; }
-  function dialogKey(ev){ if(!dlgResolve) return false;   // offener Dialog: Escape bricht ab, Tab pendelt zwischen den zwei Knöpfen, alles andere bleibt im Dialog
+  function dialogKey(ev){ if(!dlgResolve) return false;   // offener Dialog: Escape bricht ab, Tab pendelt im Dialog, alles andere bleibt im Dialog
     if(ev.key==='Escape'){ dialogCancel(); return true; }
-    if(ev.key==='Tab'){ const ring=[$('dlg-input'),$('dlg-cancel'),$('dlg-ok')].filter(n=>!n.classList.contains('hidden')); const i=ring.indexOf(document.activeElement); ring[(i+(ev.shiftKey?-1:1)+ring.length)%ring.length].focus(); return true; }
+    if(ev.key==='Tab'){ const menu=$('dlg-cat-menu'), opts=menu.classList.contains('hidden')?[]:[...menu.children];   // Feld → ▾ → Kategorien → Abbrechen → OK
+      const ring=[$('dlg-input'),$('dlg-cat-btn'),...opts,$('dlg-cancel'),$('dlg-ok')].filter(n=>!n.classList.contains('hidden')); const i=ring.indexOf(document.activeElement); ring[(i+(ev.shiftKey?-1:1)+ring.length)%ring.length].focus(); return true; }
     return false; }
   function err(id,msg){ const e=$(id); if(!e) return; if(!msg){ e.classList.add('hidden'); e.textContent=''; return; } e.textContent=msg; e.classList.remove('hidden'); }
   function el(tag, cls, text){ const n=document.createElement(tag); if(cls) n.className=cls; if(text!=null) n.textContent=text; return n; }
@@ -1145,15 +1179,18 @@ const App = (function(){
   // `===true`: lock steht im App-Export — ein künftiges data-action="lock" reichte sonst ein Event als truthy keepClip durch (Diff-Review Alien Pass v1.11).
   function lock(keepClip){
     // Stehen bleibt nur eine echte KOPIE (clipCopied) — eine bloße Markierung (Maus, Tab, Taste) startet die Frist auch, wird beim Sperren aber gelöscht (Release-Audit v1.7 R2-N1)
+    if(flushSelAll) flushSelAll();   // vor clearClip: eine gerade per Strg+A gemachte Markierung soll mitgelöscht werden
     clearIdle(); if(!(keepClip===true&&clipCopied&&clipOwnedAt&&clipTimer)) clearClip(); clearTimeout(autosaveTimer); autosaveTimer=null; applySecure(true);
-    DEK=null; KDF=null; WRAP=null; VAULT=null; editId=null; editing=false; pendingImport=null; search=''; catFilter=null; favFilter=false; openFilter=false; selMode=false; selIds=new Set(); shownIds=[];
+    // editBase: canon-JSON der letzten Notiz — beim Sperren leeren (Release-Audit v1.9 Runde 2 a2-4)
+    DEK=null; KDF=null; WRAP=null; VAULT=null; editId=null; editBase=null; editing=false; pendingImport=null; search=''; catFilter=null; favFilter=false; openFilter=false; selMode=false; selIds=new Set(); shownIds=[];
     pendingUnlock=null; pendingSecret=null; pendingOtpauth='';
     bioGen++; bioRearmDek=null; bioArmed=false; bioNeedsRearm=false;   // laufende Fingerabdruck-Vorgänge verfallen (Generation)
     clearRendered(); screen('lock'); boot();   // Sperrbildschirm sofort; boot() liest die Datei asynchron nach (Android-Plugin)
   }
   // Nach dem Sperren darf nichts Entschlüsseltes im DOM oder in Formularfeldern bleiben
   function clearRendered(){
-    ['entry-list','backup-hint','cat-chips','cat-menu','trash-list','f-items','md-view','cp-meter','setup-meter','bio-alert-list','bio-alert'].forEach(id=>{ const n=$(id); if(n) n.replaceChildren(); });
+    clearItemRows(); formProg=false;   // statt nur replaceChildren: setzt auch composing/enterAfterComp/itemsProg zurück, sonst hielten sie das losgelöste Feld fest (a2-2/a2-3)
+    ['entry-list','backup-hint','cat-chips','cat-menu','dlg-cat-menu','trash-list','md-view','cp-meter','setup-meter','bio-alert-list','bio-alert'].forEach(id=>{ const n=$(id); if(n) n.replaceChildren(); });
     ['bk-msg','import-msg','sn-msg','about-line','trash-msg','trash-n','ed-count','ed-meta','add-title','totp-secret'].forEach(id=>{ const n=$(id); if(n) n.textContent=''; });
     ['f-title','f-cat','f-body','search','import-pass','cp-cur','cp1','cp2','lock-pass','lock-pin','pin-new','pin-rep','pin-pass','setup-pass1','setup-pass2','totp-code','totp-verify','bio-pass','vault-file','sn-file'].forEach(id=>{ const n=$(id); if(n) n.value=''; });
     ['f-fav','f-pinned','f-md','f-hide','bio-keep','set-secure'].forEach(id=>{ const n=$(id); if(n) n.checked=false; });   // „auch nach Neustart“ nie stehen lassen (ab Werk aus)
@@ -1179,6 +1216,8 @@ const App = (function(){
   let bgAway=false;
   function onHidden(){
     if(bgAway) return; bgAway=true;
+    // ein noch offenes Strg+A ZUERST melden: clearGateInputs leert sonst das Feld, und die markierte Passphrase bliebe ungemeldet in PRIMARY (Release-Audit v1.9 R3a-1)
+    if(flushSelAll) flushSelAll();
     hiddenAt=Date.now(); clearGateInputs(); if(DESK&&!DEK&&clipOwnedAt&&!clipCopied) clearClip();   // gesperrt: Markierungen sofort weg; eine gesperrt kopierte Passphrase bleibt bis zur Frist (Pass B-4)
     if((DEK||pendingUnlock)&&settings().bgLock===0){ lockSaving(null, true); }   // „sofort“: Editor-Stand sichern, dann sperren; getippte Passphrasen nie stehen lassen; Kopiertes bleibt bis zum Zeitgeber (v1.3)
     else if(DEK&&editing) commitEditor(true);                          // sonst nur den Editor-Stand sichern, bevor Android die App einfriert
@@ -1197,7 +1236,7 @@ const App = (function(){
   // Fenster (Querfund Alien Pass Release-Audit v1.19 B-3, wie Sachwert-Tresor v3.7 B-3)
   // Entsperrt ebenso, wenn die letzte Meldung aus einem dieser Felder kam (Passphrase-Wechsel/PIN in den Einstellungen): clearGateInputs leert das Feld,
   // die Markierung läge sonst bis zur Frist weiter in PRIMARY (Release-Audit v1.8 B-1). Eine Markierung im Notiztext bleibt per Mittelklick nutzbar.
-  if(DESK&&typeof DESK.onBackground==='function') DESK.onBackground(h=>{ if(h==='blur'){ const g=clipGateSel; clearGateInputs(); if((!DEK||g)&&clipOwnedAt&&!clipCopied) clearClip(); } else if(h) onHidden(); else onShown(); });
+  if(DESK&&typeof DESK.onBackground==='function') DESK.onBackground(h=>{ if(h==='blur'){ if(flushSelAll) flushSelAll(); const g=clipGateSel; clearGateInputs(); if((!DEK||g)&&clipOwnedAt&&!clipCopied) clearClip(); } else if(h) onHidden(); else onShown(); });
   if(DESK&&typeof DESK.onLock==='function') DESK.onLock(()=>{ if(DEK||pendingUnlock) lockSaving(); });   // Hülle meldet Ruhezustand/Bildschirmsperre — im Flatpak wirkungslos (kein logind im Käfig), Handbuch sagt es
 
   /* ---------- Zwischenablage (synchron im Klick-Handler aufrufen!) — wortgleich Alien Pass ---------- */
@@ -1271,20 +1310,27 @@ const App = (function(){
     if(!sel||!sel.classList.contains('combo-native')||!Array.from(sel.options).some(o=>o.value===value)||sel.value===value) return;
     sel.value=value; syncCombo(sel.id);
     sel.dispatchEvent(new Event('change',{bubbles:true})); }
-  // --- Kategorie: freies Textfeld mit Vorschlägen (Alien Pass v1.5) ---
+  // --- Kategorie: freies Textfeld mit Vorschlägen (Alien Pass v1.5) — zwei feste Ziele (v1.9, wie Alien Pass v1.20): Formular #f-cat/#cat-menu und das
+  //     Eingabefeld des Dialogs #dlg-input/#dlg-cat-menu (Mehrfachauswahl „Kategorie…“, nur solange ask() mit input.cats offen ist). Feste Zuordnung statt
+  //     Nachschlagen in einem Objekt (kein __proto__-Weg, Muster chooseOpt-Guard); jedes andere Ziel fällt aufs Formular zurück. Nur das Formular meldet
+  //     editorChanged (Autosave) — Tippen im Dialog ist keine Änderung an der offenen Notiz. ---
   const cats=()=>[...new Set(live().map(e=>e.cat).filter(Boolean))].sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base'}));
-  function renderCatMenu(all){ const menu=$('cat-menu'), inp=$('f-cat'); if(!menu||!inp) return false;
+  function catTarget(id){ if(id==='dlg-input') return dlgInput&&dlgInput.cats?{id,inp:$('dlg-input'),menu:$('dlg-cat-menu')}:null;
+    return {id:'f-cat',inp:$('f-cat'),menu:$('cat-menu')}; }
+  function renderCatMenu(all,id){ const t=catTarget(id); if(!t||!t.menu||!t.inp) return false; const menu=t.menu, inp=t.inp;
     menu.replaceChildren(); const q=all?'':(inp.value||'').trim().toLowerCase();
     const items=cats().filter(c=>!q||c.toLowerCase().includes(q));
     if(!items.length){ menu.classList.add('hidden'); return false; }
-    for(const c of items) menu.appendChild(comboOpt(c,'pickCat',c,c===inp.value.trim()));
+    for(const c of items) menu.appendChild(comboOpt(c,'pickCat',c,c===inp.value.trim(),t.id));
     menu.classList.remove('hidden'); return true; }
-  function openCatMenu(){ closeMenus(); renderCatMenu(); }
-  function toggleCatMenu(){ const menu=$('cat-menu'); const wasOpen=menu&&!menu.classList.contains('hidden');
+  function openCatMenu(id){ closeMenus(); renderCatMenu(false,id); }
+  function toggleCatMenu(id){ const t=catTarget(id), wasOpen=!!(t&&t.menu&&!t.menu.classList.contains('hidden'));
     closeMenus(); if(wasOpen) return;
-    renderCatMenu(true); }   // der Pfeil zeigt ALLE Kategorien, ohne das Getippte zu verwerfen
-  function catInput(){ if(!$('cat-menu')) return; renderCatMenu(); editorChanged(); }
-  function pickCat(v){ const inp=$('f-cat'); if(inp) inp.value=v; closeMenus(); editorChanged(); }
+    renderCatMenu(true,id); }   // der Pfeil zeigt ALLE Kategorien, ohne das Getippte zu verwerfen
+  function catInput(_v,elx){ const dlg=!!(elx&&elx.id==='dlg-input'); renderCatMenu(false,dlg?'dlg-input':'f-cat'); if(!dlg) editorChanged(); }
+  // Im Dialog danach Fokus auf OK: Enter übernimmt, und am Handy klappt die Tastatur nicht wieder über die Knöpfe
+  function pickCat(v,elx){ const t=catTarget(elx&&elx.dataset.sel); if(!t||!t.inp) return; t.inp.value=v; closeMenus();
+    if(t.id==='dlg-input') $('dlg-ok').focus(); else { formProg=true; editorChanged(); } }   // Formular: Wert per Programm → Rückgängig-Stapel unsicher (R2c-7, wie C-2; formProg bis zum nächsten Öffnen, R3c-1)
 
   /* ---------- Liste ---------- */
   function renderChips(all){
@@ -1327,7 +1373,7 @@ const App = (function(){
     const snap=VAULT.entries.slice(); const r=bulkEdit(VAULT.entries, pick, {deleted:null}, nowIso()); if(!r.n) return toast(tr('toast.undoGone')); VAULT.entries=r.entries;
     persist().then(()=>{ if(!VAULT) return; renderTrash(); renderList(); toast(want.length>r.n?tr('toast.selRestoredPart',{n:r.n,t:want.length}):tr('toast.selRestored',{n:r.n})); }).catch(rollback(snap,r.entries)); }
   async function selCat(){ if(!VAULT||!selMode||!selIds.size) return; const n=selIds.size, picked=[...selIds].map(byId).filter(Boolean); const common=picked.length&&picked.every(e=>e.cat===picked[0].cat)?picked[0].cat:'';
-    const v=await ask(tr('confirm.selCat',{n}),{ok:'dlg.ok',input:{value:common,placeholder:tr('dlg.catPh'),max:CAPS.cat}}); if(v===null||!VAULT||!selMode) return; const to=line(v,CAPS.cat);
+    const v=await ask(tr('confirm.selCat',{n}),{ok:'dlg.ok',input:{value:common,placeholder:tr('dlg.catPhSel'),max:CAPS.cat,cats:true}}); if(v===null||!VAULT||!selMode) return; const to=line(v,CAPS.cat);
     const {ids,snap}=selSnapshot(); const r=bulkEdit(VAULT.entries, ids, {cat:to}, nowIso()); if(!r.n) return; VAULT.entries=r.entries; selCancel();
     persist().then(()=>{ if(!VAULT) return; renderList(); toast(to?tr(r.n===1?'toast.catRenamed1':'toast.catRenamed',{n:r.n,c:to}):tr(r.n===1?'toast.catCleared1':'toast.catCleared',{n:r.n})); }).catch(e=>{ rollback(snap,r.entries)(e); if(VAULT&&!(e&&e.locked)){ renderList(); toast(tr('err.saveFailed')); } }); }
   function selFav(on){ if(!VAULT||!selMode||!selIds.size) return; const fav=on!=='0'; const {ids,snap}=selSnapshot(); const r=bulkEdit(VAULT.entries, ids, {fav}, nowIso()); if(!r.n) return; VAULT.entries=r.entries; selCancel();
@@ -1403,7 +1449,7 @@ const App = (function(){
     else { const items=readItemRows(); const body=itemsToBody(items); if(body.length>CAPS.body) return toast(tr('toast.bodyFull',{n:CAPS.body}));   // sonst kappte sanitizeEntry still (Audit run-1 #6)
       if(items.length&&!(await ask(tr('confirm.toText'),{ok:'dlg.convert'}))) return;
       if(!editing||formType!=='list') return;
-      $('f-body').value=itemsToBody(readItemRows()); clearItemRows(); }
+      formProg=true; $('f-body').value=itemsToBody(readItemRows()); clearItemRows(); }
     setEntryType(t); editorChanged(); renderCounter(); }
   function setMdMode(m){ mdMode=m==='view'?'view':'edit'; const on=mdMode==='view'; $('mm-edit').classList.toggle('on',!on); $('mm-view').classList.toggle('on',on);
     $('f-body').classList.toggle('hidden',on); $('md-view').classList.toggle('hidden',!on); if(on) renderMd($('f-body').value); else $('md-view').replaceChildren(); }
@@ -1413,12 +1459,12 @@ const App = (function(){
   // Spickzettel: Kärtchen ein-/ausblenden (statischer Text im HTML); „Beispiel einfügen“ nur in eine LEERE Notiz, öffnet dann die Ansicht
   function mdCheat(){ $('md-cheat').classList.toggle('hidden'); }
   function mdExample(){ if(!editing||formType!=='text') return; if($('f-body').value.trim()) return toast(tr('toast.exampleBusy'));
-    if(!$('f-title').value.trim()) $('f-title').value=tr('cheat.exampleTitle'); $('f-body').value=tr('cheat.exampleText'); $('f-md').checked=true; $('md-seg').classList.remove('hidden'); setMdMode('view'); hide('md-cheat'); editorChanged(); renderCounter(); }
+    if(!$('f-title').value.trim()) $('f-title').value=tr('cheat.exampleTitle'); formProg=true; $('f-body').value=tr('cheat.exampleText'); $('f-md').checked=true; $('md-seg').classList.remove('hidden'); setMdMode('view'); hide('md-cheat'); editorChanged(); renderCounter(); }
   // Datum + Uhrzeit (lokal) an den Cursor; in der Ansicht erst zurück ins Textfeld. input-Ereignis → Delegation → editorChanged (Autosave)
   function insertDate(){ if(!editing||formType!=='text') return; if(mdMode==='view') setMdMode('edit'); const ta=$('f-body');
     const s=new Date().toLocaleString(LANG==='de'?'de-DE':'en-GB',{dateStyle:'medium',timeStyle:'short'});
     if(ta.value.length+s.length>CAPS.body) return toast(tr('toast.bodyFull',{n:CAPS.body}));
-    ta.setRangeText(s,ta.selectionStart,ta.selectionEnd,'end'); ta.focus(); ta.dispatchEvent(new Event('input',{bubbles:true})); }
+    formProg=true; ta.setRangeText(s,ta.selectionStart,ta.selectionEnd,'end'); ta.focus(); ta.dispatchEvent(new Event('input',{bubbles:true})); }
   // Markdown-Ansicht: reine Zerlegung (mdParse, Sentinel) → DOM ausschließlich per createElement/textContent; URLs bleiben Text
   function renderMd(text){ const box=$('md-view'); box.replaceChildren();
     const inl=(parent,parts)=>{ for(const p of parts){ if(p.t==='text') parent.appendChild(document.createTextNode(p.s)); else parent.appendChild(el(p.t==='b'?'strong':p.t==='i'?'em':'code',null,p.s)); } };
@@ -1430,21 +1476,87 @@ const App = (function(){
       else if(b.type==='list'){ const l=el(b.ordered?'ol':'ul'); for(const it of b.items){ const li=el('li',it.check===null?'':(it.check?'chk on':'chk')); if(it.check!==null) li.appendChild(el('span','box',it.check?'☑':'☐')); inl(li,it.inline); l.appendChild(li); } box.appendChild(l); }
     }
     if(!box.childNodes.length) box.appendChild(el('p','muted','')); }
-  function renderCounter(){ if(formType==='list'){ const it=readItemRows(); $('ed-count').textContent=it.length?tr('ed.items',{d:it.filter(x=>x.done).length,n:it.length}):''; return; }
+  // Checkliste: leere (auch nur unsichtbare) Zeilen speichert sanitizeItems nicht — nicht mitzählen (Release-Audit v1.9, Hinweis + R2c-5)
+  function renderCounter(){ if(formType==='list'){ const it=readItemRows().filter(x=>line(x.text,CAPS.item)); $('ed-count').textContent=it.length?tr('ed.items',{d:it.filter(x=>x.done).length,n:it.length}):''; return; }
     const s=$('f-body').value; $('ed-count').textContent=s?tr('ed.count',{c:s.length,w:s.trim()?s.trim().split(/\s+/).length:0}):''; }
-  // Checklisten-Zeilen im Formular: Kästchen (Kit) + Textfeld + Entfernen; Enter im Feld legt darunter eine neue Zeile an
+  // Checklisten-Zeilen im Formular: Kästchen (Kit) + Textfeld + Entfernen. Seit v1.9 (Wunsch Nutzer 09.10.2026) mehrzeilig: <textarea rows=1>, die Höhe
+  // wächst mit dem Text (CSS field-sizing:content, sonst fitItem über scrollHeight). Ein Punkt bleibt EINE Zeile im Datenformat (sanitizeItems → line()):
+  // Enter teilt am Cursor (itemEnter), Mehrzeiliges wird zu mehreren Punkten (splitItemPaste) — über paste, beforeinput (Android-Tastaturen ohne
+  // Enter-keydown, Zwischenablage-Leiste) und als Netz itemInput.
+  const FIELD_SIZING=!!(window.CSS&&CSS.supports&&CSS.supports('field-sizing','content'));
+  function fitItem(ta){ if(FIELD_SIZING||!ta) return; ta.style.height='auto'; const h=ta.scrollHeight; ta.style.height=h?(h+ta.offsetHeight-ta.clientHeight)+'px':''; }
+  function fitItems(){ if(!FIELD_SIZING) itemRows().forEach(r=>fitItem($(r.dataset.t))); }
+  // Breite und Sichtbarkeit (0 → sichtbar); nur bei neuer Breite — die eigene Höhenänderung löste sonst „ResizeObserver loop“-Meldungen aus (Release-Audit v1.9 C-11)
+  if(!FIELD_SIZING&&window.ResizeObserver) document.addEventListener('DOMContentLoaded',()=>{ const n=$('f-items'); let w=-1; if(n) new ResizeObserver(es=>{ const x=Math.round(es[es.length-1].contentRect.width); if(x!==w){ w=x; fitItems(); } }).observe(n); });
   function itemRows(){ return Array.from($('f-items').querySelectorAll('.crow')); }
   function pushItemRow(text, done, after){ if(itemRows().length>=ITEMS_MAX) return null; const k=++itemSeq, row=el('div','crow'); row.id='f-i-'+k; row.dataset.t='f-it-'+k; row.dataset.c='f-ic-'+k;
     const lab=el('label','chk'); const cb=el('input'); cb.type='checkbox'; cb.id=row.dataset.c; cb.checked=!!done; cb.dataset.change='itemChanged'; lab.appendChild(cb);
-    const ti=el('input'); ti.type='text'; ti.id=row.dataset.t; ti.maxLength=CAPS.item; ti.placeholder=tr('ed.itemPh'); ti.autocomplete='off'; ti.setAttribute('autocapitalize','sentences'); ti.spellcheck=false; ti.value=text||''; ti.dataset.input='editorChanged'; ti.dataset.enter='itemEnter';
+    const ti=el('textarea'); ti.rows=1; ti.id=row.dataset.t; ti.maxLength=CAPS.item; ti.placeholder=tr('ed.itemPh'); ti.autocomplete='off'; ti.setAttribute('autocapitalize','sentences'); ti.spellcheck=false; ti.value=text||''; ti.dataset.input='itemInput'; ti.dataset.enter='itemEnter';
     const del=el('button','btn sm ghost idel','✕'); del.type='button'; del.dataset.action='removeItemRow'; del.dataset.arg=String(k); del.title=tr('ed.itemDel'); del.setAttribute('aria-label',tr('ed.itemDel'));
-    row.append(lab,ti,del); if(after&&after.parentNode===$('f-items')) after.after(row); else $('f-items').appendChild(row); row.classList.toggle('done',!!done); syncItemAdd(); return row; }
+    row.append(lab,ti,del); if(after&&after.parentNode===$('f-items')) after.after(row); else $('f-items').appendChild(row); row.classList.toggle('done',!!done); syncItemAdd();
+    if(!FIELD_SIZING) requestAnimationFrame(()=>fitItem(ti)); return row; }
   function syncItemAdd(){ $('f-iadd').disabled=itemRows().length>=ITEMS_MAX; }
   function addItemRow(){ const row=pushItemRow('',false); if(!row) return toast(tr('err.itemsMax',{n:ITEMS_MAX})); $(row.dataset.t).focus(); }
-  function itemEnter(_,elx){ const cur=elx&&elx.closest('.crow'); if(!cur) return; if(!$(cur.dataset.t).value.trim()) return; const row=pushItemRow('',false,cur); if(!row) return toast(tr('err.itemsMax',{n:ITEMS_MAX})); $(row.dataset.t).focus(); }
+  // Enter (v1.9: am Cursor teilen, Entscheidung Nutzer 09.10.2026): am Ende → neuer leerer Punkt darunter (wie bisher); mittendrin → der Text rechts vom
+  // Cursor wird ein eigener Punkt darunter (mit demselben Haken); ganz vorn → leerer Punkt darüber, der Text bleibt mit seinem Haken. Leerer Punkt: nichts.
+  // Rückgängig/Wiederholen: Chromiums Stapel gilt fürs ganze Dokument und kennt per Programm gesetzte Werte nicht — nach einem Teilen/Einfügen setzte
+  // Strg+Umschalt+Z alte Tipp-Schritte an falscher Stelle wieder ein („abcxabcabc“), der Autosave speicherte den Salat (Release-Audit v1.9 C-2). Ab dem ersten
+  // solchen Schritt sperrt itemBeforeInput beides, bis die Zeilen neu aufgebaut werden (clearItemRows: neue Felder, alte Schritte zeigen ins Leere).
+  let itemsProg=false, formProg=false, composing=null, enterAfterComp=null;
+  function itemEnter(_,elx){ const cur=elx&&elx.closest('.crow'); if(!cur) return; const ta=$(cur.dataset.t), v=ta.value; if(!v.trim()) return;
+    if(itemRows().length>=ITEMS_MAX) return toast(tr('err.itemsMax',{n:ITEMS_MAX}));
+    const at=ta.selectionEnd, head=v.slice(0,at), tail=v.slice(at);   // am ENDE einer Markierung teilen: Enter löscht nie Text (der Wert wird per Programm gesetzt, Strg+Z holte ihn nicht zurück; Release-Audit v1.9 Runde 1)
+    if(!head.trim()){ const row=pushItemRow('',false,cur); if(row) cur.before(row); ta.setSelectionRange(0,0); return; }
+    if(!tail.trim()){ const row=pushItemRow('',false,cur); if(row&&document.activeElement===ta) $(row.dataset.t).focus(); return; }
+    if(composing===ta){ composing=null; enterAfterComp=null; }   // ta.value beendet eine Komposition ohne compositionend (R2c-2)
+    itemsProg=true; ta.value=head; fitItem(ta); const row=pushItemRow(tail.replace(/^\s+/,''),$(cur.dataset.c).checked,cur); if(!row) return;
+    const t=$(row.dataset.t); if(document.activeElement===ta){ t.focus(); t.setSelectionRange(0,0); } editorChanged(); renderCounter(); }
+  function spreadItem(ta, head, text, tail){ const cur=ta.closest('.crow'); if(!cur) return;
+    const r=splitItemPaste(head,text,tail,ITEMS_MAX-itemRows().length,CAPS.item,$(cur.dataset.c).checked);
+    if(composing===ta){ composing=null; enterAfterComp=null; }   // R2c-2
+    itemsProg=true; ta.value=r.first; if(r.firstDone!==null){ $(cur.dataset.c).checked=r.firstDone; cur.classList.toggle('done',r.firstDone); }
+    let after=cur, last=ta; for(const x of r.rows){ const row=pushItemRow(x.text,x.done,after); if(!row) break; after=row; last=$(row.dataset.t); }
+    fitItem(ta); if(document.activeElement===ta){ last.focus(); try{ last.setSelectionRange(r.caret,r.caret); }catch(_){} }   // nicht aus einem anderen Feld wegziehen (R2c-3)
+    if(r.cut) toast(tr('err.itemsMax',{n:ITEMS_MAX})); editorChanged(); renderCounter(); }
+  const isItemField=n=>!!(n&&n.tagName==='TEXTAREA'&&n.parentNode&&n.parentNode.parentNode===$('f-items'));
+  function spreadAtCaret(ta, text){ const v=ta.value; spreadItem(ta,v.slice(0,ta.selectionStart),text,v.slice(ta.selectionEnd)); }
+  // Nur Umbrüche (Einfügen von „⏎“, Eingabehilfe) = Enter, statt still verschluckt zu werden (Release-Audit v1.9 C-9)
+  function spreadOrEnter(ta, d){ if(/^[\r\n]+$/.test(d)) itemEnter(null,ta); else spreadAtCaret(ta,d); }
+  function itemPaste(ev){ const ta=ev.target; if(!isItemField(ta)) return; const d=ev.clipboardData&&ev.clipboardData.getData('text/plain'); if(!d||!/[\r\n]/.test(d)) return;
+    ev.preventDefault(); spreadOrEnter(ta,d); }
+  // Android-Tastaturen schicken den Umbruch teils ohne Enter-keydown (insertLineBreak/insertParagraph), die Zwischenablage-Leiste von Gboard als insertText.
+  // Ablegen ebenso hier (data und Cursor stehen schon am Ablegeort; im Netz hätte maxlength Mehrzeiliges über 500 Zeichen vorher still gekürzt, C-5) —
+  // Mehrzeiliges kann nur von außen kommen (Punkte, Titel, Suche sind einzeilig, das Notizfeld ist neben der Checkliste nie sichtbar).
+  // Während einer Komposition (IME) nicht teilen: das Netz verschob mitten darin den Fokus, Text kam doppelt (C-3); ein Umbruch wartet aufs Ende (C-4).
+  function itemBeforeInput(ev){ const t=ev.inputType;
+    // … und bei offener Rückfrage: deskKey lässt Strg+Z dort seit v1.9 durch, der dokumentweite Stapel machte dann Getipptes in der Notiz HINTER dem modalen
+    // Dialog rückgängig, der Autosave speicherte es (Release-Audit v1.9 Runde 2 R2c-1; Preis: kein Rückgängig im Dialogfeld)
+    // gesperrt (!DEK) ebenso: der Stapel überlebt lock(), auf dem Sperrbildschirm braucht es kein Rückgängig (Release-Audit v1.9 R3a-4).
+    // Nach Werten per Programm im Formular (formProg: Datum, Beispiel, Typwechsel, Kategorie aus der Liste) ebenso, und immer, wenn der Schritt ein Feld
+    // OHNE Fokus träfe (Hilfe offen, Fokus in der Suche → Strg+Z löschte Text in der offenen Notiz, R3c-3; seit v0.1).
+    if((t==='historyUndo'||t==='historyRedo')&&(itemsProg||formProg||dlgResolve||!DEK||ev.target!==document.activeElement)){ ev.preventDefault(); return; }
+    const ta=ev.target; if(!isItemField(ta)) return;
+    // Chromium beendet eine Komposition mit Umbruch teils ohne compositionend — eine normale Texteingabe ohne isComposing beweist das Ende (R3c-5)
+    if(composing===ta&&!ev.isComposing&&t==='insertText') composing=null;
+    if(t==='insertLineBreak'||t==='insertParagraph'){ ev.preventDefault(); if(ev.isComposing||composing===ta) enterAfterComp=ta; else itemEnter(null,ta); return; }
+    if(ev.isComposing||composing===ta) return;
+    if(ev.cancelable&&typeof ev.data==='string'&&/[\r\n]/.test(ev.data)){ ev.preventDefault(); spreadOrEnter(ta,ev.data); } }
+  // focusout mit noch offener Komposition (Chromium schickte kein compositionend, R3c-5): auflösen und das Netz einmal laufen lassen
+  function itemComposition(ev){ const ta=ev.target; if(!isItemField(ta)) return;
+    if(ev.type==='focusout'){ if(composing===ta){ composing=null; enterAfterComp=null; setTimeout(()=>{ if(ta.isConnected) itemInput(null,ta); },0); } return; }
+    if(ev.type==='compositionstart'){ composing=ta; return; }
+    composing=null; setTimeout(()=>{ if(!ta.isConnected) return; itemInput(null,ta); if(enterAfterComp===ta){ enterAfterComp=null; if(document.activeElement===ta) itemEnter(null,ta); } },0); }   // Klick woandershin beendet die Komposition: dann kein Enter mehr (R2c-3)
+  // Netz: ein Umbruch kam an paste/beforeinput vorbei (Ablegen, Eingabehilfe). Eingefügt wurde mindestens vom ersten bis zum letzten Umbruch; nach dem
+  // Ablegen markiert Chromium genau das Abgelegte, nach einer Eingabe steht der Cursor dahinter — so bleibt der Text hinter der Stelle tail (vorher lief er
+  // als „Eingefügtes“ durch Marker, Platz und Kürzung und ging an der Grenze 200 verloren; Release-Audit v1.9 B-1).
+  function itemInput(_v, ta){ if(!ta) return; const v=ta.value, i=v.search(/[\r\n]/);
+    if(i>=0&&composing!==ta){ const L=Math.max(v.lastIndexOf('\n'),v.lastIndexOf('\r'))+1, a=Math.min(ta.selectionStart,i), e=Math.max(ta.selectionEnd,L);   // lastIndexOf statt Regex: unter Node quadratisch (C-7)
+      if(/^[\r\n]+$/.test(v.slice(a,e))){ ta.value=v.slice(0,a)+v.slice(e); ta.setSelectionRange(a,a); return itemEnter(null,ta); }   // nur ein Umbruch = Enter (R2c-4)
+      return spreadItem(ta,v.slice(0,a),v.slice(a,e),v.slice(e)); }
+    fitItem(ta); editorChanged(); }
   function removeItemRow(k){ const r=$('f-i-'+k); if(!r) return; r.remove(); syncItemAdd(); editorChanged(); renderCounter(); }
   function itemChanged(_,elx){ const r=elx&&elx.closest('.crow'); if(r) r.classList.toggle('done',elx.checked); editorChanged(); renderCounter(); }
-  function clearItemRows(){ $('f-items').replaceChildren(); syncItemAdd(); }
+  function clearItemRows(){ $('f-items').replaceChildren(); syncItemAdd(); itemsProg=false; composing=null; enterAfterComp=null; }
   function setItemRows(items){ clearItemRows(); for(const x of items) pushItemRow(x.text,x.done); }
   function readItemRows(){ return itemRows().map(r=>({text:$(r.dataset.t).value, done:$(r.dataset.c).checked})); }
   function sortDone(){ const it=readItemRows(); setItemRows(it.filter(x=>!x.done).concat(it.filter(x=>x.done))); editorChanged(); }
@@ -1452,12 +1564,16 @@ const App = (function(){
     if(!editing||formType!=='list') return;                      // während der Rückfrage gesperrt
     itemRows().forEach(r=>{ $(r.dataset.c).checked=false; r.classList.remove('done'); }); editorChanged(); renderCounter(); }
   function relabelItemRows(){ itemRows().forEach(r=>{ $(r.dataset.t).placeholder=tr('ed.itemPh'); const b=r.querySelector('.idel'); b.title=tr('ed.itemDel'); b.setAttribute('aria-label',tr('ed.itemDel')); }); }
-  function resetForm(){ ['f-title','f-cat','f-body'].forEach(id=>$(id).value=''); ['f-fav','f-pinned','f-md','f-hide'].forEach(id=>$(id).checked=false); clearItemRows(); $('md-seg').classList.add('hidden'); hide('md-cheat'); setMdMode('edit'); closeMenus(); err('add-err'); setEntryType('text'); $('ed-count').textContent=''; $('ed-meta').textContent=''; $('ed-del').classList.add('hidden'); }
+  // Beim Öffnen frische Felder (Klone ohne Wert): alte Rückgängig-Schritte zeigen dann ins Leere — sonst holte Strg+Z/Strg+Umschalt+Z Getipptes aus Notiz A
+  // in Notiz B, und der Autosave speicherte es (Release-Audit v1.9 R3c-2, seit v0.1). Alle Zugriffe laufen über die ID, die Delegation über data-*.
+  function resetForm(){ formProg=false; ['f-title','f-cat','f-body'].forEach(id=>{ const o=$(id), n=o.cloneNode(false); n.value=''; o.replaceWith(n); }); ['f-fav','f-pinned','f-md','f-hide'].forEach(id=>$(id).checked=false); clearItemRows(); $('md-seg').classList.add('hidden'); hide('md-cheat'); setMdMode('edit'); closeMenus(); err('add-err'); setEntryType('text'); $('ed-count').textContent=''; $('ed-meta').textContent=''; $('ed-del').classList.add('hidden'); }
   function newEntry(t){ if(editing) closeEditor(); editId=null; editBase=null; editing=true; resetForm(); if(t==='list') setEntryType('list'); if(catFilter) $('f-cat').value=catFilter; tab('add'); setTimeout(()=>$(formType==='list'?'f-title':'f-body').focus(),80); if(formType==='list') addItemRow(); }
   function openEditor(id){ const e=byId(id); if(!e) return toast(tr('toast.noEntry')); if(editing) closeEditor(); editId=e.id; editing=true; resetForm(); setEntryType(e.type);
     $('f-title').value=e.title; $('f-cat').value=e.cat; $('f-fav').checked=e.fav; $('f-pinned').checked=e.pinned; $('f-hide').checked=e.hide;
     if(e.type==='text'){ $('f-body').value=e.body; $('f-md').checked=e.md; $('md-seg').classList.toggle('hidden',!e.md); setMdMode(e.md?'view':'edit'); }
-    else setItemRows(e.items);
+    // Checkliste ohne Punkte (leere Punkte werden nie gespeichert): gleich einen leeren ersten Punkt zeigen wie bei einer neuen — sonst landete Getipptes
+    // im Kategoriefeld, Enter tat dort nichts (Gerätetest Desktop 09.10.2026). editBase unten sieht ihn nicht (sanitizeEntry verwirft leere Punkte).
+    else { setItemRows(e.items); if(!itemRows().length) pushItemRow('',false); }
     $('ed-meta').textContent=tr('ed.meta',{c:fmtDate(e.created),u:fmtDate(e.updated)}); $('ed-del').classList.remove('hidden'); renderCounter(); tab('add'); markSel();
     // Fixpunkt merken: was das Formular unverändert liefert (textarea normalisiert CRLF, Titel aus erster Zeile) — nur echte Änderungen werden geschrieben
     const base=sanitizeEntry(Object.assign({},e,readDraft())); editBase=base?sig(base):null; }
@@ -1612,7 +1728,18 @@ const App = (function(){
       if(!a||(a.tagName!=='INPUT'&&a.tagName!=='TEXTAREA')||typeof a.selectionStart!=='number'||a.readOnly||a.disabled) return;   // Fokus auf Kästchen/Knopf: nur kopieren (setRangeText warf dort, Release-Audit v1.7 B-N1)
       let done=false; try{ done=document.execCommand('delete'); }catch(_){}
       if(!done){ a.setRangeText('',a.selectionStart,a.selectionEnd,'end'); a.dispatchEvent(new Event('input',{bubbles:true})); } });
-    document.addEventListener('keyup',ev=>{ if(ev.shiftKey||ev.key==='Shift'||((ev.ctrlKey||ev.metaKey)&&(ev.key||'').toLowerCase()==='a')) onSel(); });
+    // Strg+A: Wer Strg VOR dem A loslässt, schickt ein keyup von „a“ ohne ctrlKey — die ganze Markierung blieb ungemeldet und ohne Frist in PRIMARY,
+    // auch über die Sperre (Release-Audit v1.9 Runde 1, Befund a-1; v1.9 lässt Strg+A zudem im Dialog durch). Deshalb merkt sich das Capture-keydown
+    // ein Strg+A, und das nächste keyup (egal welcher Taste) meldet.
+    let selAllUp=false;
+    document.addEventListener('keyup',ev=>{ if(selAllUp||ev.shiftKey||ev.key==='Shift'||((ev.ctrlKey||ev.metaKey)&&(ev.key||'').toLowerCase()==='a')){ selAllUp=false; onSel(); } });
+    flushSelAll=()=>{ if(selAllUp){ selAllUp=false; onSel(); } };
+    // Rückgängig/Wiederholen holt in einem Eingabefeld eine überschriebene Markierung zurück, und Chromium legt sie in PRIMARY — ohne Taste, die sie meldet
+    // (gemessen 09.10.2026 in der echten Hülle, Electron 44.7.0: Titelfeld, Markierung per Umschalt+Pfeil, überschrieben, Strg+Z → wieder in PRIMARY, Frist
+    // und Sperre kannten sie nicht; Release-Audit v1.9 Runde 2 a2-1, seit v1.7). Beim input steht die Auswahl schon.
+    // Nur das fokussierte Feld: ein „Rückgängig“ ohne Wirkung in einem versteckten Feld meldete sonst dessen alte Rest-Markierung (R3a-3).
+    document.addEventListener('input',ev=>{ const a=ev.target, t=ev.inputType;
+      if((t==='historyUndo'||t==='historyRedo')&&a&&a===document.activeElement&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA')&&typeof a.selectionStart==='number') report(a.value.substring(a.selectionStart,a.selectionEnd),a); });
     // Fokus in ein Feld (Tab, focus()/select(), Rückkehr aus dem Dialog) kann dessen ganzen Inhalt markieren — Chromium legt ihn auch aus type=password in PRIMARY
     // (Alien Pass v1.18, Release-Audit B-1). Nach JEDER Fokusbewegung melden, nicht erst beim Loslassen von Tab: gehaltenes Tab wanderte sonst auf einen
     // Knopf weiter (keyup dort → nichts zu melden), und Weitertippen vor dem Loslassen hob die Markierung auf, bevor sie gemeldet war (Pass-Audit Runde 2).
@@ -1622,7 +1749,8 @@ const App = (function(){
       setTimeout(()=>{ try{ report(a.value.substring(a.selectionStart,a.selectionEnd),a); }catch(_){} },0); });
     // Vor jeder Taste synchron (Capture, vor der Standardaktion): Weitertippen klappt die Markierung zusammen, PRIMARY behält sie aber — Blink zieht Eingaben
     // dem Timer vor, bei Auto-Type kam die Taste sonst vor der focusin-Meldung (Pass-Audit Runde 3)
-    document.addEventListener('keydown',onSel,true);
+    // Strg+F ebenso: deskKey markiert per select() den Suchbegriff, Chromium legt ihn in PRIMARY — im schon fokussierten Suchfeld ohne focusin (R3a-2)
+    document.addEventListener('keydown',ev=>{ if((ev.ctrlKey||ev.metaKey)&&/^[af]$/.test((ev.key||'').toLowerCase())) selAllUp=true; onSel(); },true);
   }
   const BIO = (isNative && CAP.Plugins && CAP.Plugins.Biometric) ? CAP.Plugins.Biometric : null;   // Fingerabdruck-Plugin (patch-hardening.mjs), Web: kein Slot
   const SEC = (isNative && CAP.Plugins && CAP.Plugins.SecureScreen) ? CAP.Plugins.SecureScreen : null;   // FLAG_SECURE zur Laufzeit (patch-hardening.mjs)
@@ -1963,7 +2091,9 @@ const App = (function(){
   function deskKey(ev){
     if(!DESK||!ev.ctrlKey||ev.altKey||ev.shiftKey||ev.metaKey) return false; const k=(ev.key||'').toLowerCase();
     if(k==='l'&&(DEK||pendingUnlock)){ lockNow(); return true; }
-    if(dlgResolve) return true;   // offene Rückfrage: kein Strg+N/F/S daran vorbei (nur Sperren)
+    // Offene Rückfrage: kein Strg+N/F/S daran vorbei; alle anderen Strg-Tasten (Einfügen, Alles markieren, Rückgängig, Wortsprung) wirken normal im
+    // Eingabefeld — vorher schluckte die Weiche jede, im Kategorie-Feld ging Strg+V nicht (Querfund Alien Pass v1.20, Review N-3)
+    if(dlgResolve) return k==='n'||k==='f'||k==='s';
     if(!DEK) return false;
     if(k==='f'){ closeHelp(); tab('list'); const q=$('search'); q.focus(); q.select(); return true; }
     if(k==='n'){ closeHelp(); newEntry(); return true; }
@@ -2036,7 +2166,7 @@ const App = (function(){
 
   return {boot,doSetup,doUnlock,doTotp,cancelTotp,lock,lockNow,tab,dialogOk,renameCat,selStart,selCancel,toggleSel,selAll,selNone,selDelete,selCat,selFav,toastAction,hideToast,dialogCancel,dialogOpen,dialogKey,
     newEntry,openEditor,doneEditor,copyCurrent,deleteCurrent,editorChanged,changeEntryType,mdModeEdit,mdModeView,mdToggle,mdCheat,mdExample,insertDate,
-    addItemRow,itemEnter,removeItemRow,itemChanged,sortDone,resetDone,
+    addItemRow,itemEnter,itemInput,itemPaste,itemBeforeInput,itemComposition,removeItemRow,itemChanged,sortDone,resetDone,
     renderList,setCatFilter,clearCatFilter,toggleFavFilter,toggleOpenFilter,openCatMenu,toggleCatMenu,catInput,pickCat,
     openTrash,renderTrash,restoreEntry,purgeEntry,emptyTrash,
     closeMenus,syncCombo,syncCombos,toggleCombo,chooseOpt,
@@ -2067,12 +2197,17 @@ document.addEventListener('input',ev=>{
   const elx=ev.target.closest('[data-input]'); if(!elx) return;
   const fn=App[elx.dataset.input]; if(typeof fn==='function') fn(elx.value, elx);
 });
+// Checklisten-Punkte (v1.9): Mehrzeiliges einfügen → mehrere Punkte; Zeilenumbruch ohne Enter-Taste (Android-Tastaturen) → wie Enter
+document.addEventListener('paste',ev=>App.itemPaste(ev));
+document.addEventListener('beforeinput',ev=>App.itemBeforeInput(ev));
+document.addEventListener('compositionstart',ev=>App.itemComposition(ev)); document.addEventListener('focusout',ev=>App.itemComposition(ev)); document.addEventListener('compositionend',ev=>App.itemComposition(ev));
 document.addEventListener('keydown',ev=>{
   if(App.deskKey(ev)){ ev.preventDefault(); return; }
   if(App.dialogKey(ev)){ ev.preventDefault(); return; }
   if(ev.key==='Escape'){ App.closeMenus(); App.closeHelp(); App.selCancel(); return; }
   if(ev.key!=='Enter') return;
   const elx=ev.target.closest('[data-enter]'); if(!elx) return;
+  if(ev.isComposing&&elx.dataset.enter==='itemEnter') return;   // Enter beendet die Komposition (IME); ein Umbruch danach läuft über beforeinput (Release-Audit v1.9 C-4)
   const fn=App[elx.dataset.enter]; if(typeof fn==='function'){ ev.preventDefault(); fn(elx.dataset.arg, elx); }
 });
 window.addEventListener('DOMContentLoaded',()=>{

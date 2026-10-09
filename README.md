@@ -124,7 +124,8 @@ Schlüsselableitung schafft, und schlägt eine passende Argon2-Stufe vor.
 ## Was es kann
 
 - **Notizen und Checklisten.** Eine Notiz ist freier Text (bis 100.000 Zeichen); eine Checkliste hat bis zu 200 Einträge mit Kästchen,
-  „Erledigte nach unten“ und „Haken zurücksetzen“. Der Typ lässt sich umschalten — Zeilen werden Einträge und umgekehrt, mit Rückfrage,
+  „Erledigte nach unten“ und „Haken zurücksetzen“. Lange Einträge brechen um, Enter teilt einen Eintrag am Cursor, eingefügter Text mit
+  mehreren Zeilen wird zu mehreren Einträgen (seit 1.9). Der Typ lässt sich umschalten — Zeilen werden Einträge und umgekehrt, mit Rückfrage,
   wenn dabei etwas gekürzt würde.
 - **Kein Speichern-Knopf.** Die App speichert beim Tippen (nach 1,5 s Ruhe) und beim Verlassen der Notiz — verschlüsselt, jedes Mal
   die ganze Datei. Der Titel darf leer bleiben, dann dient die erste Zeile als Titel.
@@ -138,7 +139,7 @@ Schlüsselableitung schafft, und schlägt eine passende Argon2-Stufe vor.
   daraus. Klartext-, Markdown-, Code-, Rich-Text- und Super-Notizen werden Notizen, Checklisten werden Checklisten, der erste Tag wird die
   Kategorie. Authenticator-Einträge (2FA), Spreadsheets und Dateien werden nie übernommen; ein zweiter Import legt keine Dubletten an.
 - **Mehrere auf einmal** (seit 1.1): Notizen auswählen und gemeinsam in den Papierkorb legen (ein „Rückgängig“ für alle, höchstens 200 auf
-  einmal), in eine Kategorie setzen oder als Favorit markieren.
+  einmal), in eine Kategorie setzen (vorhandene stehen seit 1.9 gleich als Liste zur Auswahl) oder als Favorit markieren.
 - **„Rückgängig“ nach dem Löschen** (sechs Sekunden), **„Keine Vorschau“** je Notiz (die Liste zeigt nur den Titel), **drei Schriftgrößen**, und
   jede Rückfrage ist ein Dialog im App-Design — der Android-Systemdialog erbt den Screenshot-Schutz nicht (seit 1.1).
 - **Kopieren** legt die ganze Notiz in die Zwischenablage; die App leert sie nach der eingestellten Zeit (ab Werk 30 s, abschaltbar) und beim

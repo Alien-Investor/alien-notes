@@ -69,12 +69,14 @@ html.desk .no-desk{display:none;}
 .cheat-row .cheat-done{text-decoration:line-through;color:var(--text-dim);}
 .cheat-row .cheat-code{background:rgba(0,255,204,.1);padding:1px 5px;border-radius:3px;font-size:.88em;}
 .cheat-row .cheat-hr{flex:1;border-top:1px solid var(--neon-mid);}
-/* Checkliste im Editor: Kästchen (Kit) + Textfeld + Entfernen */
-.crow{display:flex;gap:8px;margin-bottom:6px;align-items:center;}
+/* Checkliste im Editor: Kästchen (Kit) + Textfeld + Entfernen. Textfeld seit v1.9 eine <textarea rows=1>, die mit dem Text wächst (lange Punkte brechen um
+   statt seitwärts zu scrollen); Kästchen und ✕ bleiben oben an der ersten Zeile. */
+.crow{display:flex;gap:8px;margin-bottom:6px;align-items:flex-start;}
 .crow label.chk{margin:0;flex:none;}
-.crow input[type=text]{flex:1;min-width:0;}
+.crow textarea{flex:1;min-width:0;min-height:0;resize:none;overflow:hidden;field-sizing:content;line-height:1rem;}   /* 1rem = „normal“ der Schrift, eine Zeile so hoch wie jedes Eingabefeld */
 .crow .idel{flex:0 0 auto;}
-.crow.done input[type=text]{text-decoration:line-through;color:var(--text-dim);}
+.crow label.chk,.crow .idel{position:relative;top:calc(.5rem + 10px);transform:translateY(-50%);}   /* mittig auf der ersten Zeile (halbe Zeilenhöhe + Polster/Rand), ohne die Zeile höher zu machen */
+.crow.done textarea{text-decoration:line-through;color:var(--text-dim);}
 /* Markdown-Ansicht: nur createElement/textContent, Links bleiben Text */
 .md{background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:3px;padding:12px 14px;min-height:42vh;color:var(--neon);font-size:.95rem;line-height:1.6;overflow-wrap:anywhere;}
 .md h2,.md h3,.md h4{font-family:'Orbitron',sans-serif;color:var(--neon);letter-spacing:1px;margin:14px 0 6px;font-weight:700;}
@@ -498,9 +500,9 @@ html.desk .no-desk{display:none;}
     <ul data-i18n-html="help.l2">
       <li><strong>Passphrase wählen</strong> — mindestens 12 Zeichen, besser sechs Würfelwörter (der Vorschlag-Knopf baut sie aus der EFF-Liste). Aufschreiben und sicher verwahren.</li>
       <li><strong>+</strong> legt eine Notiz an. Der Titel darf leer bleiben — dann dient die erste Zeile des Textes als Titel. Einen Speichern-Knopf gibt es nicht: Die App speichert beim Tippen und beim Verlassen der Notiz.</li>
-      <li><strong>Checklisten:</strong> Schalte eine Notiz auf „Checkliste“ — jede Zeile wird ein Eintrag mit Kästchen; „Erledigte nach unten“ sortiert abgehakte Einträge ans Ende. Zurückschalten macht aus den Einträgen „- [ ] …“- bzw. „- [x] …“-Zeilen.</li>
+      <li><strong>Checklisten:</strong> Schalte eine Notiz auf „Checkliste“ — jede Zeile wird ein Eintrag mit Kästchen; „Erledigte nach unten“ sortiert abgehakte Einträge ans Ende. Zurückschalten macht aus den Einträgen „- [ ] …“- bzw. „- [x] …“-Zeilen. Lange Einträge brechen um. Enter beginnt einen neuen Eintrag (mitten im Text teilt es ihn), eingefügter Text mit mehreren Zeilen wird zu mehreren Einträgen.</li>
       <li><strong>Kategorien</strong> wirken wie Ordner: frei eintippen (Vorschläge aus vorhandenen). Die Liste filtert über die Chips oben; der ★-Chip zeigt nur Favoriten, der ☐-Chip nur Checklisten mit offenen Einträgen (beide lassen sich mit einer Kategorie kombinieren). Angeheftete Notizen stehen immer ganz oben. <strong>Keine Vorschau:</strong> das Kästchen im Editor lässt die Liste nur den Titel zeigen — gegen Mitleser über die Schulter. <strong>Umbenennen:</strong> Kategorie-Chip antippen, dann den Stift ✎ daneben — alle Notizen dieser Kategorie ziehen um (auch im Papierkorb); leerer Name heißt „ohne Kategorie“.</li>
-      <li><strong>Mehrere auf einmal:</strong> der ☑-Knopf neben dem Papierkorb blendet Kästchen ein; Zeilen antippen wählt sie (Suche und Chips wirken weiter, „Alle“ nimmt jede gezeigte Zeile; bereits gewählte bleiben gewählt, auch wenn ein Filter sie ausblendet). Die Leiste unten legt die gewählten Notizen in den Papierkorb (ein „Rückgängig“ für alle, höchstens 200 auf einmal — so viele fasst der Papierkorb), setzt eine Kategorie oder den Favoriten-Stern.</li>
+      <li><strong>Mehrere auf einmal:</strong> der ☑-Knopf neben dem Papierkorb blendet Kästchen ein; Zeilen antippen wählt sie (Suche und Chips wirken weiter, „Alle“ nimmt jede gezeigte Zeile; bereits gewählte bleiben gewählt, auch wenn ein Filter sie ausblendet). Die Leiste unten legt die gewählten Notizen in den Papierkorb (ein „Rückgängig“ für alle, höchstens 200 auf einmal — so viele fasst der Papierkorb), setzt eine Kategorie (vorhandene stehen gleich zur Auswahl, eine neue einfach eintippen) oder den Favoriten-Stern.</li>
       <li><strong>Darstellung:</strong> Unter Einstellungen → Darstellung gibt es Schwarz/Soft und drei Schriftgrößen. Beides gilt für dieses Gerät — steht nicht in der Datei, nicht im Backup.</li>
       <li>Die Suche findet Titel, Text, Checklisten-Einträge und Kategorie.</li>
     </ul>
@@ -546,7 +548,14 @@ html.desk .no-desk{display:none;}
 <div id="dlg" class="dlg-back hidden" role="dialog" aria-modal="true" aria-describedby="dlg-msg">
   <div class="dlg">
     <div id="dlg-msg" class="dlg-msg"></div>
-    <input id="dlg-input" class="hidden" type="text" autocomplete="off" autocapitalize="sentences" spellcheck="false" maxlength="200" data-enter="dialogOk">
+    <!-- Eingabefeld (prompt()-Ersatz); mit input.cats als Kategorie-Kombi wie #f-cat: Liste aus cats(), beim Öffnen sofort offen (v1.9, wie Alien Pass v1.20) -->
+    <div class="combo hidden" id="dlg-combo">
+      <div class="combo-row">
+        <input id="dlg-input" class="hidden" type="text" autocomplete="off" autocapitalize="sentences" spellcheck="false" maxlength="200" data-enter="dialogOk" data-action="openCatMenu" data-arg="dlg-input" data-input="catInput">
+        <button id="dlg-cat-btn" class="btn sm ghost icon hidden" type="button" data-action="toggleCatMenu" data-arg="dlg-input" aria-label="Kategorien">▾</button>
+      </div>
+      <div id="dlg-cat-menu" class="combo-menu hidden"></div>
+    </div>
     <div class="dlg-btns">
       <button id="dlg-cancel" class="btn ghost" data-action="dialogCancel" data-i18n="dlg.cancel">Abbrechen</button>
       <button id="dlg-ok" class="btn" data-action="dialogOk">OK</button>

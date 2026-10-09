@@ -28,7 +28,8 @@ description: |
 
   Features:
   - Notes (free text, up to 100,000 characters) and checklists (up to 200 entries with boxes, "done to the bottom",
-    "clear ticks"); switch a note between the two — lines become entries and back, with a warning whenever something would be shortened
+    "clear ticks"; since 1.9 long entries wrap, Enter splits an entry at the cursor and pasted text with several lines becomes several entries);
+    switch a note between the two — lines become entries and back, with a warning whenever something would be shortened
   - No save button: the app saves as you type (after 1.5 s) and when you leave the note — encrypted, the whole file every time;
     the title may stay empty, the first line then serves as the title
   - Markdown preview per note (off by default): headings, bold, italic, lists, boxes, code, rules — a small own subset, no third-party
@@ -38,7 +39,8 @@ description: |
   - Moving from Standard Notes (since 1.1): reads a decrypted Standard Notes backup — the downloaded ZIP directly or the text file inside — and
     turns plain, Markdown, code, rich-text and Super notes into notes, checklists into checklists, the first tag into the category; 2FA
     (Authenticator) entries, spreadsheets and files are never imported; a second import creates no duplicates
-  - Select several notes at once (since 1.1): trash (with one "Undo" for all, at most 200 at once), set a category or the favourite mark
+  - Select several notes at once (since 1.1): trash (with one "Undo" for all, at most 200 at once), set a category (since 1.9 the existing
+    ones are offered right away as a list) or the favourite mark
   - "Undo" after deleting (six seconds), "no preview" per note (the list shows only the title), three font sizes, and every confirmation is
     an in-app dialog — the Android system dialog does not inherit the screenshot protection
   - Copy puts the whole note into the clipboard; auto-clear after 15/30/60 s (default 30 s, can be switched off) and on lock; copied content

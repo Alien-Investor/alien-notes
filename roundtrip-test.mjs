@@ -26,7 +26,7 @@ const V = new Function(region + `
     encryptBody,decryptBody,serializeFile,parseFile,kdfOk,KDF_DEFAULT,KDF_BOUNDS,MAX_ENTRIES,MAX_FILE_BYTES,MAX_READ_BYTES,emptyVault,sanitizeEntry,sanitizeEntries,sanitizeVault,sanitizeSettings,
     SETTINGS_DEFAULT,SETTINGS_ALLOWED,BG_NEVER,normalizeTotp,otpauthUri,sanitizeItems,ITEMS_MAX,ENTRY_TYPES,CAPS,mergeEntries,winner,canon,purgeTombstones,tombstone,
     totpCode,totpRemaining,genWords,passStrength,passCheck,MAX_TOMBSTONES,liveCount,tombFrom,isWiped,wipeTrash,shapeIncoming,TRASH_DAYS,MAX_TRASH,TOMBSTONE_DAYS,ts,
-    dupKey,entryType,line,bioKey,parseBioBlob,serializeBioBlob,bioWrapOk,wrapTag,mdParse,mdInline,noteText,linesToItems,itemsToBody,snImport,snId,htmlToText,lexToMd,zipEntries,zipSlice,zipFindSn,ZIP_NAME_SN,renameCatEntries,bodyJson,bulkEdit};`)();
+    dupKey,entryType,line,bioKey,parseBioBlob,serializeBioBlob,bioWrapOk,wrapTag,mdParse,mdInline,noteText,lineToItem,linesToItems,itemsToBody,splitItemPaste,snImport,snId,htmlToText,lexToMd,zipEntries,zipSlice,zipFindSn,ZIP_NAME_SN,renameCatEntries,bodyJson,bulkEdit};`)();
 
 let pass=0, fail=0; const ok=(c,m)=>{ if(c){pass++;console.log('  ✓',m);} else {fail++;console.log('  ✗ FEHLER:',m);} };
 const throwsWith=async(fn,code,m)=>{ try{ await fn(); ok(false,m+' (kein Fehler)'); }catch(e){ ok(e&&e.message===code,m+' → '+(e&&e.message)); } };
@@ -490,7 +490,10 @@ console.log('\n[14] Markdown-Zerlegung (mdParse/mdInline), Kopiertext, Zeilen �
   { const hh=P('## Titel ##\n### a #\n# a#\n# a # b\n   # x\n    # code\n# Titel   '); ok(hh[0].inline[0].s==='Titel'&&hh[1].inline[0].s==='a'&&hh[2].inline[0].s==='a#'&&hh[3].inline[0].s==='a # b'&&hh[4].type==='h'&&hh[4].inline[0].s==='x'&&hh[5].type==='code'&&hh[6].inline[0].s==='Titel','Überschriften: schließende # nur nach Leerraum abgeschnitten, Einrückung ≤ 3, Leerraum am Ende weg'); }
   // Audit run-1 #5: die alte Überschriften-Regex war kubisch bei langem Leerraum vor einem Zeichen — jetzt linear
   { const t0=Date.now(); const hb=P('# a'+' '.repeat(100000)+'x'); const t1=Date.now()-t0; ok(hb.length===1&&hb[0].type==='h'&&t1<200,'ReDoS-Wächter: 100.000 Leerzeichen in einer Überschrift in '+t1+' ms (< 200)');
-    const t2=Date.now(); P('# a'+'\t'.repeat(100000)+'x\n'+'# '+'#'.repeat(100000)+'\n'+' #'.repeat(50000)); ok(Date.now()-t2<300,'ReDoS-Wächter: Tabs, Rauten, Raute-Ketten linear'); }
+    const t2=Date.now(); P('# a'+'\t'.repeat(100000)+'x\n'+'# '+'#'.repeat(100000)+'\n'+' #'.repeat(50000)); ok(Date.now()-t2<300,'ReDoS-Wächter: Tabs, Rauten, Raute-Ketten linear');
+    // v1.9 (Release-Audit B-4): \u2028/\u2029 am Zeilenende — „.“ passt nicht darauf, vorher ~3 s für 100.000 Leerzeichen
+    const t3=Date.now(); const u=P('# '+' '.repeat(100000)+'\u2028\n- '+' '.repeat(100000)+'a\u2029\n1. '+'\t'.repeat(100000)+'b\u2028'); const t4=Date.now()-t3;
+    ok(t4<300&&u.length===3&&u[0].type==='h'&&u[1].type==='list'&&u[2].type==='list'&&u[2].ordered,`ReDoS-Wächter: Überschrift/Liste mit \\u2028/\\u2029 am Zeilenende linear (${t4} ms)`); }
   // Kopiertext
   ok(V.noteText({type:'text',title:'T',body:'a\nb'})==='T\n\na\nb'&&V.noteText({type:'text',title:'',body:'nur'})==='nur','noteText: Titel + Leerzeile + Text, ohne Titel nur Text');
   ok(V.noteText({type:'text',title:'a',body:'a\nb'})==='a\nb'&&V.noteText({type:'text',title:'Erste Zeile',body:'\n  Erste Zeile \nb'})==='\n  Erste Zeile \nb','noteText: Titel aus der ersten Zeile steht nicht doppelt (Faktencheck help.l8)');
@@ -711,6 +714,89 @@ console.log('\n[19] Standard-Notes-Fuzz: zufällige Backups durch snImport — j
     // C-4: eine „leer“ übersprungene Notiz zählt nicht als gekürzt
     const g=one('\u200b'.repeat(100001),'plain-text');
     ok(g.entries.length===0&&g.stats.skipped.empty===1&&g.stats.capped.body===0,'übersprungene leere Notiz über 100.000 Zeichen zählt nicht als „gekürzt“'); }
+}
+
+console.log('\n[20] v1.9: Mehrzeiliges in einen Checklisten-Punkt (splitItemPaste) — feste Fälle + Fuzz');
+{ const S=(h,t,ta,room,cap,cd)=>V.splitItemPaste(h,t,ta,room===undefined?199:room,cap===undefined?V.CAPS.item:cap,cd), J=x=>JSON.stringify(x);
+  let r=S('Einkauf','Milch\nBrot\n- [x] Eier','');
+  ok(r.first==='EinkaufMilch'&&r.firstDone===null&&J(r.rows)===J([{text:'Brot',done:false},{text:'Eier',done:true}])&&r.caret===4&&!r.cut,'Vorschau der Entscheidung: „Einkauf|“ + Milch/Brot/- [x] Eier → EinkaufMilch, Brot, ☑ Eier, Cursor hinter „Eier“');
+  r=S('','- [x] Milch\n- [ ] Brot','');
+  ok(r.first==='Milch'&&r.firstDone===true&&J(r.rows)===J([{text:'Brot',done:false}]),'leerer Punkt: Marker der ersten Zeile setzt dessen Haken');
+  r=S('','- [x] Milch\nBrot','rest',199,500,false);
+  ok(r.first==='Milch'&&r.firstDone===true&&J(r.rows)===J([{text:'Brotrest',done:false}])&&r.caret===4,'Cursor ganz vorn: erste Zeile ist nur Eingefügtes (Marker-Haken), der vorhandene Rest hängt am letzten und behält seinen Haken');
+  r=S('Milch','X\nY','Brot',199,500,true);
+  ok(r.first==='MilchX'&&r.firstDone===null&&J(r.rows)===J([{text:'YBrot',done:true}]),'B-2: abgehakter Punkt mittendrin — beide Teile des vorhandenen Texts behalten den Haken (wie Enter)');
+  r=S('','- [ ] neu1\n- [ ] neu2','MilchBrot',199,500,true);
+  ok(r.first==='neu1'&&r.firstDone===false&&J(r.rows)===J([{text:'neu2MilchBrot',done:true}]),'B-2: ganz vorn in abgehakten Punkt — Marker der ersten Zeile gilt, der vorhandene Text behält seinen Haken');
+  r=S('Buy',' milk\nbread','');
+  ok(r.first==='Buy milk'&&r.rows[0].text==='bread','B-3: an vorhandenen Text wird die erste Zeile roh angehängt (Leerzeichen bleibt, wie beim einzeiligen Einfügen)');
+  r=S('Termin in',' + 3 Tage\nDanach','');
+  ok(r.first==='Termin in + 3 Tage','B-3: kein Marker-Abstreifen mitten im Punkt');
+  { const t0=Date.now(); r=S('','\n'.repeat(1000000)+'x\n'+'\n'.repeat(1000000)+'y',''); const t1=Date.now()-t0;
+    ok(t1<300&&r.first==='x'&&r.rows.length===1&&r.rows[0].text==='y',`C-1: 2 Mio Leerzeilen vor und zwischen zwei Zeilen linear (${t1} ms; vorher quadratisch, 1 MB ≈ 20–50 s)`); }
+  { const t0=Date.now(); r=S('',('zeile\n').repeat(2000000),''); const t1=Date.now()-t0; ok(t1<400&&r.rows.length===199&&r.cut,`C-1: 2 Mio Zeilen, nur 199 passen: liest nur so weit wie nötig (${t1} ms)`); }
+  r=S('','\u200b\n'.repeat(150)+'a\n'.repeat(100),'');
+  ok(r.first==='a'&&r.rows.length===99&&!r.cut,'C-6: Zeilen nur aus Nullbreiten-Zeichen belegen keine Plätze (vorher 149 unsichtbare Punkte, 50 echte Zeilen verloren)');
+  r=S('','x\n\u200b\u0007\ny','\u200b',199,500,true);
+  ok(r.first==='x'&&J(r.rows.map(x=>x.text))===J(['y\u200b'])&&r.rows[0].done===false,'C-6: unsichtbarer Rest zählt nicht als vorhandener Text (kein Haken übernommen)');
+  r=S('','- [x]\nfoo','rest',199,500,false);
+  ok(r.first==='foorest'&&r.rows.length===0,'R2c-5: Marker-Zeile ohne Text vor leerem Punkt zählt als Leerzeile (vorher blieb ein leerer Punkt stehen)');
+  r=S('x'.repeat(499),'🙂\ny','');
+  ok(r.first==='x'.repeat(499)&&!/[\uD800-\uDBFF]$/.test(r.first),'Kürzung schneidet kein Surrogat-Paar durch');
+  r=S('Ein','x\ny','kauf');
+  ok(r.first==='Einx'&&J(r.rows)===J([{text:'ykauf',done:false}])&&r.caret===1,'mittendrin: Text hinter dem Cursor wandert an den letzten neuen Punkt');
+  r=S('a','\n\nb\n\n','c');
+  ok(r.first==='a'&&r.rows.length===1&&r.rows[0].text==='bc','Leerzeilen fallen weg');
+  r=S('','\n\n- [x] Q\nR','');
+  ok(r.first==='Q'&&r.firstDone===true&&r.rows.length===1&&r.rows[0].text==='R','vor leerem Punkt: führende Leerzeilen weg, erste echte Zeile kommt in den Punkt');
+  r=S('a','b\r\nc\rd','');
+  ok(r.first==='ab'&&J(r.rows.map(x=>x.text))===J(['c','d']),'\\r\\n und einzelnes \\r trennen ebenfalls');
+  r=S('a','b\nc\nd','Z',1);
+  ok(r.first==='ab'&&r.rows.length===1&&r.rows[0].text==='cZ'&&r.cut,'Grenze ITEMS_MAX: nur so viele neue Punkte wie Platz, cut gesetzt, Rest hinter dem Cursor bleibt');
+  r=S('a','b\nc','Z',0);
+  ok(r.first==='abZ'&&r.rows.length===0&&r.cut&&r.caret===2,'kein Platz mehr: erste Zeile in den Punkt, Rest hinter dem Cursor bleibt dort');
+  r=S('x'.repeat(498),'yyyy\nzzzz','');
+  ok(r.first==='x'.repeat(498)+'yy'&&r.rows[0].text==='zzzz','Länge: der Punkt wird auf CAPS.item gekappt, nur am Eingefügten');
+  r=S('kopf','z'.repeat(600)+'\n'+'w'.repeat(600),'schwanz');
+  ok(r.first.length===V.CAPS.item&&r.first.startsWith('kopf')&&r.rows[0].text.length===V.CAPS.item&&r.rows[0].text.endsWith('schwanz'),'Länge: lange Zeilen gekappt, Kopf und Schwanz bleiben ganz');
+  ok(V.lineToItem('  - [X] a').text==='a'&&V.lineToItem('  - [X] a').done&&V.lineToItem('[ ] b').text==='b'&&!V.lineToItem('[ ] b').done,'lineToItem: Marker wie linesToItems');
+  { const t0=Date.now(); for(const sep of ['\u2028','\u2029','\r']) V.lineToItem(' '.repeat(200000)+'a'+sep+'b'); const t1=Date.now(); V.linesToItems(('\t'.repeat(30000)+'- [x] z\u2028y\n').repeat(3)); const t2=Date.now();
+    ok(t1-t0<300&&t2-t1<300,`ReDoS-Wächter (Node): 200 000 Leerzeichen vor \\u2028/\\u2029/\\r linear (${t1-t0} ms), linesToItems ebenso (${t2-t1} ms)`);
+    const u=V.lineToItem('- [x] a\u2028b'); ok(u.text==='a\u2028b'&&u.done,'Zeile mit \\u2028: Marker trotzdem verstanden (vorher Rohtext samt „- [x]“)'); }
+  // Fuzz: deterministisch (LCG). Invarianten: kein Umbruch in einem Punkt, Kopf/Schwanz bleiben, Platz und Länge gedeckelt, Cursor vor dem Schwanz,
+  // und Einfügen in einen LEEREN Punkt ergibt nach dem Speichern genau das, was „Text → Checkliste“ (linesToItems) aus demselben Text macht.
+  let seed=20261009; const rnd=()=>{ seed=(seed*1103515245+12345)&0x7fffffff; return seed/0x7fffffff; }; const pick=a=>a[Math.floor(rnd()*a.length)];
+  const A=['a','b','Ä',' ','\t','\n','\n','\r\n','\r','\u0000','\u0007','\u0085','\ufeff','\u200b','🙂','- ','- [x] ','- [ ] ','[X] ','* ','+ ','1. ','x'.repeat(120),' '.repeat(30)];
+  const fld=n=>{ let s=''; const k=Math.floor(rnd()*n); for(let i=0;i<k;i++) s+=pick(A); return s; };
+  const noNl=s=>s.replace(/[\r\n]/g,'');
+  let bad=[], eq=0, eqN=0;
+  for(let i=0;i<8000;i++){
+    const cap=pick([500,500,500,40,8,2]), room=pick([0,1,2,5,199,1000]);
+    let head=noNl(fld(4)), tail=noNl(fld(3)); if(head.length+tail.length>cap){ head=head.slice(0,Math.floor(cap/2)); tail=tail.slice(0,cap-head.length); }
+    const text=fld(10), cd=rnd()<0.5, r=V.splitItemPaste(head,text,tail,room,cap,cd), all=[r.first,...r.rows.map(x=>x.text)];
+    const vis=x=>!!V.line(x,cap);   // Modell: „sichtbar“ wie nach dem Speichern (C-6)
+    const ls=text.split(/\r\n|\r|\n/); if(!vis(head)) while(ls.length>1&&!vis(V.lineToItem(ls[0]).text)) ls.shift();   // Modell: führende Leerzeilen vor leerem Punkt fallen weg
+    const nonEmpty=ls.slice(1).map(V.lineToItem).filter(x=>vis(x.text.trim())).length;
+    const why=[];
+    if(all.some(x=>/[\r\n]/.test(x))) why.push('Umbruch im Punkt');
+    if(!r.first.startsWith(head)) why.push('Kopf verloren');
+    if(r.rows.length?!r.rows[r.rows.length-1].text.endsWith(tail):!r.first.endsWith(tail)) why.push('Schwanz verloren');
+    if(r.rows.length>room) why.push('mehr Punkte als Platz');
+    if(r.cut!==(nonEmpty>room)) why.push('cut falsch');
+    if(all.some(x=>x.length>cap)) why.push('länger als cap');
+    if(r.rows.some(x=>!x.text||typeof x.done!=='boolean')) why.push('leerer neuer Punkt');
+    const lastTxt=r.rows.length?r.rows[r.rows.length-1].text:r.first; if(lastTxt.slice(r.caret)!==tail||r.caret<0) why.push('Cursor');
+    if(r.firstDone!==null&&(vis(head)||(vis(tail)&&!r.rows.length))) why.push('Haken überschrieben');
+    if(vis(tail)&&r.rows.length&&r.rows[r.rows.length-1].done!==cd) why.push('Haken folgt dem Rest nicht');
+    if(vis(head)&&!r.rows.length&&!r.cut&&head.length+tail.length+text.length<=cap&&r.first!==head+text+tail&&!/[\r\n]/.test(text)) why.push('roh angehängt');
+    const lone=x=>/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/.test(x); if(!lone(head)&&!lone(tail)&&all.some(lone)) why.push('Surrogat zerschnitten');   // Alphabet hat nur ganze Paare (Kopf/Schwanz kürzt der Generator selbst)
+    if(!head&&!tail&&cap===500&&room===1000&&!/\r(?!\n)/.test(text)){ eqN++;
+      const got=V.sanitizeItems([{text:r.first,done:r.firstDone===true},...r.rows]), want=V.linesToItems(text);
+      if(V.canon(got)===V.canon(want)) eq++; else why.push('≠ linesToItems'); }
+    if(why.length) bad.push({i,why,head,text,tail,room,cap,r});
+  }
+  ok(!bad.length,'Fuzz 8000 Fälle: Invarianten halten'+(bad.length?' — erster Fund: '+JSON.stringify(bad[0]).slice(0,process.env.FUZZ_FULL?1e6:600):''));
+  ok(eqN>40&&eq===eqN,`Fuzz: Einfügen in einen leeren Punkt = „Text → Checkliste“ (${eq}/${eqN})`);
 }
 
 console.log(`\n${pass} ok, ${fail} Fehler`); process.exit(fail?1:0);

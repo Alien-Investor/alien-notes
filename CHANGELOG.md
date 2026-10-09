@@ -1,5 +1,34 @@
 # Changelog — Alien Notes
 
+## v1.9 — 2026-10-09
+
+Lange Einträge in Checklisten und mehr Komfort bei der Mehrfachauswahl. Keine Änderung an Datei-Format, Verschlüsselung, Berechtigungen
+oder Daten — ein Checklisten-Eintrag bleibt in der Datei eine Zeile.
+- **Lange Checklisten-Einträge brechen um:** Ein Eintrag wächst beim Schreiben in die Höhe, statt in einer Zeile seitwärts zu scrollen. Kurze
+  Einträge sehen aus wie bisher, Kästchen und ✕ bleiben auf Höhe der ersten Zeile.
+- **Enter teilt einen Eintrag:** Am Ende legt Enter wie bisher einen neuen Eintrag darunter an. Mitten im Text teilt es den Eintrag am Cursor,
+  der Rest wird ein eigener Eintrag darunter (mit demselben Haken). Ganz vorn setzt Enter einen leeren Eintrag darüber.
+- **Mehrzeiliges einfügen:** Eingefügter Text mit mehreren Zeilen wird zu mehreren Einträgen. Die erste Zeile landet an der Cursor-Stelle, jede
+  weitere wird ein eigener Eintrag darunter, Leerzeilen fallen weg. „- [ ]“ und „- [x]“ aus einer kopierten Checkliste werden verstanden,
+  abgehakte Einträge bleiben abgehakt. Mehr als 200 Einträge fasst eine Checkliste weiterhin nicht: was nicht mehr passt, wird nicht eingefügt,
+  ein Hinweis sagt es, schon Geschriebenes bleibt. Nach dem Teilen oder Einfügen wirkt Rückgängig (Strg+Z) in dieser Notiz nicht mehr, bis du sie
+  verlässt: der Browser ordnete seine Schritte danach falsch zu und setzte Text an der falschen Stelle wieder ein.
+- **Kategorie für mehrere Notizen:** Wer mit ☑ mehrere Notizen wählt und „Kategorie…“ tippt, sieht die vorhandenen Kategorien jetzt gleich als
+  Liste, wie beim Bearbeiten einer Notiz. Ein Tipp trägt sie ein, Tippen filtert die Liste, der Pfeil ▾ rechts klappt die Liste mit allen
+  Kategorien auf und zu. Eine neue Kategorie lässt sich wie bisher einfach eintippen. Am Desktop wirken im Feld jetzt auch Strg+V und Strg+A.
+- **Checkliste ohne Einträge:** Leere Einträge werden nie gespeichert — eine Checkliste, die nur leere Zeilen hatte, öffnete deshalb später ganz ohne
+  Eintrag, und Getipptes landete im Kategoriefeld. Jetzt zeigt sie beim Öffnen gleich einen leeren ersten Eintrag, wie eine neue Checkliste.
+- **Umschalten auf Checkliste und Markdown-Ansicht:** Eine Zeile mit sehr vielen Leerzeichen vor einem seltenen Trennzeichen (Zeilen- oder
+  Absatztrenner, wie ihn manche Programme beim Kopieren mitgeben) konnte das Umschalten von Text auf Checkliste, den Import einer
+  Standard-Notes-Checkliste und die Markdown-Ansicht sekunden- bis minutenlang hängen lassen. Das geht jetzt sofort.
+- **Scrollbalken:** Der Neon-Balken gilt jetzt nur noch bei Maus oder Trackpad (Desktop). Auf Touch-Geräten gilt überall, auch in Menüs
+  und Dialogen, der schmale Balken des Systems.
+- **Desktop — Alles markieren und Rückgängig:** Wer bei Strg+A die Strg-Taste vor dem A loslässt, ließ die ganze markierte Notiz bisher ohne Frist in
+  der Mittelklick-Auswahl liegen, auch über das Sperren hinaus. Ebenso eine Markierung, die Strg+Z in einem Eingabefeld (etwa dem Titel) zurückholt.
+  Jetzt werden beide wie jede Markierung mit der Frist und beim Sperren gelöscht (Funde aus dem internen Release-Audit). Bei offener Rückfrage wirkt
+  Strg+Z nicht mehr: es machte bisher Getipptes in der Notiz hinter dem Dialog rückgängig.
+- **Desktop — Electron 44.7.0** (vorher 44.5.1): enthält die seither nachgereichten Sicherheitskorrekturen aus Chromium und V8.
+
 ## v1.8 — 2026-10-04
 
 Kleine Korrekturen an der Zwischenablage der Linux-Desktop-Fassung, nachgezogen aus Alien Pass 1.19. Am Datei-Format, an der Verschlüsselung
