@@ -15,7 +15,8 @@ oder Daten — ein Checklisten-Eintrag bleibt in der Datei eine Zeile.
   verlässt: der Browser ordnete seine Schritte danach falsch zu und setzte Text an der falschen Stelle wieder ein.
 - **Kategorie für mehrere Notizen:** Wer mit ☑ mehrere Notizen wählt und „Kategorie…“ tippt, sieht die vorhandenen Kategorien jetzt gleich als
   Liste, wie beim Bearbeiten einer Notiz. Ein Tipp trägt sie ein, Tippen filtert die Liste, der Pfeil ▾ rechts klappt die Liste mit allen
-  Kategorien auf und zu. Eine neue Kategorie lässt sich wie bisher einfach eintippen. Am Desktop wirken im Feld jetzt auch Strg+V und Strg+A.
+  Kategorien auf und zu. Eine neue Kategorie lässt sich wie bisher einfach eintippen. Am Desktop wirken im Feld jetzt auch Strg+V und Strg+A; Strg+Z bleibt
+  dort bewusst ohne Wirkung, weil es sonst Getipptes in der Notiz hinter dem Dialog rückgängig machen würde.
 - **Checkliste ohne Einträge:** Leere Einträge werden nie gespeichert — eine Checkliste, die nur leere Zeilen hatte, öffnete deshalb später ganz ohne
   Eintrag, und Getipptes landete im Kategoriefeld. Jetzt zeigt sie beim Öffnen gleich einen leeren ersten Eintrag, wie eine neue Checkliste.
 - **Umschalten auf Checkliste und Markdown-Ansicht:** Eine Zeile mit sehr vielen Leerzeichen vor einem seltenen Trennzeichen (Zeilen- oder
@@ -25,9 +26,13 @@ oder Daten — ein Checklisten-Eintrag bleibt in der Datei eine Zeile.
   und Dialogen, der schmale Balken des Systems.
 - **Desktop — Alles markieren und Rückgängig:** Wer bei Strg+A die Strg-Taste vor dem A loslässt, ließ die ganze markierte Notiz bisher ohne Frist in
   der Mittelklick-Auswahl liegen, auch über das Sperren hinaus. Ebenso eine Markierung, die Strg+Z in einem Eingabefeld (etwa dem Titel) zurückholt.
-  Jetzt werden beide wie jede Markierung mit der Frist und beim Sperren gelöscht (Funde aus dem internen Release-Audit). Bei offener Rückfrage wirkt
-  Strg+Z nicht mehr: es machte bisher Getipptes in der Notiz hinter dem Dialog rückgängig.
-- **Desktop — Electron 44.7.0** (vorher 44.5.1): enthält die seither nachgereichten Sicherheitskorrekturen aus Chromium und V8.
+  Jetzt werden beide wie jede Markierung mit der Frist und beim Sperren gelöscht (Funde aus dem internen Release-Audit).
+- **Rückgängig über Notizen hinweg:** Mit Strg+Z und Strg+Umschalt+Z (am Desktop oder mit angesteckter Tastatur am Handy) konnte nach dem Wechsel in eine andere Notiz Getipptes
+  aus der vorigen Notiz eingesetzt werden, und das automatische Speichern hielt es fest. Jetzt wirkt Rückgängig nur noch auf die geöffnete Notiz und bleibt nach
+  Werten, die die App selbst einsetzt (Datum, Kategorie aus der Liste, Typwechsel, Teilen, Einfügen), bis zum Verlassen der Notiz gesperrt (Fund aus dem
+  internen Release-Audit).
+- **Desktop — Electron 44.7.0** (vorher 44.5.1): mit den von Electron nachgereichten Korrekturen aus Chromium, V8 und weiteren Teilen der Browser-Engine
+  (dort als Sicherheits-Backports gekennzeichnet).
 
 ## v1.8 — 2026-10-04
 
