@@ -16,7 +16,7 @@ const FONT_KEY='ai-notes-font', FONT_SIZES=['m','l','xl'];
    ============================================================ */
 const LS_KEY = 'ai-notes-vault';
 const LANG_KEY = 'ai-notes-lang';
-const APP_VERSION = '1.9';   // Anzeige in den Einstellungen; muss VERSION_NAME entsprechen (build-www.sh setzt es aus VERSION, roundtrip-test.mjs prüft es)
+const APP_VERSION = '1.10';   // Anzeige in den Einstellungen; muss VERSION_NAME entsprechen (build-www.sh setzt es aus VERSION, roundtrip-test.mjs prüft es)
 
 /* ===== KIT: i18n — Deutsch ist Quelle im HTML (data-i18n / data-i18n-html / data-i18n-ph), Englisch im I18N-Dict,
    dynamische Texte per tr(key,{params}) aus T {de,en}. ===== */
@@ -89,7 +89,7 @@ const I18N = {
   "set.pinDisable":"Discard PIN",
   "d.pick":"Select a note on the left or create a new one",
   "help.hDesk":"Desktop version (Linux)",
-  "help.lDesk":"<li><strong>No network — enforced by the system:</strong> the desktop app runs as a Flatpak without network permission; inside the sandbox there is no connection to the outside. On top of that the app itself blocks every connection. Check: <code>flatpak info --show-permissions org.alieninvestor.notes</code> — there is no <code>network</code>.</li><li><strong>Notes file:</strong> <code>~/.var/app/org.alieninvestor.notes/data/alien-notes/notes.ainv</code> — encrypted, readable only by you, rewritten completely on every change (never half-written). The app sees no other files: backup and import go through the system file dialog, which only grants the chosen file.</li><li><strong>Clipboard:</strong> copied notes are marked as a password for KDE — Klipper keeps them out of its history. Other clipboard managers may ignore the mark. The app clears the clipboard after the set time, also in the background, on lock and on quit, but only if its own copy is still there. The same applies to text you select in the app, with mouse or keyboard, including Tab into a filled passphrase field (on Linux instantly pasteable with a middle click). Klipper can mirror every copy into this middle-click selection as well (setting “Keep the selection and clipboard the same”) — the app clears it there too. Selected text does not carry the KDE mark: if Klipper is set to keep the selection in its history, turn that off. Ctrl+C and Ctrl+X in the app copy like the copy button.</li><li><strong>Syncing with the phone:</strong> on the phone “Create backup” into a Syncthing folder, on the desktop import it under Backup — and the other way round. See “Backup &amp; Sync”.</li><li><strong>Locking:</strong> after inactivity and when the window has been minimised or hidden for longer than the chosen time — with “immediately” right when minimising (setting “Lock in background”; “background” here means minimised or hidden; switching to another window does not count, but it clears typed passphrases and PINs). On <strong>screen lock and suspend the desktop app does not lock by itself</strong> — inside the Flatpak it is not told. So use the system lock and, if you want, a short inactivity lock; Ctrl+L locks immediately.</li><li><strong>Keyboard:</strong> Ctrl+F search, Ctrl+N new note, Ctrl+S finish the note (save and close), Ctrl+L lock, Esc closes. From about 1000 pixels window width, list and note sit side by side.</li><li><strong>Honest limits:</strong> the desktop app ships its own browser engine (Electron) — security updates for it only arrive with a new app version, not through the system. No protection against screenshots (Linux has no way to block them). Under X11 every running program can read keyboard and clipboard; Wayland separates programs better. No fingerprint.</li>",
+  "help.lDesk":"<li><strong>No network — enforced by the system:</strong> the desktop app runs as a Flatpak without network permission; inside the sandbox there is no connection to the outside. On top of that the app itself blocks every connection. Check: <code>flatpak info --show-permissions org.alieninvestor.notes</code> — there is no <code>network</code>.</li><li><strong>Notes file:</strong> <code>~/.var/app/org.alieninvestor.notes/data/alien-notes/notes.ainv</code> — encrypted, readable only by you, rewritten completely on every change (never half-written). The app sees no other files: backup and import go through the system file dialog, which only grants the chosen file.</li><li><strong>Clipboard:</strong> copied notes are marked as a password for KDE — Klipper keeps them out of its history. Other clipboard managers may ignore the mark. The app clears the clipboard after the set time, also in the background, on lock and on quit, but only if its own copy is still there. The same applies to text you select in the app, with mouse or keyboard, including Tab into a filled passphrase field (on Linux instantly pasteable with a middle click). Klipper can mirror every copy into this middle-click selection as well (setting “Keep the selection and clipboard the same”) — the app clears it there too. Selected text does not carry the KDE mark: if Klipper is set to keep the selection in its history, turn that off. Ctrl+C and Ctrl+X in the app copy like the copy button.</li><li><strong>Syncing with the phone:</strong> on the phone “Create backup” into a Syncthing folder, on the desktop import it under Backup — and the other way round. See “Backup &amp; Sync”.</li><li><strong>Locking:</strong> after inactivity and when the window has been minimised or hidden for longer than the chosen time — with “immediately” right when minimising (setting “Lock in background”; “background” here means minimised or hidden; switching to another window does not count, but it clears typed passphrases and PINs). On <strong>screen lock and suspend the desktop app does not lock by itself</strong> — inside the Flatpak it is not told. So use the system lock and, if you want, a short inactivity lock; Ctrl+L locks immediately.</li><li><strong>Keyboard:</strong> Ctrl+F search, Ctrl+N new note, Ctrl+S finish the note (save and close), Ctrl+Z / Ctrl+Shift+Z undo / redo in the open note, Ctrl+L lock, Esc closes. From about 1000 pixels window width, list and note sit side by side.</li><li><strong>Honest limits:</strong> the desktop app ships its own browser engine (Electron) — security updates for it only arrive with a new app version, not through the system. No protection against screenshots (Linux has no way to block them). Under X11 every running program can read keyboard and clipboard; Wayland separates programs better. No fingerprint.</li>",
   "help.hPin":"Quick unlock with a PIN (desktop)",
   "help.pPin":"Optionally a PIN replaces the passphrase after a lock (Settings → Quick unlock with a PIN). <strong>How it works:</strong> when you set it up, the app wraps a copy of the data key under a key derived from your PIN (Argon2id, same parameters as the notes file) and keeps that copy <em>in memory only</em>. A lock through inactivity or the background clears the session as before, but that wrapped copy stays; the PIN opens it again. Nothing of it is written to disk, the notes file stays unchanged and backups carry none of it. Quitting the app removes the copy, and after 24 hours at the latest the app discards it itself: the next start asks for the passphrase. <strong>What it costs:</strong> six digits are a tiny search space. With the file's Argon2 parameters an ordinary CPU tries them all in a few hours, a single graphics card in roughly ten minutes — never enough to protect the file, each extra digit only multiplies the effort by ten. The PIN only protects that copy in memory. With a PIN, “locked” therefore no longer means “key wiped from memory”: whoever can read the memory of the running program holds the wrapped key and can try PINs offline — the three attempts are a rule in the code, not a cryptographic limit. <strong>What discards the PIN:</strong> three wrong attempts, a passphrase change, deleting the notes, an altered or swapped notes file, the end of the 24 hours, and quitting the app. <strong>The deliberate bolt:</strong> “Lock now” (Ctrl+L) keeps the PIN but demands the passphrase once — afterwards the PIN applies again. If you share the computer with others or have unencrypted swap, leave the PIN off.",
   "set.bioTitle":"Fingerprint unlock (Android)",
@@ -122,7 +122,7 @@ const I18N = {
   "help.p1":"A <strong>local, encrypted notes app</strong> for notes and checklists. Runs fully <strong>offline</strong> — no cloud, no server, no telemetry, no account. The Android app does not even have an internet permission. Your notes never leave the device in plaintext.",
   "help.warn":"⚠ There is no reset and no backdoor. Forget your passphrase and the notes are gone for good. Make regular backups and keep the passphrase safe.",
   "help.h2":"First steps",
-  "help.l2":"<li><strong>Choose a passphrase</strong> — at least 12 characters, better six dice words (the suggest button builds them from the EFF list). Write it down and store it safely.</li><li><strong>+</strong> creates a note. The title may stay empty — the first line of the text serves as the title. There is no save button: the app saves while you type and when you leave the note.</li><li><strong>Checklists:</strong> switch a note to “Checklist” — every line becomes an entry with a box; “Done to the bottom” sorts ticked entries down. Switching back turns the entries into “- [ ] …” or “- [x] …” lines. Long entries wrap. Enter starts a new entry (in the middle of the text it splits it), pasted text with several lines becomes several entries.</li><li><strong>Categories</strong> work like folders: type one freely (suggestions from existing ones). The list filters via the chips at the top; the ★ chip shows favourites only, the ☐ chip only checklists with open items (both combine with a category). Pinned notes always sit at the top. <strong>No preview:</strong> the checkbox in the editor makes the list show only the title — against onlookers. <strong>Rename:</strong> tap the category chip, then the pencil ✎ next to it — every note of that category moves (including the trash); an empty name means “no category”.</li><li><strong>Several at once:</strong> the ☑ button next to the trash turns on checkboxes; tap rows to pick them (search and chips keep working, “All” picks every row shown; already picked notes stay picked even when a filter hides them). The bar at the bottom moves the picked notes to the trash (one “Undo” for all, at most 200 at once — that is what the trash holds), sets a category (existing ones are right there to pick, or just type a new one) or the favourite mark.</li><li><strong>Appearance:</strong> Settings → Appearance offers Black/Soft and three font sizes. Both are device settings — not in the file, not in the backup.</li><li>The search covers title, text, checklist entries and category.</li>",
+  "help.l2":"<li><strong>Choose a passphrase</strong> — at least 12 characters, better six dice words (the suggest button builds them from the EFF list). Write it down and store it safely.</li><li><strong>+</strong> creates a note. The title may stay empty — the first line of the text serves as the title. There is no save button: the app saves while you type and when you leave the note.</li><li><strong>Checklists:</strong> switch a note to “Checklist” — every line becomes an entry with a box; “Done to the bottom” sorts ticked entries down. Switching back turns the entries into “- [ ] …” or “- [x] …” lines. Long entries wrap. Enter starts a new entry (in the middle of the text it splits it), pasted text with several lines becomes several entries.</li><li><strong>Undo ↶ / Redo ↷:</strong> The buttons at the top of the editor take back the latest changes to the open note and bring them back again. Typing counts as one step until a short pause, every other change on its own, including an entry removed with ✕, a tick, sorting or switching between note and checklist. Up to 50 steps (fewer for very long notes), only while the note is open: closing and locking clear the history. With a keyboard: Ctrl+Z and Ctrl+Shift+Z (or Ctrl+Y).</li><li><strong>Categories</strong> work like folders: type one freely (suggestions from existing ones). The list filters via the chips at the top; the ★ chip shows favourites only, the ☐ chip only checklists with open items (both combine with a category). Pinned notes always sit at the top. <strong>No preview:</strong> the checkbox in the editor makes the list show only the title — against onlookers. <strong>Rename:</strong> tap the category chip, then the pencil ✎ next to it — every note of that category moves (including the trash); an empty name means “no category”.</li><li><strong>Several at once:</strong> the ☑ button next to the trash turns on checkboxes; tap rows to pick them (search and chips keep working, “All” picks every row shown; already picked notes stay picked even when a filter hides them). The bar at the bottom moves the picked notes to the trash (one “Undo” for all, at most 200 at once — that is what the trash holds), sets a category (existing ones are right there to pick, or just type a new one) or the favourite mark.</li><li><strong>Appearance:</strong> Settings → Appearance offers Black/Soft and three font sizes. Both are device settings — not in the file, not in the backup.</li><li>The search covers title, text, checklist entries and category.</li>",
   "help.h3":"Markdown preview",
   "help.p3":"Every text note (not checklists) has a “Markdown preview” switch. Editing always stays the plain text field; the preview renders a small subset: headings (<code>#</code> to <code>###</code>), <strong>bold</strong> (<code>**…**</code>), <em>italic</em> (<code>*…*</code>), lists (<code>-</code>, <code>1.</code> — numbered ones always start at 1), boxes (<code>- [ ]</code>, <code>- [x]</code>), code (<code>`…`</code>, ``` blocks or 4 spaces of indentation — so no indented sub-items), rules (<code>---</code>). Links are deliberately shown as text, never clickable — the app has no network anyway.",
   "help.h4":"Locking",
@@ -267,6 +267,7 @@ const T = {
   "ed.items":{de:"{d} von {n} erledigt",en:"{d} of {n} done"},
   "ed.meta":{de:"Angelegt {c} · Geändert {u}",en:"Created {c} · Updated {u}"},
   "ed.itemPh":{de:"Eintrag",en:"Entry"},"ed.itemDel":{de:"Eintrag entfernen",en:"Remove entry"},
+  "ed.undo":{de:"Rückgängig",en:"Undo"},"ed.redo":{de:"Wiederholen",en:"Redo"},
   "confirm.toList":{de:"In eine Checkliste umwandeln? Jede Zeile des Textes wird ein Eintrag (leere Zeilen fallen weg, Zeilen über {c} Zeichen werden gekürzt, mehr als {n} Zeilen werden abgeschnitten). Einrückung und mehrfache Leerzeichen fallen weg; Überschriften, Fett und andere Auszeichnung bleiben nur als Zeichen stehen.",en:"Convert to a checklist? Every line of the text becomes an entry (empty lines are dropped, lines over {c} characters are shortened, more than {n} lines are cut). Indentation and repeated spaces are lost; headings, bold and other markup remain only as plain characters."},
   "confirm.toText":{de:"In eine Textnotiz umwandeln? Die Einträge werden Zeilen mit „- [ ]“- bzw. „- [x]“-Kästchen; erledigte Haken bleiben nur als Text.",en:"Convert to a text note? The entries become lines with “- [ ]” or “- [x]” boxes; ticks survive only as text."},
   "confirm.delete":{de:"„{t}“ in den Papierkorb legen? {d} Tage wiederherstellbar, danach endgültig. (Wird beim Sync auf andere Geräte übernommen.)",en:"Move “{t}” to the trash? Restorable for {d} days, then gone for good. (Deletion syncs to other devices.)"},
@@ -1018,6 +1019,9 @@ const App = (function(){
   const rollback=(snap,base)=>e=>{ if(e&&e.locked) return; if(VAULT&&(base===undefined||VAULT.entries===base)) VAULT.entries=snap; };
   // Laufende Schreibvorgänge als Kette (Audit run-1 #1): lockSaving wartet darauf, bevor lock() die Sitzung für tot erklärt.
   let inflight=Promise.resolve();
+  // Datei hinkt dem Speicher hinterher: ein Write scheiterte (zwei überlappende gescheiterte Writes spielten per Rollback einen nie geschriebenen Stand zurück).
+  // Solange das gilt, schreibt commitEditor auch einen „unveränderten“ Entwurf (sonst blieb nach ↶ genau dorthin die Datei alt; Release-Audit v1.10 b2-2).
+  let fileStale=false;
   function persist(){ const run=persistOnce(); inflight=inflight.then(()=>run,()=>run).then(()=>{},()=>{}); return run; }
   async function persistOnce(){
     const dek=DEK, kdf=KDF, wrap=WRAP, vault=VAULT;          // Schlüssel-Generation pinnen (lock/changePass während des await)
@@ -1035,7 +1039,8 @@ const App = (function(){
     // beim Entsperren (storedLen), nicht am letzten Schreiben, und nie bis an die Lesegrenze heran (Audit run-1b #1: mitwandernde Toleranz = Ratsche)
     if(s.length>MAX_FILE_BYTES&&(s.length>storedLen+4096||s.length>MAX_READ_BYTES-1048576)){ const e=new Error('filefull'); e.fileFull=true; toast(tr('err.fileFull',{m:MAX_FILE_BYTES/1048576})); throw e; }
     try{ await vaultSet(s); }
-    catch(e){ toast(tr('err.saveFailed')); throw e; }
+    catch(e){ if(VAULT===vault) fileStale=true; toast(tr('err.saveFailed')); throw e; }   // nur für die eigene Sitzung (ein spät scheiternder Write überlebte sonst die Sperre, Runde 3 a3-3)
+    fileStale=false;
     // Nur den EIGENEN Stand committen: auf Android ist vaultSet echt asynchron, ein zweiter Schreiber kann währenddessen vault.entries neu gesetzt haben —
     // die bedingungslose Zuweisung überschrieb dessen Array, seine Rekursion (Zeile oben) schrieb dann den alten Stand als Erfolg (Audit run-2 #1, Lost Update).
     // Wipe/Purge rechnet der spätere Schreiber auf seinem Stand selbst.
@@ -1182,14 +1187,14 @@ const App = (function(){
     if(flushSelAll) flushSelAll();   // vor clearClip: eine gerade per Strg+A gemachte Markierung soll mitgelöscht werden
     clearIdle(); if(!(keepClip===true&&clipCopied&&clipOwnedAt&&clipTimer)) clearClip(); clearTimeout(autosaveTimer); autosaveTimer=null; applySecure(true);
     // editBase: canon-JSON der letzten Notiz — beim Sperren leeren (Release-Audit v1.9 Runde 2 a2-4)
-    DEK=null; KDF=null; WRAP=null; VAULT=null; editId=null; editBase=null; editing=false; pendingImport=null; search=''; catFilter=null; favFilter=false; openFilter=false; selMode=false; selIds=new Set(); shownIds=[];
+    DEK=null; KDF=null; WRAP=null; VAULT=null; fileStale=false; editId=null; editBase=null; editing=false; pendingImport=null; search=''; catFilter=null; favFilter=false; openFilter=false; selMode=false; selIds=new Set(); shownIds=[];
     pendingUnlock=null; pendingSecret=null; pendingOtpauth='';
     bioGen++; bioRearmDek=null; bioArmed=false; bioNeedsRearm=false;   // laufende Fingerabdruck-Vorgänge verfallen (Generation)
     clearRendered(); screen('lock'); boot();   // Sperrbildschirm sofort; boot() liest die Datei asynchron nach (Android-Plugin)
   }
   // Nach dem Sperren darf nichts Entschlüsseltes im DOM oder in Formularfeldern bleiben
   function clearRendered(){
-    clearItemRows(); formProg=false;   // statt nur replaceChildren: setzt auch composing/enterAfterComp/itemsProg zurück, sonst hielten sie das losgelöste Feld fest (a2-2/a2-3)
+    clearItemRows(); histClear();   // statt nur replaceChildren: setzt auch composing/enterAfterComp zurück, sonst hielten sie das losgelöste Feld fest (a2-2/a2-3); Verlauf weg (v1.10)
     ['entry-list','backup-hint','cat-chips','cat-menu','dlg-cat-menu','trash-list','md-view','cp-meter','setup-meter','bio-alert-list','bio-alert'].forEach(id=>{ const n=$(id); if(n) n.replaceChildren(); });
     ['bk-msg','import-msg','sn-msg','about-line','trash-msg','trash-n','ed-count','ed-meta','add-title','totp-secret'].forEach(id=>{ const n=$(id); if(n) n.textContent=''; });
     ['f-title','f-cat','f-body','search','import-pass','cp-cur','cp1','cp2','lock-pass','lock-pin','pin-new','pin-rep','pin-pass','setup-pass1','setup-pass2','totp-code','totp-verify','bio-pass','vault-file','sn-file'].forEach(id=>{ const n=$(id); if(n) n.value=''; });
@@ -1329,8 +1334,9 @@ const App = (function(){
     renderCatMenu(true,id); }   // der Pfeil zeigt ALLE Kategorien, ohne das Getippte zu verwerfen
   function catInput(_v,elx){ const dlg=!!(elx&&elx.id==='dlg-input'); renderCatMenu(false,dlg?'dlg-input':'f-cat'); if(!dlg) editorChanged(); }
   // Im Dialog danach Fokus auf OK: Enter übernimmt, und am Handy klappt die Tastatur nicht wieder über die Knöpfe
-  function pickCat(v,elx){ const t=catTarget(elx&&elx.dataset.sel); if(!t||!t.inp) return; t.inp.value=v; closeMenus();
-    if(t.id==='dlg-input') $('dlg-ok').focus(); else { formProg=true; editorChanged(); } }   // Formular: Wert per Programm → Rückgängig-Stapel unsicher (R2c-7, wie C-2; formProg bis zum nächsten Öffnen, R3c-1)
+  // Formular: ein eigener Schritt im Verlauf (v1.10; ersetzt die Rückgängig-Sperre formProg aus R2c-7/R3c-1)
+  function pickCat(v,elx){ const t=catTarget(elx&&elx.dataset.sel); if(!t||!t.inp) return; const form=t.id!=='dlg-input'; if(form) histPoint(); t.inp.value=v; closeMenus();
+    if(!form) $('dlg-ok').focus(); else { histPoint(); editorChanged(); } }
 
   /* ---------- Liste ---------- */
   function renderChips(all){
@@ -1445,26 +1451,26 @@ const App = (function(){
   async function changeEntryType(t){ t=entryType(t); if(t===formType||!editing) return;
     if(t==='list'){ const body=$('f-body').value; if(body.trim()&&!(await ask(tr('confirm.toList',{n:ITEMS_MAX,c:CAPS.item}),{ok:'dlg.convert'}))) return;
       if(!editing||formType!=='text') return;                    // während der Rückfrage gesperrt oder verlassen
-      setItemRows(linesToItems($('f-body').value)); if(!itemRows().length) pushItemRow('',false); $('f-body').value=''; $('f-md').checked=false; $('md-seg').classList.add('hidden'); setMdMode('edit'); }
+      histPoint(); setItemRows(linesToItems($('f-body').value)); if(!itemRows().length) pushItemRow('',false); $('f-body').value=''; $('f-md').checked=false; $('md-seg').classList.add('hidden'); setMdMode('edit'); }
     else { const items=readItemRows(); const body=itemsToBody(items); if(body.length>CAPS.body) return toast(tr('toast.bodyFull',{n:CAPS.body}));   // sonst kappte sanitizeEntry still (Audit run-1 #6)
       if(items.length&&!(await ask(tr('confirm.toText'),{ok:'dlg.convert'}))) return;
       if(!editing||formType!=='list') return;
-      formProg=true; $('f-body').value=itemsToBody(readItemRows()); clearItemRows(); }
-    setEntryType(t); editorChanged(); renderCounter(); }
+      histStep(); $('f-body').value=itemsToBody(readItemRows()); clearItemRows(); }
+    setEntryType(t); histPoint(); editorChanged(); renderCounter(); }
   function setMdMode(m){ mdMode=m==='view'?'view':'edit'; const on=mdMode==='view'; $('mm-edit').classList.toggle('on',!on); $('mm-view').classList.toggle('on',on);
     $('f-body').classList.toggle('hidden',on); $('md-view').classList.toggle('hidden',!on); if(on) renderMd($('f-body').value); else $('md-view').replaceChildren(); }
   function mdModeEdit(){ setMdMode('edit'); setTimeout(()=>$('f-body').focus(),50); }
   function mdModeView(){ commitEditor(true); setMdMode('view'); }
-  function mdToggle(){ const on=$('f-md').checked; $('md-seg').classList.toggle('hidden',!on); setMdMode(on?'view':'edit'); editorChanged(); }
+  function mdToggle(){ histToggle($('f-md')); const on=$('f-md').checked; $('md-seg').classList.toggle('hidden',!on); setMdMode(on?'view':'edit'); editorChanged(); }
   // Spickzettel: Kärtchen ein-/ausblenden (statischer Text im HTML); „Beispiel einfügen“ nur in eine LEERE Notiz, öffnet dann die Ansicht
   function mdCheat(){ $('md-cheat').classList.toggle('hidden'); }
   function mdExample(){ if(!editing||formType!=='text') return; if($('f-body').value.trim()) return toast(tr('toast.exampleBusy'));
-    if(!$('f-title').value.trim()) $('f-title').value=tr('cheat.exampleTitle'); formProg=true; $('f-body').value=tr('cheat.exampleText'); $('f-md').checked=true; $('md-seg').classList.remove('hidden'); setMdMode('view'); hide('md-cheat'); editorChanged(); renderCounter(); }
+    histPoint(); if(!$('f-title').value.trim()) $('f-title').value=tr('cheat.exampleTitle'); $('f-body').value=tr('cheat.exampleText'); $('f-md').checked=true; $('md-seg').classList.remove('hidden'); setMdMode('view'); hide('md-cheat'); histPoint(); editorChanged(); renderCounter(); }
   // Datum + Uhrzeit (lokal) an den Cursor; in der Ansicht erst zurück ins Textfeld. input-Ereignis → Delegation → editorChanged (Autosave)
   function insertDate(){ if(!editing||formType!=='text') return; if(mdMode==='view') setMdMode('edit'); const ta=$('f-body');
     const s=new Date().toLocaleString(LANG==='de'?'de-DE':'en-GB',{dateStyle:'medium',timeStyle:'short'});
     if(ta.value.length+s.length>CAPS.body) return toast(tr('toast.bodyFull',{n:CAPS.body}));
-    formProg=true; ta.setRangeText(s,ta.selectionStart,ta.selectionEnd,'end'); ta.focus(); ta.dispatchEvent(new Event('input',{bubbles:true})); }
+    histPoint(); ta.setRangeText(s,ta.selectionStart,ta.selectionEnd,'end'); ta.focus(); ta.dispatchEvent(new Event('input',{bubbles:true})); histPoint(); }
   // Markdown-Ansicht: reine Zerlegung (mdParse, Sentinel) → DOM ausschließlich per createElement/textContent; URLs bleiben Text
   function renderMd(text){ const box=$('md-view'); box.replaceChildren();
     const inl=(parent,parts)=>{ for(const p of parts){ if(p.t==='text') parent.appendChild(document.createTextNode(p.s)); else parent.appendChild(el(p.t==='b'?'strong':p.t==='i'?'em':'code',null,p.s)); } };
@@ -1496,28 +1502,29 @@ const App = (function(){
     row.append(lab,ti,del); if(after&&after.parentNode===$('f-items')) after.after(row); else $('f-items').appendChild(row); row.classList.toggle('done',!!done); syncItemAdd();
     if(!FIELD_SIZING) requestAnimationFrame(()=>fitItem(ti)); return row; }
   function syncItemAdd(){ $('f-iadd').disabled=itemRows().length>=ITEMS_MAX; }
-  function addItemRow(){ const row=pushItemRow('',false); if(!row) return toast(tr('err.itemsMax',{n:ITEMS_MAX})); $(row.dataset.t).focus(); }
+  function addItemRow(){ histStep(); const row=pushItemRow('',false); if(!row) return toast(tr('err.itemsMax',{n:ITEMS_MAX})); histPoint(); $(row.dataset.t).focus(); }
   // Enter (v1.9: am Cursor teilen, Entscheidung Nutzer 09.10.2026): am Ende → neuer leerer Punkt darunter (wie bisher); mittendrin → der Text rechts vom
   // Cursor wird ein eigener Punkt darunter (mit demselben Haken); ganz vorn → leerer Punkt darüber, der Text bleibt mit seinem Haken. Leerer Punkt: nichts.
-  // Rückgängig/Wiederholen: Chromiums Stapel gilt fürs ganze Dokument und kennt per Programm gesetzte Werte nicht — nach einem Teilen/Einfügen setzte
-  // Strg+Umschalt+Z alte Tipp-Schritte an falscher Stelle wieder ein („abcxabcabc“), der Autosave speicherte den Salat (Release-Audit v1.9 C-2). Ab dem ersten
-  // solchen Schritt sperrt itemBeforeInput beides, bis die Zeilen neu aufgebaut werden (clearItemRows: neue Felder, alte Schritte zeigen ins Leere).
-  let itemsProg=false, formProg=false, composing=null, enterAfterComp=null;
-  function itemEnter(_,elx){ const cur=elx&&elx.closest('.crow'); if(!cur) return; const ta=$(cur.dataset.t), v=ta.value; if(!v.trim()) return;
+  // Jedes Teilen/Einfügen ist ein eigener Schritt im Verlauf (v1.10) — Chromiums Stapel bleibt für Editorfelder gesperrt (siehe Rückgängig/Wiederholen).
+  let composing=null, enterAfterComp=null;
+  // Hat das Auflösen einen Punkt mit Umbruch geteilt (hängende Komposition), steht der Cursor im letzten Teil — dort teilen (Runde 3 c3-4)
+  function itemEnter(a,elx){ const moved=histSettle(); histPoint(); const f=document.activeElement; itemSplit(a,moved&&isItemField(f)?f:elx); histPoint(); }
+  function itemSplit(_,elx){ const cur=elx&&elx.closest('.crow'); if(!cur) return; const ta=$(cur.dataset.t), v=ta.value; if(!v.trim()) return;
     if(itemRows().length>=ITEMS_MAX) return toast(tr('err.itemsMax',{n:ITEMS_MAX}));
     const at=ta.selectionEnd, head=v.slice(0,at), tail=v.slice(at);   // am ENDE einer Markierung teilen: Enter löscht nie Text (der Wert wird per Programm gesetzt, Strg+Z holte ihn nicht zurück; Release-Audit v1.9 Runde 1)
     if(!head.trim()){ const row=pushItemRow('',false,cur); if(row) cur.before(row); ta.setSelectionRange(0,0); return; }
     if(!tail.trim()){ const row=pushItemRow('',false,cur); if(row&&document.activeElement===ta) $(row.dataset.t).focus(); return; }
     if(composing===ta){ composing=null; enterAfterComp=null; }   // ta.value beendet eine Komposition ohne compositionend (R2c-2)
-    itemsProg=true; ta.value=head; fitItem(ta); const row=pushItemRow(tail.replace(/^\s+/,''),$(cur.dataset.c).checked,cur); if(!row) return;
+    ta.value=head; fitItem(ta); const row=pushItemRow(tail.replace(/^\s+/,''),$(cur.dataset.c).checked,cur); if(!row) return;
     const t=$(row.dataset.t); if(document.activeElement===ta){ t.focus(); t.setSelectionRange(0,0); } editorChanged(); renderCounter(); }
-  function spreadItem(ta, head, text, tail){ const cur=ta.closest('.crow'); if(!cur) return;
+  // net: aus dem Netz (der Umbruch steht schon im Feld) — dann keinen Stand davor festhalten, er trüge den Umbruch im Punkt
+  function spreadItem(ta, head, text, tail, net){ const cur=ta.closest('.crow'); if(!cur) return;
     const r=splitItemPaste(head,text,tail,ITEMS_MAX-itemRows().length,CAPS.item,$(cur.dataset.c).checked);
     if(composing===ta){ composing=null; enterAfterComp=null; }   // R2c-2
-    itemsProg=true; ta.value=r.first; if(r.firstDone!==null){ $(cur.dataset.c).checked=r.firstDone; cur.classList.toggle('done',r.firstDone); }
+    if(net!==true) histPoint(); ta.value=r.first; if(r.firstDone!==null){ $(cur.dataset.c).checked=r.firstDone; cur.classList.toggle('done',r.firstDone); }
     let after=cur, last=ta; for(const x of r.rows){ const row=pushItemRow(x.text,x.done,after); if(!row) break; after=row; last=$(row.dataset.t); }
     fitItem(ta); if(document.activeElement===ta){ last.focus(); try{ last.setSelectionRange(r.caret,r.caret); }catch(_){} }   // nicht aus einem anderen Feld wegziehen (R2c-3)
-    if(r.cut) toast(tr('err.itemsMax',{n:ITEMS_MAX})); editorChanged(); renderCounter(); }
+    if(r.cut) toast(tr('err.itemsMax',{n:ITEMS_MAX})); histPoint(); editorChanged(); renderCounter(); }
   const isItemField=n=>!!(n&&n.tagName==='TEXTAREA'&&n.parentNode&&n.parentNode.parentNode===$('f-items'));
   function spreadAtCaret(ta, text){ const v=ta.value; spreadItem(ta,v.slice(0,ta.selectionStart),text,v.slice(ta.selectionEnd)); }
   // Nur Umbrüche (Einfügen von „⏎“, Eingabehilfe) = Enter, statt still verschluckt zu werden (Release-Audit v1.9 C-9)
@@ -1529,12 +1536,14 @@ const App = (function(){
   // Mehrzeiliges kann nur von außen kommen (Punkte, Titel, Suche sind einzeilig, das Notizfeld ist neben der Checkliste nie sichtbar).
   // Während einer Komposition (IME) nicht teilen: das Netz verschob mitten darin den Fokus, Text kam doppelt (C-3); ein Umbruch wartet aufs Ende (C-4).
   function itemBeforeInput(ev){ const t=ev.inputType;
-    // … und bei offener Rückfrage: deskKey lässt Strg+Z dort seit v1.9 durch, der dokumentweite Stapel machte dann Getipptes in der Notiz HINTER dem modalen
-    // Dialog rückgängig, der Autosave speicherte es (Release-Audit v1.9 Runde 2 R2c-1; Preis: kein Rückgängig im Dialogfeld)
-    // gesperrt (!DEK) ebenso: der Stapel überlebt lock(), auf dem Sperrbildschirm braucht es kein Rückgängig (Release-Audit v1.9 R3a-4).
-    // Nach Werten per Programm im Formular (formProg: Datum, Beispiel, Typwechsel, Kategorie aus der Liste) ebenso, und immer, wenn der Schritt ein Feld
-    // OHNE Fokus träfe (Hilfe offen, Fokus in der Suche → Strg+Z löschte Text in der offenen Notiz, R3c-3; seit v0.1).
-    if((t==='historyUndo'||t==='historyRedo')&&(itemsProg||formProg||dlgResolve||!DEK||ev.target!==document.activeElement)){ ev.preventDefault(); return; }
+    // Rückgängig/Wiederholen: Chromiums Stapel gilt fürs ganze Dokument und kennt per Programm gesetzte Werte nicht (v1.9: Zeichensalat nach Teilen/Datum/
+    // Kategorie aus der Liste, Text aus Notiz A in Notiz B). Editorfelder nehmen ihn darum NIE — ein historyUndo/historyRedo dort (Kontextmenü, Tastatur-App)
+    // läuft über den eigenen Verlauf, aber nur im fokussierten Feld bei geschlossener Hilfe (v1.10, ersetzt die Sperren itemsProg/formProg).
+    // Andere Felder (Suche): gesperrt bei offener Rückfrage (R2c-1: sonst änderte es die Notiz HINTER dem modalen Dialog), gesperrt (!DEK; der Stapel überlebt
+    // lock(), R3a-4) und wenn der Schritt ein Feld OHNE Fokus träfe (R3c-3, seit v0.1).
+    if(t==='historyUndo'||t==='historyRedo'){ const n=ev.target;
+      if(isEdField(n)){ ev.preventDefault(); if(n===document.activeElement&&helpClosed()){ if(t==='historyUndo') histUndo(); else histRedo(); } return; }
+      if(dlgResolve||!DEK||n!==document.activeElement) ev.preventDefault(); return; }
     const ta=ev.target; if(!isItemField(ta)) return;
     // Chromium beendet eine Komposition mit Umbruch teils ohne compositionend — eine normale Texteingabe ohne isComposing beweist das Ende (R3c-5)
     if(composing===ta&&!ev.isComposing&&t==='insertText') composing=null;
@@ -1552,23 +1561,25 @@ const App = (function(){
   function itemInput(_v, ta){ if(!ta) return; const v=ta.value, i=v.search(/[\r\n]/);
     if(i>=0&&composing!==ta){ const L=Math.max(v.lastIndexOf('\n'),v.lastIndexOf('\r'))+1, a=Math.min(ta.selectionStart,i), e=Math.max(ta.selectionEnd,L);   // lastIndexOf statt Regex: unter Node quadratisch (C-7)
       if(/^[\r\n]+$/.test(v.slice(a,e))){ ta.value=v.slice(0,a)+v.slice(e); ta.setSelectionRange(a,a); return itemEnter(null,ta); }   // nur ein Umbruch = Enter (R2c-4)
-      return spreadItem(ta,v.slice(0,a),v.slice(a,e),v.slice(e)); }
+      return spreadItem(ta,v.slice(0,a),v.slice(a,e),v.slice(e),true); }
     fitItem(ta); editorChanged(); }
-  function removeItemRow(k){ const r=$('f-i-'+k); if(!r) return; r.remove(); syncItemAdd(); editorChanged(); renderCounter(); }
-  function itemChanged(_,elx){ const r=elx&&elx.closest('.crow'); if(r) r.classList.toggle('done',elx.checked); editorChanged(); renderCounter(); }
-  function clearItemRows(){ $('f-items').replaceChildren(); syncItemAdd(); itemsProg=false; composing=null; enterAfterComp=null; }
+  function removeItemRow(k){ const r=$('f-i-'+k); if(!r) return; histStep(r); if(!r.isConnected) return; if(composing&&r.contains(composing)){ composing=null; enterAfterComp=null; } r.remove(); syncItemAdd(); histPoint(); editorChanged(); renderCounter(); }   // ✕: ↶ holt den Punkt samt Haken zurück
+  function itemChanged(_,elx){ histToggle(elx); const r=elx&&elx.closest('.crow'); if(r) r.classList.toggle('done',elx.checked); editorChanged(); renderCounter(); }
+  function clearItemRows(){ $('f-items').replaceChildren(); syncItemAdd(); composing=null; enterAfterComp=null; }
   function setItemRows(items){ clearItemRows(); for(const x of items) pushItemRow(x.text,x.done); }
   function readItemRows(){ return itemRows().map(r=>({text:$(r.dataset.t).value, done:$(r.dataset.c).checked})); }
-  function sortDone(){ const it=readItemRows(); setItemRows(it.filter(x=>!x.done).concat(it.filter(x=>x.done))); editorChanged(); }
+  function sortDone(){ histStep(); const it=readItemRows(); setItemRows(it.filter(x=>!x.done).concat(it.filter(x=>x.done))); histPoint(); editorChanged(); }
   async function resetDone(){ const rows=itemRows().filter(r=>$(r.dataset.c).checked); if(!rows.length) return; if(!(await ask(tr('confirm.resetDone',{n:rows.length}),{ok:'dlg.remove'}))) return;
     if(!editing||formType!=='list') return;                      // während der Rückfrage gesperrt
-    itemRows().forEach(r=>{ $(r.dataset.c).checked=false; r.classList.remove('done'); }); editorChanged(); renderCounter(); }
+    histStep(); itemRows().forEach(r=>{ $(r.dataset.c).checked=false; r.classList.remove('done'); }); histPoint(); editorChanged(); renderCounter(); }
   function relabelItemRows(){ itemRows().forEach(r=>{ $(r.dataset.t).placeholder=tr('ed.itemPh'); const b=r.querySelector('.idel'); b.title=tr('ed.itemDel'); b.setAttribute('aria-label',tr('ed.itemDel')); }); }
   // Beim Öffnen frische Felder (Klone ohne Wert): alte Rückgängig-Schritte zeigen dann ins Leere — sonst holte Strg+Z/Strg+Umschalt+Z Getipptes aus Notiz A
-  // in Notiz B, und der Autosave speicherte es (Release-Audit v1.9 R3c-2, seit v0.1). Alle Zugriffe laufen über die ID, die Delegation über data-*.
-  function resetForm(){ formProg=false; ['f-title','f-cat','f-body'].forEach(id=>{ const o=$(id), n=o.cloneNode(false); n.value=''; o.replaceWith(n); }); ['f-fav','f-pinned','f-md','f-hide'].forEach(id=>$(id).checked=false); clearItemRows(); $('md-seg').classList.add('hidden'); hide('md-cheat'); setMdMode('edit'); closeMenus(); err('add-err'); setEntryType('text'); $('ed-count').textContent=''; $('ed-meta').textContent=''; $('ed-del').classList.add('hidden'); }
-  function newEntry(t){ if(editing) closeEditor(); editId=null; editBase=null; editing=true; resetForm(); if(t==='list') setEntryType('list'); if(catFilter) $('f-cat').value=catFilter; tab('add'); setTimeout(()=>$(formType==='list'?'f-title':'f-body').focus(),80); if(formType==='list') addItemRow(); }
-  function openEditor(id){ const e=byId(id); if(!e) return toast(tr('toast.noEntry')); if(editing) closeEditor(); editId=e.id; editing=true; resetForm(); setEntryType(e.type);
+  // in Notiz B, und der Autosave speicherte es (Release-Audit v1.9 R3c-2, seit v0.1). Seit v1.10 nimmt kein Editorfeld mehr Chromiums Stapel — die Klone
+  // bleiben als zweite Sicherung. Alle Zugriffe laufen über die ID, die Delegation über data-*. Der Verlauf der vorigen Notiz fällt hier weg.
+  function resetForm(){ histClear(); ['f-title','f-cat','f-body'].forEach(id=>{ const o=$(id), n=o.cloneNode(false); n.value=''; o.replaceWith(n); }); ['f-fav','f-pinned','f-md','f-hide'].forEach(id=>$(id).checked=false); clearItemRows(); $('md-seg').classList.add('hidden'); hide('md-cheat'); setMdMode('edit'); closeMenus(); err('add-err'); setEntryType('text'); $('ed-count').textContent=''; $('ed-meta').textContent=''; $('ed-del').classList.add('hidden'); }
+  function newEntry(t){ if(editing) closeEditor(); editId=null; editBase=null; editing=true; resetForm(); if(t==='list') setEntryType('list'); if(catFilter) $('f-cat').value=catFilter; tab('add'); setTimeout(()=>$(formType==='list'?'f-title':'f-body').focus(),80); if(formType==='list') addItemRow(); histOpen(); }
+  // Desktop: Klick auf die Zeile der gerade offenen Notiz lässt sie offen — Neuöffnen löschte ihren Verlauf (Release-Audit v1.10, Beobachtung a)
+  function openEditor(id){ const e=byId(id); if(!e) return toast(tr('toast.noEntry')); if(editing&&editId===e.id){ tab('add'); markSel(); return; } if(editing) closeEditor(); editId=e.id; editing=true; resetForm(); setEntryType(e.type);
     $('f-title').value=e.title; $('f-cat').value=e.cat; $('f-fav').checked=e.fav; $('f-pinned').checked=e.pinned; $('f-hide').checked=e.hide;
     if(e.type==='text'){ $('f-body').value=e.body; $('f-md').checked=e.md; $('md-seg').classList.toggle('hidden',!e.md); setMdMode(e.md?'view':'edit'); }
     // Checkliste ohne Punkte (leere Punkte werden nie gespeichert): gleich einen leeren ersten Punkt zeigen wie bei einer neuen — sonst landete Getipptes
@@ -1576,7 +1587,7 @@ const App = (function(){
     else { setItemRows(e.items); if(!itemRows().length) pushItemRow('',false); }
     $('ed-meta').textContent=tr('ed.meta',{c:fmtDate(e.created),u:fmtDate(e.updated)}); $('ed-del').classList.remove('hidden'); renderCounter(); tab('add'); markSel();
     // Fixpunkt merken: was das Formular unverändert liefert (textarea normalisiert CRLF, Titel aus erster Zeile) — nur echte Änderungen werden geschrieben
-    const base=sanitizeEntry(Object.assign({},e,readDraft())); editBase=base?sig(base):null; }
+    const base=sanitizeEntry(Object.assign({},e,readDraft())); editBase=base?sig(base):null; histOpen(); }
   // Entwurf aus dem Formular; leerer Titel → erste Zeile des Textes (Konzept: Easy-Notes-Bedienung)
   function readDraft(){ const t=formType, body=t==='text'?$('f-body').value:'', items=t==='list'?readItemRows():[];
     let title=line($('f-title').value,CAPS.title); if(!title&&t==='text'){ const first=body.split('\n').map(l=>line(l,CAPS.title)).find(Boolean); title=first||''; }
@@ -1593,20 +1604,184 @@ const App = (function(){
     const entry=sanitizeEntry(Object.assign({id:editId||cryptoId(), created:before?before.created:now, updated:now, deleted:null},draft));
     if(!entry) return Promise.resolve(false);
     if(!before&&isBlank(entry)) return Promise.resolve(false);            // leere neue Notiz: nichts anlegen
-    if(before&&sig(entry)===sig(before)) return Promise.resolve(false);    // unverändert: updated nicht anheben (sonst gewänne der Stand überall)
-    if(editBase&&sig(entry)===editBase) return Promise.resolve(false);     // unverändert gegenüber dem Öffnen (fremder Stand mit CRLF/leerem Titel, Import währenddessen) — nicht zurückschreiben
+    // unverändert: updated nicht anheben (sonst gewänne der Stand überall) — nur die Datei nachziehen, falls ein Write scheiterte (fileStale, b2-2)
+    if(before&&sig(entry)===sig(before)) return fileStale?persist().then(()=>true,()=>false):Promise.resolve(false);
+    // unverändert gegenüber dem Öffnen (fremder Stand mit CRLF/leerem Titel, Import währenddessen) — nicht zurückschreiben
+    if(editBase&&sig(entry)===editBase) return fileStale?persist().then(()=>true,()=>false):Promise.resolve(false);
     if(editId&&idx<0){ toast(tr('toast.noEntry')); return Promise.resolve(false); }   // inzwischen gelöscht (nur per Import möglich): nie mit derselben ID neu anlegen
     if(idx<0&&liveCount(VAULT.entries)>=MAX_ENTRIES){ err('add-err',tr('err.tooMany')); return Promise.resolve(false); }
     const snapshot=VAULT.entries.slice(), wasNew=!before;
     const next = idx>=0 ? VAULT.entries.map((x,i)=>i===idx?entry:x) : VAULT.entries.concat([entry]);   // neues Array: persist erkennt den zweiten Schreiber (Audit run-1 #2)
-    VAULT.entries=next;
+    // editBase SYNCHRON nachziehen (Release-Audit v1.10 B-1): erst im .then galt während des Writes noch der Öffnungsstand — ↶ genau dorthin, dann Fertig/
+    // Sperren, und dieser Commit wurde übersprungen, die Datei behielt den zurückgenommenen Stand. Bei echtem Rollback zurück auf den vorigen Wert.
+    VAULT.entries=next; const prevBase=editBase; editBase=sig(entry);
     if(wasNew){ editId=entry.id; renderAddTitle(); $('ed-del').classList.remove('hidden'); }
-    return persist().then(()=>{ if(editing&&editId===entry.id) editBase=sig(entry); if(stay&&editing&&editId===entry.id){ $('ed-meta').textContent=tr('ed.meta',{c:fmtDate(entry.created),u:fmtDate(entry.updated)}); if(DESK){ renderList(); } } return true; })
-      .catch(e=>{ rollback(snapshot,next)(e); if(!(e&&e.locked)&&wasNew&&editing&&editId===entry.id){ editId=null; renderAddTitle(); $('ed-del').classList.add('hidden'); } return false; });   // editId===entry.id: nur die eigene Notiz zurücksetzen (Audit run-1 #4)
+    return persist().then(()=>{ if(stay&&editing&&editId===entry.id){ $('ed-meta').textContent=tr('ed.meta',{c:fmtDate(entry.created),u:fmtDate(entry.updated)}); if(DESK){ renderList(); } } return true; })
+      .catch(e=>{ rollback(snapshot,next)(e); if(VAULT&&VAULT.entries===snapshot&&editing&&editId===entry.id&&editBase===sig(entry)) editBase=prevBase; if(!(e&&e.locked)&&wasNew&&editing&&editId===entry.id&&!(VAULT&&VAULT.entries.some(x=>x.id===entry.id))){ editId=null; renderAddTitle(); $('ed-del').classList.add('hidden'); } return false; });   // editId===entry.id: nur die eigene Notiz zurücksetzen (Audit run-1 #4); und nur, wenn sie nach dem Rollback wirklich fehlt — sonst legte der nächste Commit sie doppelt an (Release-Audit v1.10 b2-1)
   }
   // Editor verlassen: speichern, dann Formular leeren. Eine leere neue Notiz wird verworfen (mit Hinweis).
   function closeEditor(){ if(!editing) return; const blankNew=!editId&&isBlank(readDraft()); commitEditor(false); editing=false; editId=null; editBase=null; resetForm(); renderDeskPane(); markSel(); if(blankNew) toast(tr('toast.discarded')); }
   function doneEditor(){ closeEditor(); tab('list'); }
+
+  /* ---------- Rückgängig/Wiederholen (v1.10, Wunsch Nutzer 09.10.2026): eigener Verlauf je geöffneter Notiz ----------
+     Stände des Formulars (Typ, Titel, Kategorie, Text, Punkte samt Haken, Schalter) nur im RAM: Öffnen beginnt ihn (histOpen), Schließen, Öffnen einer
+     anderen Notiz und Sperren löschen ihn (resetForm/clearRendered → histClear). Ein Schritt (Entscheidung Nutzer 09.10.2026): Tippen bis HIST_PAUSE_MS
+     Pause, Feldwechsel, versetzter Cursor oder überschriebene Markierung, Enter im Notiztext; jede andere Änderung für sich (✕, Enter-Teilen, Einfügen/
+     Ausschneiden/Ablegen, Haken, Sortieren, Haken zurücksetzen, Typwechsel, Datum, Beispiel, Kategorie aus der Liste, Schalter). Höchstens HIST_MAX Schritte
+     und HIST_CHARS Zeichen, die ältesten fallen. Knöpfe ↶/↷ in der mitlaufenden Kopfzeile (nehmen den Fokus nicht, am Handy bleibt die Tastatur offen);
+     Strg+Z / Strg+Umschalt+Z / Strg+Y auf allen Geräten (histKey), solange der Fokus im Editor liegt oder nirgends.
+     Chromiums eigener Stapel bleibt für Editorfelder gesperrt (itemBeforeInput). Wiederhergestellt wird mit Cursor an der geänderten Stelle, NIE mit
+     Markierung (X11: eine Markierung läge in PRIMARY), und nur, wenn der Fokus schon im Editor lag. */
+  const HIST_MAX=50, HIST_CHARS=2000000, HIST_PAUSE_MS=1000;
+  const HIST_KEYS=['type','title','cat','body','md','fav','pinned','hide'], HIST_OWN=['insertFromPaste','insertFromPasteAsQuotation','insertFromDrop','insertFromYank','insertReplacementText','deleteByCut'];
+  // hist={stack,i,dirty}: stack[i] = zuletzt festgehaltener Stand, dirty = seither getippt. histAt = Feld und Cursor nach der letzten Eingabe.
+  // histOwn: die laufende Eingabe (Einfügen …) wird gleich danach ein eigener Schritt. histDrag: ein deleteByDrag wartet auf sein insertFromDrop (Verschieben).
+  let hist=null, histTimer=null, histAt=null, histOwn=false, histDrag=false;
+  const isEdField=n=>!!n&&(n===$('f-title')||n===$('f-cat')||n===$('f-body')||isItemField(n));
+  const helpClosed=()=>{ const h=$('help-overlay'); return !h||h.classList.contains('hidden'); };
+  function formState(){ return {type:formType, title:$('f-title').value, cat:$('f-cat').value, body:$('f-body').value, items:readItemRows(),
+    md:$('f-md').checked, fav:$('f-fav').checked, pinned:$('f-pinned').checked, hide:$('f-hide').checked}; }
+  const stateEq=(a,b)=>HIST_KEYS.every(k=>a[k]===b[k])&&a.items.length===b.items.length&&a.items.every((x,i)=>x.text===b.items[i].text&&x.done===b.items[i].done);
+  // Zeichen des Verlaufs; ein Text oder Punkt (gleiche Stelle), der dem vorigen Stand gleicht, ist derselbe String (histPoint) und zählt einmal (c-9/B-5)
+  const histSize=st=>st.reduce((n,s,i)=>{ const p=i?st[i-1]:null; return n+s.title.length+s.cat.length+(p&&s.body===p.body?0:s.body.length)
+    +s.items.reduce((m,x,k)=>m+(p&&p.items[k]&&p.items[k].text===x.text?0:x.text.length),0); },0);
+  function histClear(){ clearTimeout(histTimer); histTimer=null; hist=null; histAt=null; histOwn=false; histDrag=false; renderHist(); }
+  function histOpen(){ histClear(); if(!editing) return; hist={stack:[formState()], i:0, dirty:false}; renderHist(); }
+  // Stand festhalten, wenn er vom letzten abweicht: die ↷-Seite fällt weg, über den Deckeln die ältesten Stände
+  // Nie ein Stand mit Umbruch IM Punkt (hängende Komposition mit Umbruch, Release-Audit v1.10 c-5/B-2): er bleibt ungesichert, das Netz teilt ihn auf
+  // und hält das Ergebnis fest (spreadItem); ↶/↷/Haken lösen ihn vorher auf (histSettle)
+  function histPoint(s){ if(!hist) return; clearTimeout(histTimer); histTimer=null; const h=hist, cur=h.stack[h.i]; s=s||formState();
+    if(s.items.some(x=>/[\r\n]/.test(x.text))){ h.dirty=true; renderHist(); return; }
+    h.dirty=false;
+    if(!stateEq(s,cur)){
+      if(s.body===cur.body) s.body=cur.body;
+      s.items.forEach((x,k)=>{ const o=cur.items[k]; if(o&&o.text===x.text) x.text=o.text; });
+      h.stack.length=h.i+1; h.stack.push(s); h.i++;
+      while(h.stack.length>HIST_MAX+1||(h.stack.length>2&&histSize(h.stack)>HIST_CHARS)){ h.stack.shift(); h.i--; } }
+    renderHist(); }
+  // Haken/Schalter: das change-Ereignis kommt NACH dem Umschalten — der Stand davor ist der jetzige mit diesem einen Wert zurückgedreht
+  // Lag eine Komposition mit Umbruch an, hält das Auflösen (histSettle → spreadItem) den Haken schon mit fest — dann bleibt es bei diesem einen Schritt
+  function histToggle(elx){ if(!hist||!elx) return; histSettle(); const now=formState(), pre=Object.assign({},now), r=elx.closest('.crow');
+    if(!hist.dirty&&stateEq(now,hist.stack[hist.i])) return;
+    if(r){ const i=itemRows().indexOf(r); if(i<0) return; pre.items=now.items.map((x,k)=>k===i?{text:x.text,done:!x.done}:x); }
+    else { const k={'f-fav':'fav','f-pinned':'pinned','f-hide':'hide','f-md':'md'}[elx.id]; if(!k) return; pre[k]=!now[k]; }
+    histPoint(pre); histPoint(now); }
+  function optChanged(_,elx){ histToggle(elx); editorChanged(); }
+  // vor jeder Eingabe in ein Editorfeld (läuft NACH itemBeforeInput; was dort abgefangen wird, hält seinen Schritt selbst fest): neuer Schritt bei
+  // Feldwechsel, versetztem Cursor, überschriebener Markierung, Enter im Notiztext und bei Einfügen/Ausschneiden/Ablegen (dann auch gleich danach).
+  // In einer Komposition (IME) zählt hier nur der Feldwechsel — dort wandert der Cursor mit dem gesetzten Wort; Cursor und Markierung prüft histCompStart.
+  // Mehrere Zeichen auf einmal ohne Komposition (Zwischenablage-Leiste der Tastatur, Spracheingabe) gelten als Einfügen (c-8).
+  function histBefore(ev){ const n=ev.target, t=ev.inputType||''; if(ev.defaultPrevented||!hist||!editing||!isEdField(n)) return;
+    // Verschieben per Ziehen = EIN Schritt (c-7/B-4): deleteByDrag hält den Stand davor fest, das folgende insertFromDrop (auch in einem anderen Feld) nur den danach
+    if(t==='deleteByDrag'){ histPoint(); histDrag=true; histOwn=false; return; }
+    if(t==='insertFromDrop'&&histDrag){ histDrag=false; histOwn=true; return; }
+    histDrag=false;
+    const comp=ev.isComposing||t==='insertCompositionText'||t==='deleteCompositionText'||t==='insertFromComposition';
+    const own=HIST_OWN.includes(t)||(t==='insertText'&&!comp&&typeof ev.data==='string'&&ev.data.length>1&&multiGrapheme(ev.data));
+    const moved=!histAt||histAt.el!==n||(!comp&&(n.selectionStart!==n.selectionEnd||n.selectionStart!==histAt.pos));
+    if(own||moved||(n===$('f-body')&&(t==='insertLineBreak'||t==='insertParagraph'))) histPoint();
+    histOwn=own; }
+  // nach jeder Eingabe in ein Editorfeld (nach der Delegation): Pause-Zeitgeber neu starten
+  function histInput(ev){ const n=ev.target; if(!hist||!editing||!isEdField(n)) return; histAt={el:n, pos:n.selectionEnd};
+    if(histOwn){ histOwn=false; histPoint(); return; }
+    // nichts geändert (z. B. Komposition setzt dasselbe Wort neu): nicht „getippt“ — sonst wäre ↷ bis zur Pause gesperrt (c2-6)
+    if(!hist.dirty&&stateEq(formState(),hist.stack[hist.i])){ renderHist(); return; }
+    hist.dirty=true; clearTimeout(histTimer); histTimer=setTimeout(()=>{ histTimer=null; histPoint(); },HIST_PAUSE_MS); renderHist(); }
+  // Beginn einer Komposition (am Handy fast jede Eingabe): versetzter Cursor oder Markierung = neuer Schritt — hier steht der Text noch unverändert (c-6/B-3)
+  function histCompStart(ev){ const n=ev.target; if(!hist||!editing||!isEdField(n)) return;
+    if(!histAt||histAt.el!==n||n.selectionStart!==n.selectionEnd||n.selectionStart!==histAt.pos) histPoint(); }
+  function histDragEnd(){ histDrag=false; }
+  // mehr als ein Schriftzeichen? Grapheme, nicht Codepunkte — ein Emoji mit Hautton, Flagge oder ZWJ ist EIN Zeichen und wird kein eigener Schritt (c2-5)
+  let SEG=null;
+  function multiGrapheme(x){ try{ if(!SEG&&window.Intl&&Intl.Segmenter) SEG=new Intl.Segmenter(); if(SEG){ let k=0; for(const _ of SEG.segment(x)) if(++k>1) return true; return false; } }catch(_){} return [...x].length>1; }
+  // Punkte mit Umbruch (hängende Komposition — auch schon nach focusout, dessen Netz erst im nächsten Task läuft) erst über das Netz auflösen, sonst käme ein
+  // Stand mit Umbruch im Punkt in den Verlauf bzw. verschmölze die folgende Aktion mit ihm (c-5/B-2, Runde 2 b2-3). histStep = auflösen + Stand davor.
+  // skip: der Punkt, den die Aktion gleich entfernt, bleibt ganz (✕ löschte sonst nur den ersten Teil, Runde 3 c3-3); Rückgabe: es wurde aufgeteilt
+  function histSettle(skip){ let moved=false; for(const r of itemRows()){ if(r===skip) continue; const ta=$(r.dataset.t); if(ta&&ta.isConnected&&/[\r\n]/.test(ta.value)){ if(composing===ta){ composing=null; enterAfterComp=null; } itemInput(null,ta); moved=true; } } return moved; }
+  function histStep(skip){ histSettle(skip); histPoint(); }
+  const histReady=()=>!!(hist&&editing&&VAULT&&DEK&&!dlgResolve);
+  function histUndo(){ if(!histReady()) return; histSettle(); histPoint(); const h=hist; if(h.i<1) return; h.i--; histApply(h.stack[h.i]); }
+  function histRedo(){ if(!histReady()) return; histSettle(); histPoint(); const h=hist; if(h.i>=h.stack.length-1) return; h.i++; histApply(h.stack[h.i]); }
+  // Strg+Z / Strg+Umschalt+Z / Strg+Y: Fokus im Editor oder nirgends, keine Rückfrage, Hilfe zu — sonst Chromium mit den Sperren in itemBeforeInput
+  function histKey(ev){ if(!ev.ctrlKey||ev.altKey||ev.metaKey) return false; const k=(ev.key||'').toLowerCase();
+    const undo=k==='z'&&!ev.shiftKey, redo=(k==='z'&&ev.shiftKey)||(k==='y'&&!ev.shiftKey); if(!undo&&!redo) return false;
+    if(!histReady()||!helpClosed()) return false;
+    const a=document.activeElement; if(a&&a!==document.body&&!$('tab-add').contains(a)) return false;
+    if(undo) histUndo(); else histRedo(); return true; }
+  // Stand ins Formular: Werte nur bei Abweichung setzen (sonst springt der Cursor), Checklisten-Zeilen nach Position angleichen — das fokussierte Feld bleibt
+  // stehen, am Handy klappt die Tastatur nicht zu. Eine Komposition endet nur, wo ihr Feld überschrieben oder entfernt wird (sonst fielen C-3/C-4 aus, c-4).
+  function histApply(s){ const prev=formState(), a=document.activeElement, wasIn=isEdField(a);
+    closeMenus();
+    if(s.type!==formType) setEntryType(s.type);
+    const put=(id,v)=>{ const n=$(id); if(n.value!==v) n.value=v; };
+    put('f-title',s.title); put('f-cat',s.cat); put('f-body',s.body);
+    $('f-md').checked=s.md; $('f-fav').checked=s.fav; $('f-pinned').checked=s.pinned; $('f-hide').checked=s.hide;
+    if(s.type==='list'){ const rows=itemRows();
+      s.items.forEach((x,i)=>{ const r=rows[i]; if(!r){ pushItemRow(x.text,x.done); return; } const ta=$(r.dataset.t);
+        if(ta.value!==x.text){ if(composing===ta){ composing=null; enterAfterComp=null; } ta.value=x.text; } $(r.dataset.c).checked=x.done; r.classList.toggle('done',x.done); });
+      rows.slice(s.items.length).forEach(r=>r.remove()); if(composing&&!composing.isConnected){ composing=null; enterAfterComp=null; } syncItemAdd(); fitItems(); }
+    else clearItemRows();
+    const mdOn=s.type==='text'&&s.md; $('md-seg').classList.toggle('hidden',!mdOn);
+    // Markdown wieder an: in die Ansicht — außer der Fokus liegt im Text (sonst fiele er auf body und Getipptes ginge ins Leere; Runde 2 a2-4)
+    // … ebenso, wenn der Fokus in einem Punkt lag, den der Rückweg zum Text entfernt hat (Runde 3 a3-2)
+    if(!mdOn) setMdMode('edit'); else if(!(prev.type==='text'&&prev.md)) setMdMode(a===$('f-body')||(wasIn&&!a.isConnected)?'edit':'view'); else if(mdMode==='view') renderMd(s.body);
+    // Lag der Fokus nicht in einem Editorfeld, nur hinrollen — ohne Cursor und ohne Fokus (am Handy klappte sonst die Tastatur auf; Runde 3 c3-5)
+    histAt=null; histCaret(prev,s,wasIn);
+    editorChanged(); renderCounter(); renderHist(); }
+  // Cursor ans Ende des geänderten Bereichs im ersten geänderten Textfeld (gemeinsamer Anfang und gemeinsames Ende weg) — ohne Markierung
+  function histCaret(a,b,focus){ let n=null, x='', y='';
+    if(a.title!==b.title){ n=$('f-title'); x=a.title; y=b.title; }
+    else if(a.cat!==b.cat){ n=$('f-cat'); x=a.cat; y=b.cat; }
+    else if(b.type==='text'&&a.body!==b.body){ if(mdMode!=='view'){ n=$('f-body'); x=a.body; y=b.body; } }
+    else if(b.type==='list'&&b.items.length){ let i=b.items.findIndex((it,k)=>!a.items[k]||a.items[k].text!==it.text);
+      if(i<0&&a.items.length>b.items.length) i=b.items.length-1;
+      if(i>=0){ const r=itemRows()[i]; n=r?$(r.dataset.t):null; x=a.items[i]?a.items[i].text:''; y=b.items[i].text; } }
+    if(!n) return;
+    let p=0; const m=Math.min(x.length,y.length); while(p<m&&x[p]===y[p]) p++;
+    let q=0; while(q<m-p&&x[x.length-1-q]===y[y.length-1-q]) q++;
+    // Cursor ERST setzen, dann fokussieren: focus() holte sonst kurz die alte Markierung des Felds zurück, Chromium legte sie ungemeldet in PRIMARY (a-1).
+    // Ein schon fokussiertes Feld nicht neu fokussieren (blur+focus ließe am Handy die Tastatur zuklappen) — revealCaret rollt die Stelle ins Bild (c-1).
+    const c=y.length-q; try{ if(focus){ n.setSelectionRange(c,c); if(document.activeElement!==n) n.focus({preventScroll:true}); } revealCaret(n,c); }catch(_){} }
+  // Stelle c sichtbar machen (c-1; Release-Audit v1.10 Runde 2 c2-1/-2/-3/-7, a2-3): Zeile über einen unsichtbaren Spiegel des Felds messen — gleiche Breite und
+  // Schrift, Zeilenhöhe als Verhältnis zur Schriftgröße wie im Feld (als gerundeter px-Wert driftete der Spiegel in langen Notizen um Zeilen), hinter c der Rest
+  // des Worts (bricht an einer weichen Umbruchstelle mit um). Mehrzeiliges Feld senkrecht mit zwei Zeilen Rand, einzeiliges (Titel, Kategorie) waagrecht
+  // nachrollen, dann Desktop-Spalte und Seite: sichtbar ist der Schnitt aus Spalte und Fenster unter der Kopfzeile, was die Spalte nicht mehr rollen kann,
+  // rollt die Seite (die Spalte ragt bei oben stehender Seite unter den Fensterrand). Der Spiegel lebt nur in diesem Aufruf, auch bei einer Ausnahme (finally).
+  const RTL_CH=/[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
+  function revealCaret(n,c){ const cs=getComputedStyle(n), num=k=>parseFloat(cs[k])||0, fs=num('fontSize')||16, lr=parseFloat(cs.lineHeight)/fs;
+    const mirror=(tag,st,fill)=>{ const d=document.createElement(tag);
+      ['fontFamily','fontSize','fontWeight','fontStyle','letterSpacing','textTransform','wordSpacing','tabSize','wordBreak','overflowWrap'].forEach(k=>{ d.style[k]=cs[k]; });
+      Object.assign(d.style,{position:'absolute',visibility:'hidden',left:'-99999px',top:'0',border:'0',lineHeight:isFinite(lr)&&lr>0?String(lr):cs.lineHeight},st);
+      document.body.appendChild(d); try{ return fill(d); } finally{ d.remove(); } };
+    let y, h;
+    if(n.tagName==='TEXTAREA'){
+      [y,h]=mirror('div',{whiteSpace:'pre-wrap',boxSizing:'content-box',paddingTop:cs.paddingTop,paddingLeft:cs.paddingLeft,paddingRight:cs.paddingRight,width:Math.max(0,n.clientWidth-num('paddingLeft')-num('paddingRight'))+'px'},d=>{
+        const m=document.createElement('span'); d.textContent=n.value.slice(0,c); m.textContent=(n.value.slice(c).match(/^[^\s]{1,80}/)||['​'])[0]; d.appendChild(m);
+        const r0=m.getClientRects()[0]; return [m.offsetTop,(r0&&r0.height)||(isFinite(lr)&&lr>0?lr*fs:fs*1.3)]; });
+      if(y-h<n.scrollTop) n.scrollTop=Math.max(0,y-2*h); else if(y+2*h>n.scrollTop+n.clientHeight) n.scrollTop=y+3*h-n.clientHeight;
+      y=n.getBoundingClientRect().top+num('borderTopWidth')+y-n.scrollTop; }
+    // waagrecht nur bei Text ohne Gegenrichtung: bei Hebräisch/Arabisch stimmt die Breite des logischen Anfangs nicht mit der Lage auf dem Bildschirm (Runde 3 c3-2)
+    else { if(!RTL_CH.test(n.value)){ const x=mirror('span',{whiteSpace:'pre'},d=>{ d.textContent=n.value.slice(0,c); return d.getBoundingClientRect().width; }), w=n.clientWidth-num('paddingLeft')-num('paddingRight');
+      if(x<n.scrollLeft) n.scrollLeft=Math.max(0,x-w/3); else if(x>n.scrollLeft+w-2) n.scrollLeft=x-w+w/3; }
+      y=n.getBoundingClientRect().top; h=n.offsetHeight; }
+    // Innenabstand und Rahmen mit sichtbar machen (ein Punkt soll ganz unter der Kopfzeile stehen, nicht nur seine Textzeile)
+    const pt=n.tagName==='TEXTAREA'?num('paddingTop')+num('borderTopWidth'):0, pb=n.tagName==='TEXTAREA'?num('paddingBottom')+num('borderBottomWidth'):0;
+    const box=$('tab-add'), head=box&&box.querySelector('.ed-head'), inner=box&&/auto|scroll/.test(getComputedStyle(box).overflowY)&&box.scrollHeight>box.clientHeight?box:null;
+    const vv=window.visualViewport, winB=(vv?vv.height:innerHeight)-8, br=inner?inner.getBoundingClientRect():null;
+    const top=(br?Math.max(br.top,0):0)+(head?head.getBoundingClientRect().height:0)+8, bot=br?Math.min(br.bottom,winB):winB;
+    const dy=y-pt<top?y-pt-top:(y+h+pb>bot?y+h+pb-bot:0), h0=head?head.getBoundingClientRect().top:0;
+    if(dy){ if(inner){ const s0=inner.scrollTop; inner.scrollTop+=dy; const rest=dy-(inner.scrollTop-s0); if(rest) window.scrollBy(0,rest); } else window.scrollBy(0,dy); }
+    // Hat das Rollen die (noch nicht angeheftete) Kopfzeile verschoben, träfe ein schnelles zweites Tippen auf ↶/↷ etwas anderes (✕ eines Punkts) — kurz verschlucken
+    if(head&&Math.abs(head.getBoundingClientRect().top-h0)>2) histTapUntil=performance.now()+HIST_TAP_MS; }
+  // Runde 3 a3-1: Tipps außerhalb der Kopfzeile kurz nach so einem Rollen verwerfen (pointerdown/mousedown/click, Capture)
+  const HIST_TAP_MS=600; let histTapUntil=0;
+  function histTapGuard(ev){ if(!histTapUntil) return; if(performance.now()>histTapUntil){ histTapUntil=0; return; } const t=ev.target; if(t&&t.closest&&t.closest('.ed-head')) return; ev.preventDefault(); ev.stopPropagation(); }
+  // Ein per Tastatur fokussierter Knopf wird am Anschlag nur aria-gesperrt (bleibt fokussiert, Klick ist ohnehin wirkungslos): `disabled` gäbe den Fokus an body
+  // ab (Runde 2 a2-4), eine Weitergabe an den anderen Knopf ließ ein Enter zu viel wiederherstellen und gehaltenes Enter pendeln (Runde 3 c3-1)
+  function renderHist(){ const u=$('ed-undo'), r=$('ed-redo'); if(!u||!r) return; const h=hist;
+    const set=(b,off)=>{ if(off&&b===document.activeElement){ b.disabled=false; b.setAttribute('aria-disabled','true'); } else { b.disabled=off; b.removeAttribute('aria-disabled'); } };
+    set(u,!(h&&(h.i>0||h.dirty))); set(r,!(h&&!h.dirty&&h.i<h.stack.length-1));
+    u.title=tr('ed.undo'); u.setAttribute('aria-label',tr('ed.undo')); r.title=tr('ed.redo'); r.setAttribute('aria-label',tr('ed.redo')); }
   function copyCurrent(){ if(!editing) return; copyText(noteText(readDraft()),'what.note'); }
   async function deleteCurrent(){ if(!editing||!editId) return; if(!byId(editId)) return;
     // Erst den Entwurf festschreiben (stoppt den Autosave-Timer): feuerte er während der Rückfrage, ersetzte commitEditor das Objekt, und die
@@ -1719,15 +1894,18 @@ const App = (function(){
       if(!clipOwnedAt) armClip();
       let p=null; try{ p=DESK.clip.selected(t); }catch(_){ p=null; }
       if(p&&p.then) p.then(()=>{ if(!clipOwnedAt) armClip(); },()=>{}); };
-    const onSel=()=>{ const t=selText(); report(t,selFrom); };
+    // selFrom nach jeder Meldung loslassen: sonst hielt es nach Schließen/Sperren ein losgelöstes Editorfeld samt Text (Release-Audit v1.10 a-2)
+    const onSel=()=>{ const t=selText(); report(t,selFrom); selFrom=null; };
     document.addEventListener('mouseup',onSel);
     // Strg+C auf Markiertem: nicht Chromium kopieren lassen (ohne KDE-Hinweis, ohne Löschen → Klipper-Verlauf), sondern über die Brücke
-    document.addEventListener('copy',ev=>{ const t=selText(); if(!t) return; ev.preventDefault(); copyText(t,'what.sel'); });
+    document.addEventListener('copy',ev=>{ const t=selText(); selFrom=null; if(!t) return; ev.preventDefault(); copyText(t,'what.sel'); });
     // Strg+X / Shift+Entf ebenso (Audit run-7 #1); danach die Markierung im Feld entfernen: execCommand('delete') hält Rückgängig intakt
-    document.addEventListener('cut',ev=>{ const a=document.activeElement, t=selText(); if(!t) return; ev.preventDefault(); copyText(t,'what.sel');
+    document.addEventListener('cut',ev=>{ const a=document.activeElement, t=selText(); selFrom=null; if(!t) return; ev.preventDefault(); copyText(t,'what.sel');
       if(!a||(a.tagName!=='INPUT'&&a.tagName!=='TEXTAREA')||typeof a.selectionStart!=='number'||a.readOnly||a.disabled) return;   // Fokus auf Kästchen/Knopf: nur kopieren (setRangeText warf dort, Release-Audit v1.7 B-N1)
+      const ed=isEdField(a); if(ed) histPoint();   // Ausschneiden = eigener Schritt im Verlauf (v1.10)
       let done=false; try{ done=document.execCommand('delete'); }catch(_){}
-      if(!done){ a.setRangeText('',a.selectionStart,a.selectionEnd,'end'); a.dispatchEvent(new Event('input',{bubbles:true})); } });
+      if(!done){ a.setRangeText('',a.selectionStart,a.selectionEnd,'end'); a.dispatchEvent(new Event('input',{bubbles:true})); }
+      if(ed) histPoint(); });
     // Strg+A: Wer Strg VOR dem A loslässt, schickt ein keyup von „a“ ohne ctrlKey — die ganze Markierung blieb ungemeldet und ohne Frist in PRIMARY,
     // auch über die Sperre (Release-Audit v1.9 Runde 1, Befund a-1; v1.9 lässt Strg+A zudem im Dialog durch). Deshalb merkt sich das Capture-keydown
     // ein Strg+A, und das nächste keyup (egal welcher Taste) meldet.
@@ -2160,13 +2338,13 @@ const App = (function(){
   function openHelp(){ show('help-overlay'); $('help-overlay').scrollTop=0; }
   function closeHelp(){ hide('help-overlay'); }
   function toggleLang(){ setLang(LANG==='de'?'en':'de'); }
-  function relabel(){ if(!VAULT){ if(!pendingUnlock){ err('lock-err'); pinMsg(''); bioMsg(''); } return; } renderAddTitle(); relabelItemRows(); renderCounter(); if(editing&&editId){ const e=byId(editId); if(e) $('ed-meta').textContent=tr('ed.meta',{c:fmtDate(e.created),u:fmtDate(e.updated)}); } renderList(); renderTrash(); renderSettings(); renderBackupMsg(); }
+  function relabel(){ if(!VAULT){ if(!pendingUnlock){ err('lock-err'); pinMsg(''); bioMsg(''); } return; } renderAddTitle(); relabelItemRows(); renderHist(); renderCounter(); if(editing&&editId){ const e=byId(editId); if(e) $('ed-meta').textContent=tr('ed.meta',{c:fmtDate(e.created),u:fmtDate(e.updated)}); } renderList(); renderTrash(); renderSettings(); renderBackupMsg(); }
   function renderAll(){ renderList(); renderSettings(); renderBackupMsg(); }
   function kdfChanged(){ kdfTouched=true; }
 
   return {boot,doSetup,doUnlock,doTotp,cancelTotp,lock,lockNow,tab,dialogOk,renameCat,selStart,selCancel,toggleSel,selAll,selNone,selDelete,selCat,selFav,toastAction,hideToast,dialogCancel,dialogOpen,dialogKey,
     newEntry,openEditor,doneEditor,copyCurrent,deleteCurrent,editorChanged,changeEntryType,mdModeEdit,mdModeView,mdToggle,mdCheat,mdExample,insertDate,
-    addItemRow,itemEnter,itemInput,itemPaste,itemBeforeInput,itemComposition,removeItemRow,itemChanged,sortDone,resetDone,
+    addItemRow,itemEnter,itemInput,itemPaste,itemBeforeInput,itemComposition,removeItemRow,itemChanged,sortDone,resetDone,histUndo,histRedo,histKey,histBefore,histInput,histCompStart,histDragEnd,histTapGuard,optChanged,
     renderList,setCatFilter,clearCatFilter,toggleFavFilter,toggleOpenFilter,openCatMenu,toggleCatMenu,catInput,pickCat,
     openTrash,renderTrash,restoreEntry,purgeEntry,emptyTrash,
     closeMenus,syncCombo,syncCombos,toggleCombo,chooseOpt,
@@ -2186,7 +2364,11 @@ document.addEventListener('click',ev=>{
   const fn=App[elx.dataset.action]; if(typeof fn==='function') fn(elx.dataset.arg, elx);
 });
 // Auge: Fokus bleibt im Passwortfeld (Tastatur klappt nicht zu, Cursor bleibt stehen) — am Gerät bestätigt (GrapheneOS, 16.09.2026)
-document.addEventListener('mousedown',ev=>{ if(ev.target.closest('.pw-eye')) ev.preventDefault(); });
+// Editor-Kopfzeile mit ↶/↷ (v1.10) ebenso: der Cursor bleibt im Feld, am Handy die Tastatur offen — für die ganze Zeile und auch per pointerdown, ein GESPERRTER
+// Knopf bekommt kein mousedown (Release-Audit v1.10 c-3/a-3); der click auf einen freien Knopf kommt weiter an
+// Nur die Haupttaste (Runde 2 a2-2): beim Mittelklick hielte der Wächter den Fokus im Feld, und Linux fügte die Mittelklick-Auswahl (auch aus fremden Programmen) dort ein
+document.addEventListener('mousedown',ev=>{ if(ev.button===0&&ev.target.closest('.pw-eye,.ed-head')) ev.preventDefault(); });
+document.addEventListener('pointerdown',ev=>{ if(ev.button===0&&ev.target.closest('.ed-head')) ev.preventDefault(); });
 document.addEventListener('change',ev=>{
   const elx=ev.target.closest('[data-change]'); if(!elx) return;
   const a=elx.dataset.change; const fn=App[a]; if(typeof fn!=='function') return;
@@ -2200,8 +2382,13 @@ document.addEventListener('input',ev=>{
 // Checklisten-Punkte (v1.9): Mehrzeiliges einfügen → mehrere Punkte; Zeilenumbruch ohne Enter-Taste (Android-Tastaturen) → wie Enter
 document.addEventListener('paste',ev=>App.itemPaste(ev));
 document.addEventListener('beforeinput',ev=>App.itemBeforeInput(ev));
+// Verlauf (v1.10): NACH itemBeforeInput (sieht dessen preventDefault) bzw. NACH der input-Delegation (Teilen/Einfügen haben ihren Schritt dann schon)
+document.addEventListener('beforeinput',ev=>App.histBefore(ev)); document.addEventListener('input',ev=>App.histInput(ev));
+document.addEventListener('compositionstart',ev=>App.histCompStart(ev)); document.addEventListener('dragend',()=>App.histDragEnd());
+['pointerdown','mousedown','click'].forEach(t=>document.addEventListener(t,ev=>App.histTapGuard(ev),true));   // Tippsperre nach Rollen der Kopfzeile (Runde 3 a3-1)
 document.addEventListener('compositionstart',ev=>App.itemComposition(ev)); document.addEventListener('focusout',ev=>App.itemComposition(ev)); document.addEventListener('compositionend',ev=>App.itemComposition(ev));
 document.addEventListener('keydown',ev=>{
+  if(App.histKey(ev)){ ev.preventDefault(); return; }   // Strg+Z/Strg+Umschalt+Z/Strg+Y im Editor: eigener Verlauf (v1.10)
   if(App.deskKey(ev)){ ev.preventDefault(); return; }
   if(App.dialogKey(ev)){ ev.preventDefault(); return; }
   if(ev.key==='Escape'){ App.closeMenus(); App.closeHelp(); App.selCancel(); return; }

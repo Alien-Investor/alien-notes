@@ -129,6 +129,10 @@ Schlüsselableitung schafft, und schlägt eine passende Argon2-Stufe vor.
   wenn dabei etwas gekürzt würde.
 - **Kein Speichern-Knopf.** Die App speichert beim Tippen (nach 1,5 s Ruhe) und beim Verlassen der Notiz — verschlüsselt, jedes Mal
   die ganze Datei. Der Titel darf leer bleiben, dann dient die erste Zeile als Titel.
+- **Rückgängig und Wiederholen beim Bearbeiten** (seit 1.10): ↶ und ↷ oben im Editor nehmen bis zu 50 Schritte der offenen Notiz zurück
+  und holen sie wieder, auch einen mit ✕ entfernten Checklisten-Eintrag. Bei sehr langen Notizen sind es weniger. Der Verlauf liegt nur im
+  Arbeitsspeicher; Schließen, eine andere Notiz und Sperren löschen ihn. Mit Tastatur (am Desktop oder am Handy angesteckt) laufen Strg+Z,
+  Strg+Umschalt+Z und Strg+Y über denselben Verlauf.
 - **Markdown-Ansicht je Notiz** (Schalter, ab Werk aus): Überschriften (`#` bis `###`), **fett**, *kursiv*, Listen, Kästchen (`- [ ]`,
   `- [x]`), Code, Trennlinien. Eigene kleine Untermenge, kein Fremd-Renderer, kein HTML, Links bleiben bewusst reiner Text — die App hat
   ohnehin kein Netz. Ein Spickzettel im Editor zeigt „so tippen → so sieht es aus“ und fügt auf Wunsch eine Beispielnotiz ein.

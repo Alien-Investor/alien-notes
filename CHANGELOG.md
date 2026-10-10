@@ -1,5 +1,37 @@
 # Changelog — Alien Notes
 
+## v1.10 — 2026-10-10
+
+Rückgängig und Wiederholen mit eigenen Knöpfen. Keine Änderung an Datei-Format, Verschlüsselung, Berechtigungen oder Daten.
+- **Knöpfe ↶ und ↷:** Oben im Editor, rechts in der Zeile mit der Überschrift („Neue Notiz“, „Notiz bearbeiten“ …), nehmen sie die letzten
+  Änderungen der offenen Notiz zurück und holen sie wieder. Die Zeile bleibt beim Scrollen oben stehen, auch bei langen Checklisten. Ein Tipp darauf
+  lässt die Tastatur am Handy offen. Die App rollt geänderten Text ins Bild, und steht der Cursor im Editor, springt er dorthin (in der
+  Markdown-Ansicht und bei Haken oder Schaltern rollt sie nicht). Verschiebt sich dabei die Kopfzeile selbst, weil sie noch nicht oben angeheftet
+  ist, nimmt die App gut eine halbe Sekunde lang nur Tipps auf die Kopfzeile an — sonst träfe ein schneller zweiter Tipp auf ↶ das, was gerade unter
+  den Finger gerollt ist.
+- **Was ein Schritt ist:** Getipptes zählt bis zu einer Pause von einer Sekunde als ein Schritt. Ein Wechsel in ein anderes Feld, ein versetzter
+  Cursor, überschriebener markierter Text und Enter im Notiztext beginnen einen neuen. Jede andere Änderung ist ein Schritt für sich: ein mit ✕
+  entfernter Eintrag (er kommt samt Haken an seine Stelle zurück), ein Haken, das Teilen eines Eintrags mit Enter, Einfügen und Ausschneiden, Verschieben per Ziehen,
+  „+ Zeile“, „Erledigte nach unten“, „Haken zurücksetzen“, der Wechsel zwischen Notiz und Checkliste, „Datum einfügen“, „Beispiel einfügen“, eine
+  Kategorie aus der Liste und die Schalter „Oben anheften“, „Favorit“, „Keine Vorschau“ und „Markdown-Ansicht“.
+- **Nur im Arbeitsspeicher, nur für die offene Notiz:** bis zu 50 Schritte, bei sehr langen Notizen weniger. Schließen, das Öffnen einer anderen
+  Notiz und Sperren löschen den Verlauf. Er landet nie in der Datei oder im Backup.
+- **Strg+Z, Strg+Umschalt+Z und Strg+Y** (am Desktop oder mit angesteckter Tastatur am Handy) laufen über denselben Verlauf. Damit wirkt Rückgängig
+  auch nach dem Teilen, Einfügen oder „Datum einfügen“ wieder — v1.9 hatte es dort gesperrt, weil der Browser die von der App gesetzten Werte nicht kannte.
+  Bei offener Rückfrage, offenem Handbuch und auf dem Sperrbildschirm nimmt Strg+Z nichts zurück.
+- **Desktop:** Ein Klick auf die Zeile der gerade offenen Notiz in der Liste lässt sie offen, statt sie neu zu laden (sonst wäre ihr Verlauf weg).
+- **Speichern nach dem Zurücksetzen** (Fund aus dem internen Release-Audit, im Kern schon vor v1.10): Wer eine Notiz genau auf den Stand beim Öffnen
+  zurücksetzte, während die App gerade die vorige Änderung schrieb, und sie dann sofort schloss oder sperrte, behielt in der Datei den zurückgenommenen
+  Stand. Jetzt wird gespeichert, was
+  zu sehen ist.
+- **Speichern nach einem Fehler** (zwei Funde aus dem internen Release-Audit, beide schon vor v1.10): Scheiterte bei einer neuen Notiz ein
+  Speichervorgang, während schon der nächste lief (etwa bei vollem Speicher), konnte die App sie danach ein zweites Mal anlegen. Und scheiterten
+  zwei Speichervorgänge, die sich überschnitten, konnte sie einen Stand für gespeichert halten, den die Datei nie erhalten hatte; wer per ↶ genau
+  dorthin zurückging, verlor ihn beim Schließen. Jetzt legt sie die Notiz nur neu an, wenn sie wirklich fehlt, und schreibt nach einem Fehler beim
+  nächsten Mal in jedem Fall.
+- **Desktop — Markierungen** (Fund aus dem internen Release-Audit, schon seit v1.8): Die App hielt das zuletzt benutzte Eingabefeld samt Text bis zur
+  nächsten Taste oder zum nächsten Mausklick im Arbeitsspeicher fest, auch über Schließen und Sperren hinaus. Jetzt lässt sie es nach jeder Meldung los.
+
 ## v1.9 — 2026-10-09
 
 Lange Einträge in Checklisten und mehr Komfort bei der Mehrfachauswahl. Keine Änderung an Datei-Format, Verschlüsselung, Berechtigungen

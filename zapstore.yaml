@@ -32,6 +32,10 @@ description: |
     switch a note between the two — lines become entries and back, with a warning whenever something would be shortened
   - No save button: the app saves as you type (after 1.5 s) and when you leave the note — encrypted, the whole file every time;
     the title may stay empty, the first line then serves as the title
+  - Undo and redo while editing (since 1.10): ↶ and ↷ at the top of the editor take back up to 50 steps of the open note (fewer for
+    very long notes) and bring them back, including a checklist entry removed with ✕; the history lives only in memory, closing the
+    note, opening another one and locking clear it; with a keyboard (desktop, or attached to the phone) Ctrl+Z, Ctrl+Shift+Z and
+    Ctrl+Y use the same history
   - Markdown preview per note (off by default): headings, bold, italic, lists, boxes, code, rules — a small own subset, no third-party
     renderer, no HTML, links stay plain text; a cheat sheet in the editor shows "type this → looks like this"
   - Categories like folders (filter chips, suggestions, rename a category with all its notes), favourites, pinned notes, search across title,

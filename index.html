@@ -69,6 +69,21 @@ html.desk .no-desk{display:none;}
 .cheat-row .cheat-done{text-decoration:line-through;color:var(--text-dim);}
 .cheat-row .cheat-code{background:rgba(0,255,204,.1);padding:1px 5px;border-radius:3px;font-size:.88em;}
 .cheat-row .cheat-hr{flex:1;border-top:1px solid var(--neon-mid);}
+/* Editor-Kopfzeile (v1.10): Titel + ↶/↷, bleibt beim Scrollen oben stehen (Handy: Fenster, Desktop: rechte Spalte) — deckt die Kartenpolster mit ab */
+.ed-head{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:-10px -18px 6px;padding:10px 18px 8px;background:var(--card-bg);}
+.ed-head h2{margin:0;min-width:0;}
+/* fokussierte Felder nie unter der Kopfzeile (Umschalt+Tab, focus()): Abstand fürs Hineinrollen (c-2) — nur solange der Editor offen ist und nur so hoch wie die
+   Kopfzeile (höher: im Streifen darunter brach Markieren per Maus ab, Runde 2 c2-4). Seite am Handy und im schmalen Desktop-Fenster; im zweispaltigen Desktop
+   rollt die eigene Spalte #tab-add (dort, nicht an der Seite: die Seite rollte sonst beim Klick in den Titel nach, Markieren per Maus brach ab) */
+html:has(#tab-add:not(.hidden)){scroll-padding-top:3.25rem;}
+.ed-hist{display:inline-flex;gap:8px;flex:none;}
+.hist-btn{width:38px;height:32px;padding:0;color:var(--neon);}
+.hist-btn::before{content:'';width:18px;height:18px;background:currentColor;-webkit-mask:var(--ico) center/contain no-repeat;mask:var(--ico) center/contain no-repeat;}
+.hist-btn.undo{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 14L4 9l5-5'/%3E%3Cpath d='M4 9h10.5a5.5 5.5 0 0 1 0 11H11'/%3E%3C/svg%3E");}
+.hist-btn.redo{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 14l5-5-5-5'/%3E%3Cpath d='M20 9H9.5a5.5 5.5 0 0 0 0 11H13'/%3E%3C/svg%3E");}
+.hist-btn:disabled,.hist-btn[aria-disabled="true"]{color:var(--text-dim);}
+.hist-btn[aria-disabled="true"]{opacity:.5;cursor:default;box-shadow:none;}
+.hist-btn:disabled:hover,.hist-btn[aria-disabled="true"]:hover{border-color:var(--border);}
 /* Checkliste im Editor: Kästchen (Kit) + Textfeld + Entfernen. Textfeld seit v1.9 eine <textarea rows=1>, die mit dem Text wächst (lange Punkte brechen um
    statt seitwärts zu scrollen); Kästchen und ✕ bleiben oben an der ersten Zeile. */
 .crow{display:flex;gap:8px;margin-bottom:6px;align-items:flex-start;}
@@ -102,7 +117,8 @@ html.desk .no-desk{display:none;}
   html.desk #tab-list{display:grid;grid-template-columns:minmax(360px,460px) minmax(0,1fr);gap:18px;align-items:start;}
   html.desk #tab-list>.card{margin:0;}
   html.desk #tab-add,html.desk .detail-empty{grid-column:2;grid-row:1;}
-  html.desk #tab-add{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto;}
+  html.desk #tab-add{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto;scroll-padding-top:3.25rem;}
+  html.desk:has(#tab-add:not(.hidden)){scroll-padding-top:0;}
   html.desk #tab-add>.card{margin:0;}
   html.desk #tab-add #f-body,html.desk #tab-add .md{min-height:50vh;}
   html.desk .detail-empty{display:flex;align-items:center;justify-content:center;min-height:260px;border:1px dashed var(--border);border-radius:4px;color:var(--text-dim);font-size:.85rem;letter-spacing:1px;}
@@ -229,7 +245,14 @@ html.desk .no-desk{display:none;}
     <!-- EDITOR (Notiz / Checkliste, Autosave — kein Speichern-Knopf) -->
     <div id="tab-add" class="tabview hidden">
       <div class="card">
-        <h2 id="add-title">Neue Notiz</h2>
+        <!-- Kopfzeile läuft beim Scrollen mit (v1.10): ↶/↷ = eigener Verlauf der offenen Notiz, nimmt den Fokus nicht (mousedown in der Delegation) -->
+        <div class="ed-head">
+          <h2 id="add-title">Neue Notiz</h2>
+          <span class="ed-hist">
+            <button id="ed-undo" class="btn sm ghost icon hist-btn undo" type="button" data-action="histUndo" title="Rückgängig" aria-label="Rückgängig" disabled></button>
+            <button id="ed-redo" class="btn sm ghost icon hist-btn redo" type="button" data-action="histRedo" title="Wiederholen" aria-label="Wiederholen" disabled></button>
+          </span>
+        </div>
         <div class="seg" id="f-type-seg">
           <button id="ft-text" class="on" type="button" data-action="changeEntryType" data-arg="text" data-i18n="type.text">Notiz</button>
           <button id="ft-list" type="button" data-action="changeEntryType" data-arg="list" data-i18n="type.list">Checkliste</button>
@@ -267,9 +290,9 @@ html.desk .no-desk{display:none;}
         </div>
         <div class="ed-foot"><span id="ed-count"></span><span id="ed-meta"></span></div>
         <div class="ed-opts">
-          <label class="chk"><input type="checkbox" id="f-pinned" data-change="editorChanged"> <span data-i18n="f.pinned">Oben anheften</span></label>
-          <label class="chk"><input type="checkbox" id="f-fav" data-change="editorChanged"> <span data-i18n="f.fav">Favorit</span></label>
-          <label class="chk" title="Die Liste zeigt nur den Titel"><input type="checkbox" id="f-hide" data-change="editorChanged"> <span data-i18n="f.hide">Keine Vorschau</span></label>
+          <label class="chk"><input type="checkbox" id="f-pinned" data-change="optChanged"> <span data-i18n="f.pinned">Oben anheften</span></label>
+          <label class="chk"><input type="checkbox" id="f-fav" data-change="optChanged"> <span data-i18n="f.fav">Favorit</span></label>
+          <label class="chk" title="Die Liste zeigt nur den Titel"><input type="checkbox" id="f-hide" data-change="optChanged"> <span data-i18n="f.hide">Keine Vorschau</span></label>
           <span id="f-md-wrap" class="cheat-wrap"><label class="chk"><input type="checkbox" id="f-md" data-change="mdToggle"> <span data-i18n="f.md">Markdown-Ansicht</span></label>
             <button id="md-cheat-btn" class="btn sm ghost icon cheat-btn" type="button" data-action="mdCheat" aria-label="Markdown-Spickzettel" title="Markdown-Spickzettel">?</button></span>
         </div>
@@ -493,7 +516,7 @@ html.desk .no-desk{display:none;}
       <li><strong>Zwischenablage:</strong> Kopierte Notizen sind für KDE als Passwort markiert — Klipper nimmt sie nicht in den Verlauf. Andere Zwischenablage-Verwalter beachten die Markierung nicht unbedingt. Die App leert die Zwischenablage nach der eingestellten Zeit auch im Hintergrund, beim Sperren und beim Beenden, aber nur, wenn noch ihre eigene Kopie drin ist. Dasselbe gilt für Text, den du in der App markierst, mit Maus oder Tastatur, auch per Tab in ein gefülltes Passphrase-Feld (unter Linux sofort per Mittelklick einfügbar). Klipper kann jede Kopie zusätzlich in diese Mittelklick-Auswahl spiegeln (Einstellung „Auswahl und Zwischenablage synchronisieren“) — die App löscht sie dort mit. Markierter Text trägt die KDE-Markierung nicht: Wer in Klipper die Auswahl in den Verlauf übernehmen lässt, sollte das abschalten. Strg+C und Strg+X in der App kopieren wie der Kopier-Knopf.</li>
       <li><strong>Abgleich mit dem Handy:</strong> auf dem Handy „Backup erstellen“ in einen Syncthing-Ordner, am Desktop unter Sicherung importieren — und umgekehrt. Siehe „Backup &amp; Sync“.</li>
       <li><strong>Sperren:</strong> nach Inaktivität und wenn das Fenster länger als die eingestellte Zeit minimiert oder versteckt war — bei „sofort“ direkt beim Minimieren (Einstellung „Sperren im Hintergrund“; „Hintergrund“ heißt hier minimiert oder versteckt; ein Wechsel zu einem anderen Fenster zählt nicht, leert aber getippte Passphrasen und PINs). Bei <strong>Bildschirmsperre und Ruhezustand sperrt die Desktop-App nicht von selbst</strong> — im Flatpak erfährt sie davon nichts. Deshalb die Sperre des Systems nutzen und bei Bedarf eine kurze Inaktivitäts-Sperre einstellen; Strg+L sperrt sofort.</li>
-      <li><strong>Tastatur:</strong> Strg+F Suche, Strg+N neue Notiz, Strg+S Notiz fertig (speichern und schließen), Strg+L sperren, Esc schließt. Ab etwa 1000 Pixel Fensterbreite stehen Liste und Notiz nebeneinander.</li>
+      <li><strong>Tastatur:</strong> Strg+F Suche, Strg+N neue Notiz, Strg+S Notiz fertig (speichern und schließen), Strg+Z / Strg+Umschalt+Z rückgängig / wiederholen in der offenen Notiz, Strg+L sperren, Esc schließt. Ab etwa 1000 Pixel Fensterbreite stehen Liste und Notiz nebeneinander.</li>
       <li><strong>Ehrliche Grenzen:</strong> Die Desktop-App bringt ihre Browser-Engine (Electron) selbst mit — Sicherheits-Updates dafür kommen nur mit einer neuen Version der App, nicht über das System. Kein Schutz vor Bildschirmfotos (Linux kennt keine Sperre dafür). Unter X11 kann jedes laufende Programm Tastatur und Zwischenablage mitlesen; Wayland trennt Programme besser. Kein Fingerabdruck.</li>
     </ul>
     <h2 data-i18n="help.h2">Erste Schritte</h2>
@@ -501,6 +524,7 @@ html.desk .no-desk{display:none;}
       <li><strong>Passphrase wählen</strong> — mindestens 12 Zeichen, besser sechs Würfelwörter (der Vorschlag-Knopf baut sie aus der EFF-Liste). Aufschreiben und sicher verwahren.</li>
       <li><strong>+</strong> legt eine Notiz an. Der Titel darf leer bleiben — dann dient die erste Zeile des Textes als Titel. Einen Speichern-Knopf gibt es nicht: Die App speichert beim Tippen und beim Verlassen der Notiz.</li>
       <li><strong>Checklisten:</strong> Schalte eine Notiz auf „Checkliste“ — jede Zeile wird ein Eintrag mit Kästchen; „Erledigte nach unten“ sortiert abgehakte Einträge ans Ende. Zurückschalten macht aus den Einträgen „- [ ] …“- bzw. „- [x] …“-Zeilen. Lange Einträge brechen um. Enter beginnt einen neuen Eintrag (mitten im Text teilt es ihn), eingefügter Text mit mehreren Zeilen wird zu mehreren Einträgen.</li>
+      <li><strong>Rückgängig ↶ / Wiederholen ↷:</strong> Die Knöpfe oben im Editor nehmen die letzten Änderungen der offenen Notiz zurück und holen sie wieder. Getipptes zählt bis zu einer kurzen Pause als ein Schritt, jede andere Änderung einzeln, auch ein mit ✕ entfernter Eintrag, ein Haken, Sortieren oder der Wechsel zwischen Notiz und Checkliste. Bis zu 50 Schritte (bei sehr langen Notizen weniger), nur solange die Notiz offen ist: Schließen und Sperren löschen den Verlauf. Mit Tastatur: Strg+Z und Strg+Umschalt+Z (oder Strg+Y).</li>
       <li><strong>Kategorien</strong> wirken wie Ordner: frei eintippen (Vorschläge aus vorhandenen). Die Liste filtert über die Chips oben; der ★-Chip zeigt nur Favoriten, der ☐-Chip nur Checklisten mit offenen Einträgen (beide lassen sich mit einer Kategorie kombinieren). Angeheftete Notizen stehen immer ganz oben. <strong>Keine Vorschau:</strong> das Kästchen im Editor lässt die Liste nur den Titel zeigen — gegen Mitleser über die Schulter. <strong>Umbenennen:</strong> Kategorie-Chip antippen, dann den Stift ✎ daneben — alle Notizen dieser Kategorie ziehen um (auch im Papierkorb); leerer Name heißt „ohne Kategorie“.</li>
       <li><strong>Mehrere auf einmal:</strong> der ☑-Knopf neben dem Papierkorb blendet Kästchen ein; Zeilen antippen wählt sie (Suche und Chips wirken weiter, „Alle“ nimmt jede gezeigte Zeile; bereits gewählte bleiben gewählt, auch wenn ein Filter sie ausblendet). Die Leiste unten legt die gewählten Notizen in den Papierkorb (ein „Rückgängig“ für alle, höchstens 200 auf einmal — so viele fasst der Papierkorb), setzt eine Kategorie (vorhandene stehen gleich zur Auswahl, eine neue einfach eintippen) oder den Favoriten-Stern.</li>
       <li><strong>Darstellung:</strong> Unter Einstellungen → Darstellung gibt es Schwarz/Soft und drei Schriftgrößen. Beides gilt für dieses Gerät — steht nicht in der Datei, nicht im Backup.</li>
