@@ -221,7 +221,8 @@ Schlüsselableitung schafft, und schlägt eine passende Argon2-Stufe vor.
   Renderer ohne Node, Electron-Fuses, keine Fernsteuerung, keine DevTools. Zwischenablage: Kopiertes ist für KDE als Passwort markiert (Klipper
   nimmt es nicht in den Verlauf, unter Plasma geprüft); die App löscht nur ihre eigene Kopie und in der App markierten Text (unter Linux per
   Mittelklick einfügbar) — nach der eingestellten Zeit, beim Sperren und beim Beenden. Klipper kann jede Kopie zusätzlich in die Mittelklick-Auswahl
-  spiegeln (Einstellung „Auswahl und Zwischenablage synchronisieren“); die App löscht sie seit 1.8 auch dort. Markierter Text trägt die
+  spiegeln (Einstellung „Auswahl und Zwischenablage synchronisieren“); die App löscht sie seit 1.8 auch dort. Strg+A markiert seit 1.11 nur den
+  Inhalt eines gefüllten Feldes oder in der Markdown-Ansicht die offene Notiz, nie die ganze Seite. Markierter Text trägt die
   KDE-Markierung nicht: Wer in Klipper die Auswahl in den Verlauf übernehmen lässt, sollte das abschalten. Grenzen: eigene Browser-Engine (Electron 44, Updates nur mit neuer
   App-Version), **kein Schutz vor Bildschirmfotos**, unter X11 kann jedes Programm Tastatur und Zwischenablage mitlesen, **bei Bildschirmsperre
   und Ruhezustand sperrt die App nicht von selbst** (Strg+L sperrt sofort), kein Fingerabdruck.

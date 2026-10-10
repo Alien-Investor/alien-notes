@@ -16,7 +16,7 @@ const FONT_KEY='ai-notes-font', FONT_SIZES=['m','l','xl'];
    ============================================================ */
 const LS_KEY = 'ai-notes-vault';
 const LANG_KEY = 'ai-notes-lang';
-const APP_VERSION = '1.10';   // Anzeige in den Einstellungen; muss VERSION_NAME entsprechen (build-www.sh setzt es aus VERSION, roundtrip-test.mjs prüft es)
+const APP_VERSION = '1.11';   // Anzeige in den Einstellungen; muss VERSION_NAME entsprechen (build-www.sh setzt es aus VERSION, roundtrip-test.mjs prüft es)
 
 /* ===== KIT: i18n — Deutsch ist Quelle im HTML (data-i18n / data-i18n-html / data-i18n-ph), Englisch im I18N-Dict,
    dynamische Texte per tr(key,{params}) aus T {de,en}. ===== */
@@ -89,7 +89,7 @@ const I18N = {
   "set.pinDisable":"Discard PIN",
   "d.pick":"Select a note on the left or create a new one",
   "help.hDesk":"Desktop version (Linux)",
-  "help.lDesk":"<li><strong>No network — enforced by the system:</strong> the desktop app runs as a Flatpak without network permission; inside the sandbox there is no connection to the outside. On top of that the app itself blocks every connection. Check: <code>flatpak info --show-permissions org.alieninvestor.notes</code> — there is no <code>network</code>.</li><li><strong>Notes file:</strong> <code>~/.var/app/org.alieninvestor.notes/data/alien-notes/notes.ainv</code> — encrypted, readable only by you, rewritten completely on every change (never half-written). The app sees no other files: backup and import go through the system file dialog, which only grants the chosen file.</li><li><strong>Clipboard:</strong> copied notes are marked as a password for KDE — Klipper keeps them out of its history. Other clipboard managers may ignore the mark. The app clears the clipboard after the set time, also in the background, on lock and on quit, but only if its own copy is still there. The same applies to text you select in the app, with mouse or keyboard, including Tab into a filled passphrase field (on Linux instantly pasteable with a middle click). Klipper can mirror every copy into this middle-click selection as well (setting “Keep the selection and clipboard the same”) — the app clears it there too. Selected text does not carry the KDE mark: if Klipper is set to keep the selection in its history, turn that off. Ctrl+C and Ctrl+X in the app copy like the copy button.</li><li><strong>Syncing with the phone:</strong> on the phone “Create backup” into a Syncthing folder, on the desktop import it under Backup — and the other way round. See “Backup &amp; Sync”.</li><li><strong>Locking:</strong> after inactivity and when the window has been minimised or hidden for longer than the chosen time — with “immediately” right when minimising (setting “Lock in background”; “background” here means minimised or hidden; switching to another window does not count, but it clears typed passphrases and PINs). On <strong>screen lock and suspend the desktop app does not lock by itself</strong> — inside the Flatpak it is not told. So use the system lock and, if you want, a short inactivity lock; Ctrl+L locks immediately.</li><li><strong>Keyboard:</strong> Ctrl+F search, Ctrl+N new note, Ctrl+S finish the note (save and close), Ctrl+Z / Ctrl+Shift+Z undo / redo in the open note, Ctrl+L lock, Esc closes. From about 1000 pixels window width, list and note sit side by side.</li><li><strong>Honest limits:</strong> the desktop app ships its own browser engine (Electron) — security updates for it only arrive with a new app version, not through the system. No protection against screenshots (Linux has no way to block them). Under X11 every running program can read keyboard and clipboard; Wayland separates programs better. No fingerprint.</li>",
+  "help.lDesk":"<li><strong>No network — enforced by the system:</strong> the desktop app runs as a Flatpak without network permission; inside the sandbox there is no connection to the outside. On top of that the app itself blocks every connection. Check: <code>flatpak info --show-permissions org.alieninvestor.notes</code> — there is no <code>network</code>.</li><li><strong>Notes file:</strong> <code>~/.var/app/org.alieninvestor.notes/data/alien-notes/notes.ainv</code> — encrypted, readable only by you, rewritten completely on every change (never half-written). The app sees no other files: backup and import go through the system file dialog, which only grants the chosen file.</li><li><strong>Clipboard:</strong> copied notes are marked as a password for KDE — Klipper keeps them out of its history. Other clipboard managers may ignore the mark. The app clears the clipboard after the set time, also in the background, on lock and on quit, but only if its own copy is still there. The same applies to text you select in the app, with mouse or keyboard, including Tab into a filled passphrase field (on Linux instantly pasteable with a middle click). Klipper can mirror every copy into this middle-click selection as well (setting “Keep the selection and clipboard the same”) — the app clears it there too. Selected text does not carry the KDE mark: if Klipper is set to keep the selection in its history, turn that off. Ctrl+C and Ctrl+X in the app copy like the copy button.</li><li><strong>Syncing with the phone:</strong> on the phone “Create backup” into a Syncthing folder, on the desktop import it under Backup — and the other way round. See “Backup &amp; Sync”.</li><li><strong>Locking:</strong> after inactivity and when the window has been minimised or hidden for longer than the chosen time — with “immediately” right when minimising (setting “Lock in background”; “background” here means minimised or hidden; switching to another window does not count, but it clears typed passphrases and PINs). On <strong>screen lock and suspend the desktop app does not lock by itself</strong> — inside the Flatpak it is not told. So use the system lock and, if you want, a short inactivity lock; Ctrl+L locks immediately.</li><li><strong>Keyboard:</strong> Ctrl+F search, Ctrl+N new note, Ctrl+S finish the note (save and close), Ctrl+Z / Ctrl+Shift+Z undo / redo in the open note, Ctrl+A only selects the content of a filled-in field or, in the Markdown view, the open note, Ctrl+L lock, Esc closes. From about 1000 pixels window width, list and note sit side by side.</li><li><strong>Honest limits:</strong> the desktop app ships its own browser engine (Electron) — security updates for it only arrive with a new app version, not through the system. No protection against screenshots (Linux has no way to block them). Under X11 every running program can read keyboard and clipboard; Wayland separates programs better. No fingerprint.</li>",
   "help.hPin":"Quick unlock with a PIN (desktop)",
   "help.pPin":"Optionally a PIN replaces the passphrase after a lock (Settings → Quick unlock with a PIN). <strong>How it works:</strong> when you set it up, the app wraps a copy of the data key under a key derived from your PIN (Argon2id, same parameters as the notes file) and keeps that copy <em>in memory only</em>. A lock through inactivity or the background clears the session as before, but that wrapped copy stays; the PIN opens it again. Nothing of it is written to disk, the notes file stays unchanged and backups carry none of it. Quitting the app removes the copy, and after 24 hours at the latest the app discards it itself: the next start asks for the passphrase. <strong>What it costs:</strong> six digits are a tiny search space. With the file's Argon2 parameters an ordinary CPU tries them all in a few hours, a single graphics card in roughly ten minutes — never enough to protect the file, each extra digit only multiplies the effort by ten. The PIN only protects that copy in memory. With a PIN, “locked” therefore no longer means “key wiped from memory”: whoever can read the memory of the running program holds the wrapped key and can try PINs offline — the three attempts are a rule in the code, not a cryptographic limit. <strong>What discards the PIN:</strong> three wrong attempts, a passphrase change, deleting the notes, an altered or swapped notes file, the end of the 24 hours, and quitting the app. <strong>The deliberate bolt:</strong> “Lock now” (Ctrl+L) keeps the PIN but demands the passphrase once — afterwards the PIN applies again. If you share the computer with others or have unencrypted swap, leave the PIN off.",
   "set.bioTitle":"Fingerprint unlock (Android)",
@@ -937,6 +937,8 @@ const App = (function(){
   let editId=null, editing=false, formType='text', mdMode='edit', search='', catFilter=null, favFilter=false, openFilter=false;   // openFilter: nur Checklisten mit offenen Einträgen (v1.1 Punkt 5)
   let selMode=false, selIds=new Set(), shownIds=[];   // Mehrfachauswahl (v1.1 Punkt 8): nur im RAM, Sperre räumt ab; shownIds = zuletzt gezeigte Zeilen (für „Alle“)
   let flushSelAll=null;   // Desktop: meldet ein noch offenes Strg+A (keyup fehlt, weil per Maus ins andere Fenster gewechselt wurde) — Release-Audit v1.9 Runde 2 a2-5
+  // Desktop: meldet die aktuelle Markierung sofort an die Hülle (gesetzt im Zwischenablage-Block, nur mit DESK) — für Strg+A in deskKey (a2-1, wie Alien Pass v1.21)
+  let reportSel=null;
   let clipTimer=null, clipOwnedAt=0, clipCopied=false, clipGateSel=false, failCount=0, lockedUntil=0, pendingImport=null, kdfTouched=false;
   let pendingUnlock=null, pendingSecret=null, pendingOtpauth='';   // Aegis-Hürde: Schlüssel warten auf den Code / Einrichtung läuft
   let bioGen=0;             // Generation ALLER Pforten (Alien Pass v1.8): jede Sperre erhöht sie, laufende Pforten verwerfen ihr Ergebnis
@@ -1896,6 +1898,7 @@ const App = (function(){
       if(p&&p.then) p.then(()=>{ if(!clipOwnedAt) armClip(); },()=>{}); };
     // selFrom nach jeder Meldung loslassen: sonst hielt es nach Schließen/Sperren ein losgelöstes Editorfeld samt Text (Release-Audit v1.10 a-2)
     const onSel=()=>{ const t=selText(); report(t,selFrom); selFrom=null; };
+    reportSel=onSel;
     document.addEventListener('mouseup',onSel);
     // Strg+C auf Markiertem: nicht Chromium kopieren lassen (ohne KDE-Hinweis, ohne Löschen → Klipper-Verlauf), sondern über die Brücke
     document.addEventListener('copy',ev=>{ const t=selText(); selFrom=null; if(!t) return; ev.preventDefault(); copyText(t,'what.sel'); });
@@ -1910,7 +1913,8 @@ const App = (function(){
     // auch über die Sperre (Release-Audit v1.9 Runde 1, Befund a-1; v1.9 lässt Strg+A zudem im Dialog durch). Deshalb merkt sich das Capture-keydown
     // ein Strg+A, und das nächste keyup (egal welcher Taste) meldet.
     let selAllUp=false;
-    document.addEventListener('keyup',ev=>{ if(selAllUp||ev.shiftKey||ev.key==='Shift'||((ev.ctrlKey||ev.metaKey)&&(ev.key||'').toLowerCase()==='a')){ selAllUp=false; onSel(); } });
+    // Strg+A auch am Tastencode 65: bei nicht-lateinischer Belegung ist ev.key „ф“/„α“, Chromium markiert trotzdem (Alien Pass Audit run-11 a-1/b-1)
+    document.addEventListener('keyup',ev=>{ if(selAllUp||ev.shiftKey||ev.key==='Shift'||((ev.ctrlKey||ev.metaKey)&&((ev.key||'').toLowerCase()==='a'||ev.keyCode===65))){ selAllUp=false; onSel(); } });
     flushSelAll=()=>{ if(selAllUp){ selAllUp=false; onSel(); } };
     // Rückgängig/Wiederholen holt in einem Eingabefeld eine überschriebene Markierung zurück, und Chromium legt sie in PRIMARY — ohne Taste, die sie meldet
     // (gemessen 09.10.2026 in der echten Hülle, Electron 44.7.0: Titelfeld, Markierung per Umschalt+Pfeil, überschrieben, Strg+Z → wieder in PRIMARY, Frist
@@ -1928,7 +1932,7 @@ const App = (function(){
     // Vor jeder Taste synchron (Capture, vor der Standardaktion): Weitertippen klappt die Markierung zusammen, PRIMARY behält sie aber — Blink zieht Eingaben
     // dem Timer vor, bei Auto-Type kam die Taste sonst vor der focusin-Meldung (Pass-Audit Runde 3)
     // Strg+F ebenso: deskKey markiert per select() den Suchbegriff, Chromium legt ihn in PRIMARY — im schon fokussierten Suchfeld ohne focusin (R3a-2)
-    document.addEventListener('keydown',ev=>{ if((ev.ctrlKey||ev.metaKey)&&/^[af]$/.test((ev.key||'').toLowerCase())) selAllUp=true; onSel(); },true);
+    document.addEventListener('keydown',ev=>{ if((ev.ctrlKey||ev.metaKey)&&(/^[af]$/.test((ev.key||'').toLowerCase())||ev.keyCode===65)) selAllUp=true; onSel(); },true);
   }
   const BIO = (isNative && CAP.Plugins && CAP.Plugins.Biometric) ? CAP.Plugins.Biometric : null;   // Fingerabdruck-Plugin (patch-hardening.mjs), Web: kein Slot
   const SEC = (isNative && CAP.Plugins && CAP.Plugins.SecureScreen) ? CAP.Plugins.SecureScreen : null;   // FLAG_SECURE zur Laufzeit (patch-hardening.mjs)
@@ -2269,7 +2273,24 @@ const App = (function(){
   function deskKey(ev){
     if(!DESK||!ev.ctrlKey||ev.altKey||ev.shiftKey||ev.metaKey) return false; const k=(ev.key||'').toLowerCase();
     if(k==='l'&&(DEK||pendingUnlock)){ lockNow(); return true; }
-    // Offene Rückfrage: kein Strg+N/F/S daran vorbei; alle anderen Strg-Tasten (Einfügen, Alles markieren, Rückgängig, Wortsprung) wirken normal im
+    // Strg+A übernimmt in der Hülle IMMER die App — Chromiums „Alles markieren“ läuft nie (a2-1, Release-Audit v1.10 run-8, gemessen 10.10.2026 in der echten
+    // Hülle; Regel wie Alien Pass v1.21, dort Audit run-11). Außerhalb eines Textfelds (Fokus nirgends, Knopf, Kästchen, Notizzeile) markierte es die GANZE
+    // Seite — Titel und Vorschau ALLER Notizen samt offener Notiz —, und Chromium legt das in PRIMARY, lesbar für jedes X11-Programm. Chromium markiert dort,
+    // wo die AUSWAHL liegt, nicht wo der Fokus ist (Pass run-11 c-1): auch mit Fokus in einem Feld, leer ODER gefüllt, wenn keine Range darin liegt (Harness
+    // gegen v1.10, Audit run-9 `mutanten*.log`; per Bedienung in Notes nicht nachgestellt) — darum keine Fallunterscheidung nach Chromiums Verhalten: immer sperren. Im GEFÜLLTEN Textfeld (Titel, Notiztext, Punkte, Suche, Dialog-, Passphrase-
+    // und PIN-Felder) markiert die App das Feld selbst per select() — im keydown, also im Eingabeereignis, das PRIMARY erreicht. Ist eine Notiz in der
+    // Markdown-Ansicht offen und liegt der Fokus in keinem Textfeld, markiert sie NUR die Ansicht (Entscheidung Nutzer 10.10.2026). Sonst nichts (leeres Feld,
+    // Liste, Papierkorb, Einstellungen, Hilfe, gesperrt, Rückfrage). Ein gefülltes Feld wird immer markiert, auch hinter dem offenen Handbuch (per Tab
+    // erreichbar, wird gemeldet) — eine Sperre dort sperrte auch das Feld einer Rückfrage über dem Handbuch (Audit run-9 a-3 → c-1, wieder wie Alien Pass). Erkannt am Tastencode 65 wie in Chromium, nicht nur am Zeichen (kyrillisch „ф“, griechisch „α“).
+    if(k==='a'||ev.keyCode===65){ const a=document.activeElement, feld=a&&((a.tagName==='INPUT'&&typeof a.selectionStart==='number')||a.tagName==='TEXTAREA'), v=$('md-view');
+      if(feld&&a.value.length>0) a.select();
+      else if(!feld&&DEK&&editing&&mdMode==='view'&&!dlgResolve&&helpClosed()&&v&&!v.classList.contains('hidden')&&v.firstChild) window.getSelection().selectAllChildren(v);
+      else return true;
+      // Sofort melden, nicht erst im keyup: wer Strg VOR dem A loslässt, schickt ein keyup ohne Strg — selAllUp meldet dann erst beim nächsten keyup
+      // (Release-Audit v1.9 a-1), wie Alien Pass v1.21 (run-11 e-3). Das zweite Melden im keyup verdrängt nichts (gleicher Hash im Ring).
+      if(reportSel) reportSel();
+      return true; }
+    // Offene Rückfrage: kein Strg+N/F/S daran vorbei; alle anderen Strg-Tasten (Einfügen, Rückgängig, Wortsprung; Strg+A siehe oben) wirken normal im
     // Eingabefeld — vorher schluckte die Weiche jede, im Kategorie-Feld ging Strg+V nicht (Querfund Alien Pass v1.20, Review N-3)
     if(dlgResolve) return k==='n'||k==='f'||k==='s';
     if(!DEK) return false;

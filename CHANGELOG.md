@@ -1,5 +1,19 @@
 # Changelog — Alien Notes
 
+## v1.11 — 2026-10-10
+
+Sicherheitskorrektur für die Desktop-Fassung (Linux). Keine Änderung an Datei-Format, Verschlüsselung, Berechtigungen oder Daten; auf Android
+ändert sich am Verhalten nichts (nur die Versionsnummer). Das Netz war nie beteiligt, die App hat weiterhin keinen Netzzugang: Betroffen war die
+Mittelklick-Auswahl, die unter X11 jedes laufende Programm lesen kann. Wer in Klipper Markierungen in den Verlauf übernehmen lässt (nicht die
+Voreinstellung), sollte diesen Verlauf leeren.
+- **Desktop — Strg+A außerhalb eines Feldes:** Bei entsperrter App markierte Strg+A ohne Fokus in einem Textfeld die ganze Seite, samt Titel und
+  Vorschau der Notizen in der Liste, in der Markdown-Ansicht auch samt dem ganzen Text der offenen Notiz. Unter Linux landet jede Markierung in der
+  Mittelklick-Auswahl, und genau diese Markierung löschte die App weder nach Ablauf der Zeit noch beim Sperren. Jetzt übernimmt die App Strg+A selbst:
+  In einem gefüllten Feld markiert Strg+A wie gewohnt dessen Inhalt, in der Markdown-Ansicht nur die offene Notiz, sonst nichts, auch bei
+  nicht-lateinischer Tastaturbelegung. Auch diese Markierung löscht die App nach Ablauf der Zeit und beim Sperren.
+- **Desktop — Markierung mit der Maus:** Reichte eine Markierung über Knöpfe oder Felder hinweg oder enthielt sie geschützte Leerzeichen, blieb sie
+  bisher ebenfalls stehen. Jetzt löscht die App auch sie nach Ablauf der Zeit und beim Sperren.
+
 ## v1.10 — 2026-10-10
 
 Rückgängig und Wiederholen mit eigenen Knöpfen. Keine Änderung an Datei-Format, Verschlüsselung, Berechtigungen oder Daten.

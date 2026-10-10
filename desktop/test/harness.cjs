@@ -131,6 +131,17 @@ async function fresh(){
   await js(`AlienDesktop.clip.selected(${JSON.stringify(M3)})`); await clipboard.selection.writeText(M4); await js(`AlienDesktop.clip.clear()`);
   R('fremde Markierung bleibt stehen', (await clipboard.selection.readText())===M4);
   await clipboard.selection.clear();
+  // a2-1 (v1.11, wie Alien Pass v1.21, Pass-Audit run-11 a-2): die eigene Kopie ist ROH gehasht — eine Kopie mit NBSP/U+FFFC muss weiter aus CLIPBOARD und dem
+  // Klipper-Spiegel in PRIMARY verschwinden (Mutant „nur sha(nsel(cur))“ ließ sie stehen). Eine Meldung nur aus U+FFFC merkt nichts (Frühausstieg): fremde Auswahl aus U+FFFC bleibt.
+  { const FC=String.fromCharCode(0xfffc), NBS=String.fromCharCode(0xa0), K='an-harness-'+process.pid+NBS+'kopie'+FC+'x';
+    await js(`AlienDesktop.clip.write({text:${JSON.stringify(K)}})`); await clipboard.selection.writeText(K);
+    const vor=(await clipboard.readText())===K&&(await prim())===K;
+    await js(`AlienDesktop.clip.clear()`);
+    R('a2-1: eigene Kopie mit NBSP/U+FFFC aus CLIPBOARD und PRIMARY gelöscht (Roh-Vergleich)', vor&&(await clipboard.readText())!==K&&(await prim())==='', {vor});
+    await clipboard.clear(); await clipboard.selection.clear();
+    await js(`AlienDesktop.clip.selected(${JSON.stringify(FC)})`); await clipboard.selection.writeText(FC+FC); await js(`AlienDesktop.clip.clear()`);
+    R('a2-1: Meldung nur aus U+FFFC merkt nichts, fremde Auswahl aus U+FFFC bleibt stehen (Frühausstieg)', (await prim())===FC+FC);
+    await clipboard.selection.clear(); }
   // Ab hier aus Alien Pass v1.19 (Release-Audit run-10), v1.8
   // Hash-Ring (R2-N2): eine spätere falsche Meldung (Wert eines anderen Feldes, das nicht in PRIMARY liegt) verdrängt die richtige nicht mehr
   { const P='an-harness-'+process.pid+'-ring-p';
@@ -603,6 +614,156 @@ async function background(){
   R('Notiz aus dem Hintergrund-Autosave in der Liste', await js(`[...document.querySelectorAll('#entry-list .entry .t')].some(n=>n.textContent.startsWith('hintergrund-gesichert'))`));
   await js(`App.setBgLock('1800')`); await js(`App.setAutolock('0')`); await sleep(600);
 }
+// Markierungen AUSSERHALB von Feldern (a2-1, Release-Audit v1.10 run-8, gemessen 10.10.2026 in der echten Hülle; Regel wie Alien Pass v1.21): Strg+A ohne
+// Textfeld-Fokus markierte die ganze Seite (Titel und Vorschau aller Notizen samt offener Notiz), und Chromium legt in PRIMARY einen anderen Text, als die App
+// meldet (U+FFFC je Knopf/Feld, NBSP als Leerzeichen) — Frist und Sperre löschten nie. Seit v1.11 übernimmt Strg+A in der Hülle immer die App: gefülltes
+// Textfeld → select(), offene Notiz in der Markdown-Ansicht bei Fokus außerhalb von Textfeldern → nur die Ansicht, sonst nichts. Tasten, Klicks und Ziehen per
+// sendInputEvent auf Koordinaten; Fokus und Feldwerte zur Vorbereitung teils per Skript. Ein keydown-Haken am window (Bubble, also nach deskKey) zählt je
+// Strg+A, ob die Taste ankam und gesperrt wurde. Negativprobe gegen den alten Stand und die Mutanten (Liste in `UI-INVARIANTEN.md` „Markierungen AUSSERHALB von Feldern“).
+async function markierung(){
+  const wc=win.webContents, NB=String.fromCharCode(0xa0), FC=String.fromCharCode(0xfffc), V='mk-geheim-'+process.pid, TAIL='Leerzeichen-'+process.pid, ZWEI='zweite-notiz-'+process.pid;
+  const mclick=async(p,n=1)=>{ for(let i=1;i<=n;i++){ wc.sendInputEvent({type:'mouseDown',x:p.x,y:p.y,button:'left',clickCount:i}); wc.sendInputEvent({type:'mouseUp',x:p.x,y:p.y,button:'left',clickCount:i}); } await sleep(500); };
+  const at=sel=>js(`(()=>{const n=document.querySelector(${JSON.stringify(sel)}); if(!n) return null; n.scrollIntoView({block:'nearest'}); const b=n.getBoundingClientRect(); return {x:Math.round(b.x+Math.min(b.width/2,30)),y:Math.round(b.y+b.height/2)};})()`);
+  const atText=(root,needle)=>js(`(()=>{ const w=document.createTreeWalker(document.querySelector(${JSON.stringify(root)}),NodeFilter.SHOW_TEXT); let n;
+    while((n=w.nextNode())){ const i=n.data.indexOf(${JSON.stringify(needle)}); if(i>=0){ n.parentElement.scrollIntoView({block:'nearest'}); const r=document.createRange(); r.setStart(n,i+1); r.setEnd(n,i+2); const b=r.getBoundingClientRect(); return {x:Math.round(b.x+b.width/2),y:Math.round(b.y+b.height/2)}; } } return null; })()`);
+  const ctrl=k=>{ wc.sendInputEvent({type:'keyDown',keyCode:k,modifiers:['control']}); wc.sendInputEvent({type:'keyUp',keyCode:k,modifiers:['control']}); };
+  const sel=()=>js(`String(getSelection())`);
+  // Markierung liegt nur in der Ansicht (gemeinsamer Vorfahr der Range in #md-view)
+  const inAnsicht=()=>js(`(()=>{ const g=getSelection(); if(!g.rangeCount||g.isCollapsed) return false; const v=document.getElementById('md-view'), c=g.getRangeAt(0).commonAncestorContainer; return v===c||v.contains(c); })()`);
+  const leer=async(ms=3000)=>{ const t0=Date.now(); let ok=false; while(Date.now()-t0<ms&&!(ok=(await prim())==='')) await sleep(100); return ok; };
+  const ka=()=>js(`window.__ka.splice(0)`);
+  let nr=0;
+  // Strg+A ohne erwartete Markierung: Taste kam an und wurde gesperrt, keine Markierung, PRIMARY unverändert
+  const nichts=async(titel,vorb,info)=>{ await js(`getSelection().removeAllRanges(); true`); await ka(); const M='mk-vorher-'+(++nr)+'-'+process.pid;
+    await clipboard.selection.writeText(M); const foc=await ensureFocus(); ctrl('A'); await sleep(500);
+    const k=await ka(), gesperrt=k.length===1&&k[0]===true, unv=(await prim())===M, s=await sel();
+    R(titel, vorb&&foc&&gesperrt&&unv&&s==='', {...info,foc,k,unv,selLen:s.length}); };
+  // Strg+A bei offener Ansicht: gesperrt, NUR die Ansicht markiert (mit dem Geheimnis, ohne die Liste), in PRIMARY ebenso, gemeldet → Löschen leert PRIMARY
+  const ansicht=async(titel,vorb,info)=>{ await js(`getSelection().removeAllRanges(); true`); await ka(); const M='mk-vorher-'+(++nr)+'-'+process.pid;
+    await clipboard.selection.writeText(M); const foc=await ensureFocus(); ctrl('A'); await sleep(500);
+    const k=await ka(), gesperrt=k.length===1&&k[0]===true, s=await sel(), nurAnsicht=await inAnsicht()&&s.includes(V)&&!s.includes(ZWEI), P=await prim(), inP=P!==M&&P.includes(V)&&!P.includes(ZWEI);
+    await js('AlienDesktop.clip.clear()'); const weg=await leer();
+    R(titel, vorb&&foc&&gesperrt&&nurAnsicht&&inP&&weg, {...info,foc,k,nurAnsicht,inP,weg,selLen:s.length,primLen:P.length});
+    await js(`getSelection().removeAllRanges(); true`); };
+  const openIt=async(t,md)=>{ const p=await js(`(()=>{const n=[...document.querySelectorAll('#entry-list .entry .t')].find(n=>n.textContent===${JSON.stringify(t)}); if(!n) return null; n.scrollIntoView({block:'center'}); const b=n.getBoundingClientRect(); return {x:Math.round(b.x+b.width/2),y:Math.round(b.y+b.height/2)};})()`);
+    if(!p) return false; await ensureFocus(); await mclick(p); return until(md?visible('md-view'):`${visible('f-body')}&&document.getElementById('f-body').value.length>0`,5000); };
+  R('Markierung: Sperrbildschirm', await until(visible('screen-lock'),15000));
+  await ensureFocus(); await fill('lock-pass',PP); await click('#unlock-btn'); R('Markierung: entsperrt', await until(visible('screen-app')));
+  await js(`window.__ka=[]; window.addEventListener('keydown',e=>{ if(e.ctrlKey&&e.keyCode===65) window.__ka.push(e.defaultPrevented); }); true`);
+  for(const [t,b,md] of [['Markierung','# Markierung\n\nGeheim '+V+'\n\nNotiz:'+NB+'mit'+NB+TAIL+'\n\n- Punkt eins\n- [x] Punkt zwei\n\n```\ncode-zeile\n```\n\n---',true],['Zweite',ZWEI,false]]){
+    await click('button[data-action="newEntry"]'); await sleep(300); await fill('f-title',t); await fill('f-body',b);
+    if(md) await click('#f-md'); await sleep(200); await click('button[data-action="doneEditor"]'); await sleep(600); }
+  R('Markierung: Notizen gespeichert', await until(`['Markierung','Zweite'].every(t=>[...document.querySelectorAll('#entry-list .entry .t')].some(n=>n.textContent===t))`,10000));
+  // (1) Notiz in der Ansicht, Klick in den Text (Fokus nirgends): nur die Ansicht wird markiert (Entscheidung Nutzer 10.10.2026) — NBSP darin, Hash über nsel()
+  { const offen=await openIt('Markierung',true); await mclick(await atText('#md-view','Geheim')); const nirgends=await js(`document.activeElement===document.body`);
+    await ansicht('Strg+A in der Ansicht (Fokus nirgends): nur die Ansicht markiert und in PRIMARY, gemeldet und gelöscht (a2-1)', offen&&nirgends, {offen,nirgends}); }
+  // (1b) Ansicht offen, Fokus auf einem Kästchen (Favorit) — kein Textfeld (Mutant „jedes INPUT als Textfeld“ markierte hier nichts)
+  // Vorher ein echter Klick in den Text: dieselbe Markierung wie in (1) schreibt Chromium sonst nicht neu nach PRIMARY — removeAllRanges() per Skript reicht
+  // dafür nicht (gemessen 10.10.2026; mit Klick davor landet die Ansicht auch bei Fokus auf Kästchen/Knopf sofort in PRIMARY, run-9 `ansicht-ergebnis.txt`)
+  { await mclick(await atText('#md-view','Geheim')); await js(`document.getElementById('f-fav').focus(); true`); const kast=await js(`document.activeElement.id==='f-fav'`);
+    await ansicht('Strg+A in der Ansicht, Fokus auf einem Kästchen: nur die Ansicht markiert (a2-1)', kast, {kast}); }
+  // (1c) Ansicht, nur keyDown (A und Strg noch gedrückt, kein keyup): die App meldet schon im keydown — clip.clear() leert PRIMARY (Sofort-Meldung wie Pass e-3)
+  { await mclick(await atText('#md-view','Geheim')); await js(`getSelection().removeAllRanges(); true`); await ka(); const M='mk-vorher-c-'+process.pid; await clipboard.selection.writeText(M);
+    const foc=await ensureFocus(); wc.sendInputEvent({type:'keyDown',keyCode:'A',modifiers:['control']}); await sleep(500);
+    const k=await ka(), P=await prim(), inP=P!==M&&P.includes(V); await js('AlienDesktop.clip.clear()'); const weg=await leer();
+    wc.sendInputEvent({type:'keyUp',keyCode:'A',modifiers:['control']}); wc.sendInputEvent({type:'keyUp',keyCode:'Control'}); await sleep(300);
+    R('Strg+A in der Ansicht, Taste noch gedrückt: schon im keydown gemeldet — Löschen leert PRIMARY', foc&&k.length===1&&k[0]===true&&inP&&weg, {foc,k,inP,weg});
+    await js(`getSelection().removeAllRanges(); true`); }
+  // (2) Rückfrage über der Ansicht (Löschen), Fokus auf einem Dialogknopf: nichts — weder die Seite (Mutant „Sperre hinter der Rückfrage-Weiche“) noch die Ansicht dahinter
+  { await click('#ed-del'); const dlg=await until(visible('dlg'),3000); const knopf=await js(`['dlg-ok','dlg-cancel'].includes(document.activeElement.id)`);
+    await nichts('Strg+A bei offener Rückfrage über der Ansicht (Fokus auf Dialogknopf): gesperrt, nichts markiert (a2-1)', dlg&&knopf, {dlg,knopf});
+    await ensureFocus(); wc.sendInputEvent({type:'keyDown',keyCode:'Escape'}); wc.sendInputEvent({type:'keyUp',keyCode:'Escape'});
+    const zu=await until(`document.getElementById('dlg').classList.contains('hidden')`,3000), da=await js(`[...document.querySelectorAll('#entry-list .entry .t')].some(n=>n.textContent==='Markierung')`)&&await js(visible('md-view'));
+    R('Markierung: Rückfrage per Escape abgebrochen, Notiz bleibt in der Ansicht', zu&&da, {zu,da}); }
+  // (2b) Handbuch über der Ansicht: nichts (die Ansicht liegt verdeckt dahinter)
+  { const offen=await js(visible('md-view')); await click('button[data-action="openHelp"]'); const hilfe=await until(visible('help-overlay'),3000)&&offen; await mclick(await at('#help-overlay h2')); const nirgends=await js(`!document.activeElement||document.activeElement===document.body||!/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)`);
+    await nichts('Strg+A bei offenem Handbuch über der Ansicht: gesperrt, nichts markiert (a2-1)', hilfe&&nirgends, {hilfe,nirgends});
+    await js(`(()=>{ const q=document.getElementById('search'); q.value='mk-hinter-hilfe'; q.focus(); return true; })()`); const feld=await js(`document.activeElement.id==='search'`);
+    // ein gefülltes Feld wird auch hinter dem offenen Handbuch markiert und gemeldet (wie Alien Pass; eine Sperre dort sperrte auch das Feld einer Rückfrage
+    // ÜBER dem Handbuch, Audit run-9 c-1)
+    await js(`getSelection().removeAllRanges(); document.getElementById('search').setSelectionRange(3,3); true`); await ka(); const M='mk-vorher-h-'+process.pid; await clipboard.selection.writeText(M);
+    const foc=await ensureFocus(), hilfeNoch=await js(visible('help-overlay')); ctrl('A'); await sleep(500); const k=await ka(), inP=(await prim())==='mk-hinter-hilfe';
+    await js(`(()=>{ const q=document.getElementById('search'); q.value=''; q.blur(); return true; })()`); await js('AlienDesktop.clip.clear()'); const weg=await leer();
+    R('Strg+A bei offenem Handbuch, gefülltes Suchfeld dahinter: Feld markiert (PRIMARY), gemeldet und gelöscht (Audit run-9 c-1)', hilfe&&hilfeNoch&&feld&&foc&&k.length===1&&k[0]===true&&inP&&weg, {hilfe,hilfeNoch,feld,foc,k,inP,weg});
+    await click('#help-overlay [data-action="closeHelp"]'); await sleep(300); }
+  // (2c) LEERES Suchfeld bei offener Ansicht: nichts, auch nicht die Ansicht (ohne Range im Feld markierte Chromium dort die ganze Seite — Lauf `app` in mutanten*.log)
+  { const offen=await js(visible('md-view')); await js(`(()=>{ const q=document.getElementById('search'); q.value=''; q.focus(); return true; })()`);
+    const leerFeld=await js(`document.activeElement.id==='search'&&document.getElementById('search').value===''`);
+    await nichts('Strg+A im LEEREN Suchfeld, Notiz in der Ansicht offen: gesperrt, nichts markiert (a2-1)', offen&&leerFeld, {offen,leerFeld});
+    await js(`document.getElementById('search').blur(); true`); }
+  // (2d) Notiz im TEXT-Modus offen (keine Ansicht), Fokus auf einem Kästchen: nichts (alter Stand: ganze Seite samt Notiztext)
+  { const offen=await openIt('Zweite',false); await js(`document.getElementById('f-pinned').focus(); true`); const kast=await js(`document.activeElement.id==='f-pinned'`);
+    await nichts('Strg+A im Text-Modus mit Fokus auf einem Kästchen: gesperrt, nichts markiert (a2-1)', offen&&kast, {offen,kast}); }
+  // (2e) Keine Notiz offen, Klick auf den Untertitel (Fokus nirgends) und Fokus auf einem Knopf: nichts (alter Stand: Titel und Vorschau ALLER Notizen)
+  { await click('button[data-action="doneEditor"]'); await sleep(500); const zu=await js(`!${visible('md-view')}&&!document.querySelector('#tab-add:not(.hidden) #f-body:not(.hidden)')`);
+    await mclick(await at('.tagline')); const nirgends=await js(`document.activeElement===document.body`);
+    await nichts('Strg+A ohne offene Notiz, Fokus nirgends: gesperrt, nichts markiert (a2-1)', zu&&nirgends, {zu,nirgends});
+    await js(`document.getElementById('sel-btn').focus(); true`); const knopf=await js(`document.activeElement.id==='sel-btn'`);
+    await nichts('Strg+A ohne offene Notiz, Fokus auf einem Knopf: gesperrt, nichts markiert (a2-1)', knopf, {knopf}); }
+  // (3) Gefülltes Textfeld (Suche): die App sperrt Chromiums „Alles markieren“ und markiert das Feld selbst (select() im keydown → PRIMARY wie bisher)
+  { await js(`(()=>{ const q=document.getElementById('search'); q.value='mk-suche'; q.focus(); return true; })()`); await ka();
+    const M='mk-vorher-s-'+process.pid; await clipboard.selection.writeText(M); const foc=await ensureFocus(); ctrl('A'); await sleep(500);
+    const k=await ka(), selbst=k.length===1&&k[0]===true;
+    const ganz=await js(`(()=>{ const q=document.getElementById('search'); return q.selectionStart===0&&q.selectionEnd===q.value.length; })()`), inP=(await prim())==='mk-suche';
+    R('Strg+A im gefüllten Textfeld: App markiert das Feld (Suchfeld ganz markiert und in PRIMARY)', foc&&selbst&&ganz&&inP, {foc,k,ganz,inP});
+    await js(`(()=>{ const q=document.getElementById('search'); q.value=''; q.blur(); return true; })()`); await js('AlienDesktop.clip.clear()');
+    R('Strg+A im gefüllten Suchfeld: die von der App gesetzte Markierung ist gemeldet und wird gelöscht', inP&&await leer()); }
+  // (3d) Strg ZUERST losgelassen (keyup von A ohne Strg): gemeldet (sofort im keydown, dazu selAllUp aus v1.9) — Feldwert lag sonst ungemeldet in PRIMARY
+  { const W='mk-suche-zwei-'+process.pid; await js(`(()=>{ const q=document.getElementById('search'); q.value=${JSON.stringify(W)}; q.focus(); return true; })()`); await ka();
+    const foc=await ensureFocus();
+    wc.sendInputEvent({type:'keyDown',keyCode:'A',modifiers:['control']}); wc.sendInputEvent({type:'keyUp',keyCode:'Control'}); wc.sendInputEvent({type:'keyUp',keyCode:'A'}); await sleep(500);
+    const k=await ka(), inP=(await prim())===W;
+    await js(`(()=>{ const q=document.getElementById('search'); q.value=''; q.blur(); return true; })()`); await js('AlienDesktop.clip.clear()'); const weg=await leer();
+    R('Strg+A, Strg zuerst losgelassen: Feld markiert (PRIMARY) und gemeldet — Löschen leert PRIMARY', foc&&k.length===1&&k[0]===true&&inP&&weg, {foc,k,inP,weg}); }
+  // (3e) Gefülltes Feld, nur keyDown (Taste noch gedrückt, kein keyup): schon im keydown gemeldet — Löschen leert PRIMARY (Audit run-9 b-2)
+  { const W='mk-suche-drei-'+process.pid; await js(`(()=>{ const q=document.getElementById('search'); q.value=${JSON.stringify(W)}; q.focus(); q.setSelectionRange(2,2); return true; })()`); await ka();
+    const foc=await ensureFocus(); wc.sendInputEvent({type:'keyDown',keyCode:'A',modifiers:['control']}); await sleep(500);
+    const k=await ka(), inP=(await prim())===W; await js('AlienDesktop.clip.clear()'); const weg=await leer();
+    wc.sendInputEvent({type:'keyUp',keyCode:'A',modifiers:['control']}); wc.sendInputEvent({type:'keyUp',keyCode:'Control'}); await sleep(300);
+    await js(`(()=>{ const q=document.getElementById('search'); q.value=''; q.blur(); return true; })()`);
+    R('Strg+A im gefüllten Feld, Taste noch gedrückt: schon im keydown gemeldet — Löschen leert PRIMARY', foc&&k.length===1&&k[0]===true&&inP&&weg, {foc,k,inP,weg}); }
+  // (3b) TEXTAREA (Notiztext einer neuen Notiz): leer → gesperrt, nichts markiert; gefüllt → die App markiert das Feld. Danach leeren und schließen (verworfen)
+  { await click('button[data-action="newEntry"]'); await sleep(400); const T='mk-text-'+process.pid;
+    await js(`(()=>{ const n=document.getElementById('f-body'); n.value=''; n.focus(); return true; })()`);
+    const leerFeld=await js(`document.activeElement.id==='f-body'&&document.getElementById('f-body').value===''`);
+    await nichts('Strg+A im LEEREN Notiztext (TEXTAREA): gesperrt, nichts markiert (a2-1)', leerFeld, {leerFeld});
+    await js(`(()=>{ const n=document.getElementById('f-body'); n.value=${JSON.stringify(T)}; n.focus(); n.setSelectionRange(2,2); return true; })()`); await ka();
+    const M='mk-vorher-t-'+process.pid; await clipboard.selection.writeText(M); const foc=await ensureFocus(); ctrl('A'); await sleep(500);
+    const k=await ka(), selbst=k.length===1&&k[0]===true;
+    const ganz=await js(`(()=>{ const n=document.getElementById('f-body'); return n.selectionStart===0&&n.selectionEnd===n.value.length; })()`), inP=(await prim())===T;
+    R('Strg+A im gefüllten Notiztext (TEXTAREA): App markiert das Feld (ganz markiert und in PRIMARY)', foc&&selbst&&ganz&&inP, {foc,k,ganz,inP});
+    await js(`(()=>{ const n=document.getElementById('f-body'); n.value=''; n.dispatchEvent(new Event('input',{bubbles:true})); return true; })()`); await click('button[data-action="doneEditor"]'); await sleep(500);
+    await js('AlienDesktop.clip.clear()');
+    R('Strg+A im gefüllten Notiztext: die von der App gesetzte Markierung ist gemeldet und wird gelöscht', inP&&await leer()); }
+  R('Markierung: Notiz wieder in der Ansicht', await openIt('Markierung',true));
+  // (4) Dreifachklick auf den NBSP-Absatz in der Ansicht: App meldet NBSP, PRIMARY hat Leerzeichen — das Löschen muss trotzdem greifen (Frist-Weg: clip.clear)
+  { const M='mk-vorher-4-'+process.pid; await clipboard.selection.writeText(M); await ensureFocus(); await mclick(await atText('#md-view','mit'),3);
+    const hatNb=(await sel()).includes(NB), P=await prim(), vorb=P!==M&&!P.includes(NB)&&P.includes(TAIL);
+    await js('AlienDesktop.clip.clear()'); const weg=await leer();
+    R('NBSP-Absatz per Dreifachklick: Meldung mit NBSP, PRIMARY mit Leerzeichen — Löschen leert PRIMARY (a2-1)', hatNb&&vorb&&weg, {hatNb,vorb,weg}); }
+  // (5) Ziehen von der Notizliste in die Ansicht (Knöpfe/Felder dazwischen → U+FFFC in PRIMARY), dann echtes Strg+L: auf dem Sperrbildschirm ist PRIMARY leer
+  { const M='mk-vorher-5-'+process.pid; await clipboard.selection.writeText(M); await js(`getSelection().removeAllRanges(); true`);
+    const p1=await atText('#entry-list','Zweite'), p2=await atText('#md-view',TAIL); await ensureFocus();
+    wc.sendInputEvent({type:'mouseDown',x:p1.x,y:p1.y,button:'left',clickCount:1});
+    for(let i=1;i<=12;i++) { wc.sendInputEvent({type:'mouseMove',x:Math.round(p1.x+(p2.x-p1.x)*i/12),y:Math.round(p1.y+(p2.y-p1.y)*i/12),button:'left',modifiers:['leftButtonDown']}); await sleep(40); }
+    wc.sendInputEvent({type:'mouseUp',x:p2.x,y:p2.y,button:'left',clickCount:1}); await sleep(500);
+    const P=await prim(), ffc=P.includes(FC), drin=P.includes(V), vorb=P!==M&&ffc&&drin;
+    await ensureFocus(); ctrl('L'); const gesperrt=await until(visible('screen-lock'),5000); const weg=await leer();
+    R('Ziehen von der Liste in die Ansicht (U+FFFC in PRIMARY), dann Strg+L: PRIMARY leer (a2-1)', vorb&&gesperrt&&weg, {ffc,drin,len:P.length,gesperrt,weg}); }
+  // (6) Gesperrt: boot() setzt den Fokus per 100-ms-Zeitgeber ins LEERE Passphrase-Feld (Pass run-11 c-2/d-1) — abwarten, dann Strg+A
+  { const leerFeld=await until(`document.activeElement&&document.activeElement.id==='lock-pass'&&document.getElementById('lock-pass').value===''`,3000);
+    await nichts('Gesperrt, Strg+A im leeren Passphrase-Feld: gesperrt, nichts markiert (a2-1)', leerFeld, {leerFeld}); }
+  // (6b) Gesperrt, Klick auf den Untertitel nach dem Zeitgeber: Fokus nirgends (alter Stand: ganze Sperrseite)
+  { await sleep(300); await mclick(await at('#screen-lock .tagline, .tagline')); const nirgends=await js(`document.activeElement===document.body`);
+    await nichts('Gesperrt, Strg+A ohne Feld-Fokus: gesperrt, nichts markiert (a2-1)', nirgends, {nirgends}); }
+  // (6c) Gesperrt, gefülltes Passphrase-Feld: die App markiert das Feld und meldet es (Gate-Feld) — Feld danach leeren
+  { await js(`(()=>{ const n=document.getElementById('lock-pass'); n.value='mk-sperr-'+${JSON.stringify(String(process.pid))}; n.focus(); n.setSelectionRange(1,1); return true; })()`); await ka();
+    const M='mk-vorher-6-'+process.pid; await clipboard.selection.writeText(M); const foc=await ensureFocus(); ctrl('A'); await sleep(500);
+    const k=await ka(), ganz=await js(`(()=>{ const n=document.getElementById('lock-pass'); return n.selectionStart===0&&n.selectionEnd===n.value.length; })()`), inP=(await prim())==='mk-sperr-'+process.pid;
+    await js(`(()=>{ const n=document.getElementById('lock-pass'); n.value=''; n.blur(); return true; })()`); await js('AlienDesktop.clip.clear()'); const weg=await leer();
+    R('Gesperrt, Strg+A im gefüllten Passphrase-Feld: App markiert das Feld, gemeldet und gelöscht', foc&&k.length===1&&k[0]===true&&ganz&&inP&&weg, {foc,k,ganz,inP,weg}); }
+  await clipboard.selection.clear();
+}
 async function unreadable(){
   R('Lesefehler: keine Einrichtung', await until(visible('screen-lock'),15000)&&!(await js(visible('screen-setup'))));
   R('Lesefehler: Meldung', /nicht lesbar|not readable/.test(await js(`document.getElementById('lock-err').textContent`)));
@@ -616,6 +777,7 @@ app.on('browser-window-created',(_e,w)=>{ if(win) return; win=w;
       await until(`document.readyState==='complete'&&typeof App!=='undefined'`,15000); await js('void (window.confirm=()=>true)');
       if(STEP==='fresh') await fresh(); else if(STEP==='restart') await restart(); else if(STEP==='unreadable') await unreadable();
       else if(STEP==='background') await background();
+      else if(STEP==='markierung') await markierung();
       else if(STEP==='quit'||STEP==='quithang'){ await quitStep(STEP==='quithang'); return; }   // endet in will-quit (eigene Endmarke)
       else if(STEP==='quitslow'){ await quitSlow(); return; }
       else if(STEP==='quitreject'){ await quitReject(); return; }
