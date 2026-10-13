@@ -17,6 +17,9 @@ Verschlüsselung oder Berechtigungen; das Backup bleibt immer verschlüsselt.
   Passphrasen-Wechsel nicht wieder füllen.
 - **Desktop — Speichern-Dialog:** Scheitert das Speichern (Backup oder „Als Datei“), nennt die Meldung nur noch die Fehlerart, nicht mehr den vollen
   Pfad. Außerdem bittet die App den Dialog, vor dem Ersetzen einer bestehenden Datei nachzufragen.
+- **Handbuch — zwei Grenzen ausdrücklich benannt:** Die Tastatur-App am Handy sieht alles, was du tippst, und viele Tastaturen lernen daraus; wer
+  das nicht will, nutzt eine Tastatur ohne personalisiertes Lernen oder schaltet es dort ab. Und in der Android-App leert die App die Zwischenablage nur für ihre eigenen
+  Kopier-Knöpfe: Was du markierst und über die Leiste von Android kopierst, erfasst sie nicht.
 
 ## v1.11 — 2026-10-10
 
