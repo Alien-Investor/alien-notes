@@ -243,6 +243,8 @@ Schlüsselableitung schafft, und schlägt eine passende Argon2-Stufe vor.
   niedriger Schwere rund um die Mehrfachauswahl und das Löschen während des Autosaves), alle vor dem Release behoben und mit Regressionstests belegt.
 - **Grenzen, ehrlich benannt**: Im Hintergrund leert die Android-App die Zwischenablage nur, solange Android sie nicht eingefroren hat
   (meist nach dem zweiten App-Wechsel); danach erst beim Zurückkehren. Ab Android 13 leert das System nach etwa 1 h selbst, davor nicht.
+  In der Android-App gelten das Leeren und die Markierung als sensibel nur für die Kopier-Knöpfe der App: Was du markierst und über die Leiste von Android
+  kopierst, erfasst die App nicht.
   Die Tastatur-App sieht alles, was du tippst, und viele Tastaturen lernen daraus — wer das nicht will, nutzt eine Tastatur ohne
   personalisiertes Lernen oder schaltet es dort ab. Mit „nie“ als Hintergrund-Sperre bleibt der Schlüssel im Arbeitsspeicher, bis das System den Prozess beendet.
 
