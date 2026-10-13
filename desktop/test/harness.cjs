@@ -2,10 +2,13 @@
 // Prüfprogramm für die echte Hülle (Alien Notes, aus Alien Pass übernommen): lädt main.js wie die App und prüft von innen (keine Fernsteuerung
 // von außen — die Hülle verweigert --remote-debugging-*, und die Fuses sperren --inspect). Aufruf über verify-desktop.mjs.
 // Gibt je Prüfung eine Zeile "R <json>" aus, nie Notizen- oder Zwischenablage-Inhalte.
-const {app,BrowserWindow,Menu,session,clipboard,ClipboardItem,shell}=require('electron');
+const {app,BrowserWindow,Menu,session,clipboard,ClipboardItem,shell,dialog}=require('electron');
 const path=require('path'); const fs=require('fs'); const net=require('net'); const dgram=require('dgram');
 require('./main.js');
 const opened=[]; shell.openExternal=async u=>{ opened.push(u); };   // nie wirklich den Browser öffnen, nur mitschreiben
+// Speichern-Dialog nie wirklich öffnen: Aufrufe mitschreiben, Antwort aus dlgNext (sonst „abgebrochen“) — Schritt export (v1.12)
+// dlgNext darf eine Funktion sein (liefert ein Promise): so bleibt der „Dialog“ offen, bis der Test ihn schließt (Sperre währenddessen, run-10 b-1)
+let dlgNext=null; const dlgCalls=[]; dialog.showSaveDialog=async(_w,o)=>{ dlgCalls.push(o); const n=dlgNext; dlgNext=null; return typeof n==='function'?await n(o):(n||{canceled:true}); };
 
 const STEP=process.env.AP_STEP, PP=process.env.AP_PP||'';
 const KDE_HINT='electron application/osclipboard;format="x-kde-passwordManagerHint"';
@@ -29,7 +32,7 @@ async function fresh(){
   R('lädt nur app://aliennotes/index.html', win.webContents.getURL()==='app://aliennotes/index.html', win.webContents.getURL());
   R('kein Node im Renderer', await js(`typeof require==='undefined'&&typeof process==='undefined'&&typeof module==='undefined'`));
   const keys=await js(`Object.keys(window.AlienDesktop).sort().join(',')`);
-  R('Brücke hat genau clip, onBackground, onLock, saveBackup, store', keys==='clip,onBackground,onLock,saveBackup,store', keys);
+  R('Brücke hat genau clip, onBackground, onLock, saveBackup, saveText, store', keys==='clip,onBackground,onLock,saveBackup,saveText,store', keys);
   R('fetch nach außen scheitert', await js(`fetch('https://example.org/').then(()=>false,()=>true)`));
   R('window.open verweigert', await js(`window.open('https://example.org/')===null`));
   await js(`location.href='https://example.org/'`).catch(()=>{}); await sleep(600);
@@ -100,14 +103,16 @@ async function fresh(){
 
   const w2=new BrowserWindow({show:false,webPreferences:{preload:path.join(__dirname,'preload.js'),sandbox:true,contextIsolation:true}});
   await w2.loadURL('data:text/html,<p>fremd</p>');
-  const foreign=await w2.webContents.executeJavaScript(`(async()=>{const r=[];
+  const foreign=await w2.webContents.executeJavaScript(`(async()=>{const r=[typeof AlienDesktop==='object'&&typeof AlienDesktop.saveText==='object'?'bridge':'NO-BRIDGE'];
     try{AlienDesktop.store.read();r.push('read-OK')}catch(e){r.push('read-DENIED')}
     try{AlienDesktop.store.write('x');r.push('write-OK')}catch(e){r.push('write-DENIED')}
     try{await AlienDesktop.clip.write({text:'x'});r.push('clip-OK')}catch(e){r.push('clip-DENIED')}
     try{await AlienDesktop.clip.selected('x');r.push('sel-OK')}catch(e){r.push('sel-DENIED')}
     try{await AlienDesktop.saveBackup('a.notes','x');r.push('save-OK')}catch(e){r.push('save-DENIED')}
+    try{await AlienDesktop.saveText.pick('a.md');r.push('pick-OK')}catch(e){r.push(/denied/.test(e.message)?'pick-DENIED':'pick-'+e.message)}
+    try{await AlienDesktop.saveText.write('x','x');r.push('twrite-OK')}catch(e){r.push(/denied/.test(e.message)?'twrite-DENIED':'twrite-'+e.message)}
     return r.join(',');})()`,true);
-  R('fremder Frame: alle Brücken-Aufrufe abgewiesen', foreign==='read-DENIED,write-DENIED,clip-DENIED,sel-DENIED,save-DENIED', foreign);
+  R('fremder Frame: Brücke vorhanden, alle Aufrufe abgewiesen', foreign==='bridge,read-DENIED,write-DENIED,clip-DENIED,sel-DENIED,save-DENIED,pick-DENIED,twrite-DENIED', foreign);
   w2.destroy();
 
   const M1='an-harness-'+process.pid+'-a', M2='an-harness-'+process.pid+'-b';
@@ -762,7 +767,138 @@ async function markierung(){
     const k=await ka(), ganz=await js(`(()=>{ const n=document.getElementById('lock-pass'); return n.selectionStart===0&&n.selectionEnd===n.value.length; })()`), inP=(await prim())==='mk-sperr-'+process.pid;
     await js(`(()=>{ const n=document.getElementById('lock-pass'); n.value=''; n.blur(); return true; })()`); await js('AlienDesktop.clip.clear()'); const weg=await leer();
     R('Gesperrt, Strg+A im gefüllten Passphrase-Feld: App markiert das Feld, gemeldet und gelöscht', foc&&k.length===1&&k[0]===true&&ganz&&inP&&weg, {foc,k,ganz,inP,weg}); }
+  // (9) v1.12, Querfund Sachwert-Tresor v3.10 (dort: Ziehen bis GENAU an den Anfang des nächsten Blocks → getSelection() mit „\n“ am Rand, PRIMARY
+  // layoutabhängig ohne → Hash passte nicht, Markierung blieb stehen; Fix dort trim in nsel). HIER GEMESSEN 13.10.2026 in der echten Hülle (Electron 44.7.0):
+  // Absatz→Absatz (P@0), Text, Absatz→Liste (LI@0), Liste→Code (PRE@0), Notizliste — Meldung und PRIMARY enden jedes Mal GLEICH (auch „\n\n“), alles
+  // gelöscht. trim darum NICHT übernommen (Regel „vorher messen“); die Proben bleiben als Wächter für spätere Engine-Versionen (DIAG=1 zeigt die Werte).
+  { const drag=async(p1,p2)=>{ await ensureFocus(); wc.sendInputEvent({type:'mouseDown',x:p1.x,y:p1.y,button:'left',clickCount:1});
+      for(let i=1;i<=12;i++){ wc.sendInputEvent({type:'mouseMove',x:Math.round(p1.x+(p2.x-p1.x)*i/12),y:Math.round(p1.y+(p2.y-p1.y)*i/12),button:'left',modifiers:['leftButtonDown']}); await sleep(40); }
+      wc.sendInputEvent({type:'mouseUp',x:p2.x,y:p2.y,button:'left',clickCount:1}); await sleep(500); };
+    // der Schritt davor endet gesperrt (Passphrase-Feld) → erst entsperren
+    if(await js(visible('screen-lock'))){ await ensureFocus(); await fill('lock-pass',PP); await click('#unlock-btn'); await until(visible('screen-app')); }
+    const offen=await openIt('Markierung',true);
+    // Ziele: Anfang des nächsten Absatzes (P@0), Gegenprobe im Text, Anfang des ersten Listenpunkts (Absatz → Liste), Anfang des Codeblocks (Liste → Code)
+    // Jede Probe nennt das erwartete Range-Ende (Vorbedingung, run-10 e2-6) — sonst liefe sie still ins Leere. 'kasten': Anfang eines Checklisten-Punkts
+    // mit Kästchen (span.box inline-block), 'ende': über das Ende der Ansicht hinaus in den Block darunter.
+    const ZIELE=[['anfang','Geheim','Notiz:',0,/^P@0$/],['text','Geheim','Notiz:',4,/^#text@[1-9]/],['liste','mit','Punkt eins',0,/^LI@0$/],['code','zwei','code-zeile',0,/^PRE@0$/],
+      ['kasten','eins','Punkt zwei','box',/^LI@0$|^SPAN@0$/],['ende','code-zeile',null,'unter',/^BUTTON@0$/]];   // Soll je Probe = gemessener Blockrand (f3-4)
+    for(const [ziel,von,bis,dx,endeSoll] of ZIELE){ await mclick(await at('.tagline')); const M='mk-vorher-9-'+process.pid; await clipboard.selection.writeText(M);
+      // erst das Ziel (darf rollen), dann der Start — sonst stimmte die Startkoordinate nach dem Rollen nicht mehr
+      const p2=await js(`(()=>{ const v=document.getElementById('md-view'), d=${JSON.stringify(dx)};
+        if(d==='unter'){ const l=v.lastElementChild||v; l.scrollIntoView({block:'center'}); const c=v.getBoundingClientRect(); return {x:Math.round(c.left+20),y:Math.round(c.bottom+10)}; }
+        const w=document.createTreeWalker(v,NodeFilter.SHOW_TEXT); let n;
+        while((n=w.nextNode())&&!n.data.startsWith(${JSON.stringify(bis)})); if(!n) return null;
+        if(d==='box'){ const li=n.parentElement.closest('li'), bx=li&&li.firstElementChild; if(!bx) return null; const c=bx.getBoundingClientRect(); return {x:Math.round(c.left+1),y:Math.round(c.top+c.height/2)}; }
+        const r=document.createRange(); r.setStart(n,0); r.setEnd(n,1); const c=r.getBoundingClientRect();
+        return {x:Math.round(c.left+(d?c.width*d:1)),y:Math.round(c.top+c.height/2)}; })()`);
+      const p1=await atText('#md-view',von);
+      if(!p1||!p2){ R('v1.12: Ziehen '+ziel+' — Ziel nicht gefunden', false, {p1,p2}); continue; }
+      await drag(p1,p2); const s=await sel(), P=await prim();
+      const ende=await js(`(()=>{ const g=getSelection(); if(!g.rangeCount) return ''; const r=g.getRangeAt(0); return r.endContainer.nodeName+'@'+r.endOffset; })()`);
+      const vorb=offen&&P!==M&&s.length>0&&endeSoll.test(ende)&&(ziel!=='anfang'||s.endsWith('\n'))&&(ziel!=='ende'||s.includes('ode-zeile'));
+      await js('AlienDesktop.clip.clear()'); const weg=await leer();
+      R('v1.12: Ziehen in der Ansicht ('+ziel+'): Markierung nach dem Löschen nicht mehr in PRIMARY', vorb&&weg, {ende,vorb,weg,gleich:s===P,sEnde:JSON.stringify(s.slice(-4)),pEnde:JSON.stringify(P.slice(-4)),sAnf:JSON.stringify(s.slice(0,4)),pAnf:JSON.stringify(P.slice(0,4)),sLen:s.length,pLen:P.length}); }
+    // Notizliste: Ziehen vom Titel einer Notiz bis an den Anfang der nächsten Zeile (Knöpfe dazwischen → U+FFFC in PRIMARY, nsel gleicht an)
+    { await click('button[data-action="doneEditor"]'); await sleep(500); await mclick(await at('.tagline')); const M='mk-vorher-9l-'+process.pid; await clipboard.selection.writeText(M);
+      const ts=await js(`[...document.querySelectorAll('#entry-list .entry .t')].map(n=>n.textContent)`);
+      const p1=await atText('#entry-list',ts[0]||'x'), p2=await js(`(()=>{ const n=[...document.querySelectorAll('#entry-list .entry .t')][1]; if(!n||!n.firstChild) return null; const r=document.createRange(); r.setStart(n.firstChild,0); r.setEnd(n.firstChild,1); const c=r.getBoundingClientRect(); return {x:Math.round(c.left+1),y:Math.round(c.top+c.height/2)}; })()`);
+      if(p1&&p2){ await drag(p1,p2); const s=await sel(), P=await prim(), zweite=ts[1]||'?'; await js('AlienDesktop.clip.clear()'); const weg=await leer();
+        const vorb=P!==M&&s.includes((ts[0]||'').slice(1))&&!s.includes(zweite.slice(1,4))&&s.endsWith('\n');   // Ende genau vor der zweiten Notiz (Vorbedingung)
+        R('v1.12: Ziehen in der Notizliste bis an den Anfang der nächsten Notiz: gelöscht', vorb&&weg, {vorb,weg,gleich:s===P,sEnde:JSON.stringify(s.slice(-4)),pEnde:JSON.stringify(P.slice(-4)),sLen:s.length,pLen:P.length,ts:ts.slice(0,2)}); }
+      else R('v1.12: Ziehen in der Notizliste — Ziel nicht gefunden', false, {p1,p2,ts}); } }
   await clipboard.selection.clear();
+}
+// v1.12: eine Notiz als Markdown-Datei — Knopf „Als Datei“ → Rückfrage → Speichern-Dialog (gestubbt) → erst dann der Text (zweistufig, run-10 b-1) → Datei
+// mit genau dem Text von „Kopieren“ plus Zeilenende; neutraler Name ohne Titel, nur .md, Abbruch an beiden Stellen schreibt nichts, Sperre während des
+// Dialogs schreibt nichts, die Brücke weist Fremdes vor dem Dialog ab, Kennungen gelten einmal. Dazu das Backup positiv über denselben Speicherweg (run-10 b-2).
+async function exportStep(){
+  const dir=fs.mkdtempSync(path.join(process.env.XDG_DATA_HOME,'export-')), T='Export-Titel-'+process.pid, B='# Kopf\n\nText mit Ümlaut und „Zeichen“ '+process.pid+'\n\n- [x] erledigt';
+  const toastTxt=()=>js(`(()=>{ const n=document.getElementById('toast'); return n&&!n.classList.contains('hidden')?document.getElementById('toast-msg').textContent:''; })()`);
+  const dlgZu=()=>until(`document.getElementById('dlg').classList.contains('hidden')`,3000);
+  const exp=async()=>{ await click('button[data-action="saveCurrent"]'); await until(visible('dlg'),3000); await click('#dlg-ok'); };
+  const warteDatei=async f=>{ let da=false; for(let i=0;i<50&&!(da=fs.existsSync(f));i++) await sleep(100); return da; };
+  R('Export: Sperrbildschirm', await until(visible('screen-lock'),15000));
+  await ensureFocus(); await fill('lock-pass',PP); await click('#unlock-btn'); R('Export: entsperrt', await until(visible('screen-app')));
+  await click('button[data-action="newEntry"]'); await sleep(300); await fill('f-title',T); await fill('f-body',B); await sleep(300);
+  // (1) Rückfrage abbrechen: kein Dialog, keine Datei
+  dlgCalls.length=0; await click('button[data-action="saveCurrent"]'); const frage=await until(visible('dlg'),3000);
+  const frageTxt=await js(`document.getElementById('dlg-msg').textContent`); await click('#dlg-cancel'); await dlgZu(); await sleep(300);
+  R('Export: Rückfrage nennt „unverschlüsselt“, Abbrechen öffnet keinen Dialog', frage&&/unverschlüsselt/.test(frageTxt)&&dlgCalls.length===0, {frage,frageTxt,n:dlgCalls.length});
+  // (2) Speichern: Name neutral (ohne Titel), nur .md, Überschreiben nur nach Rückfrage, Inhalt = noteText + "\n", Rechte 600, Meldung mit Dateiname, ohne Pfad
+  const ziel=path.join(dir,'gewaehlt.md'); dlgNext={canceled:false,filePath:ziel}; dlgCalls.length=0; await exp();
+  const da=await warteDatei(ziel), o=dlgCalls[0]||{}, name=String(o.defaultPath||''), inhalt=da?fs.readFileSync(ziel,'utf8'):'', soll=T+'\n\n'+B+'\n';
+  R('Export: ein Dialog, Vorschlag neutral (notiz-JJJJ-MM-TT-HHMMSS.md, kein Titel), Filter nur .md, Überschreiben nur nach Rückfrage', dlgCalls.length===1&&/^notiz-\d{4}-\d{2}-\d{2}-\d{6}\.md$/.test(name)&&!name.includes('Export')&&JSON.stringify(o.filters)==='[{"name":"Markdown","extensions":["md"]}]'&&JSON.stringify(o.properties)==='["showOverwriteConfirmation"]', {n:dlgCalls.length,name,filters:o.filters,properties:o.properties});
+  R('Export: Datei enthält genau den Text von „Kopieren“ plus Zeilenende (UTF-8)', da&&inhalt===soll, {da,len:inhalt.length,soll:soll.length});
+  R('Export: Datei nur für den Nutzer lesbar (600)', da&&(fs.statSync(ziel).mode&0o777)===0o600, da?(fs.statSync(ziel).mode&0o777).toString(8):null);
+  await sleep(300); { const t=await toastTxt(); R('Export: Meldung nennt den Dateinamen und „unverschlüsselt“, nie den Pfad', t.includes('gewaehlt.md')&&/unverschlüsselt/.test(t)&&!t.includes(dir), t); }
+  // (3) Dialog abgebrochen: keine Datei, keine Meldung (auch nicht „Gespeichert: null“)
+  dlgNext={canceled:true}; dlgCalls.length=0; await js(`App.hideToast(); true`); await exp(); await sleep(800);
+  { const t=await toastTxt(); R('Export: Dialog abgebrochen → nichts geschrieben, keine Meldung', dlgCalls.length===1&&fs.readdirSync(dir).length===1&&t==='', {n:dlgCalls.length,files:fs.readdirSync(dir),t}); }
+  // (4) Sperre, während der Dialog offen ist (run-10 b-1): die Wahl kommt nach der Sperre — die App schickt keinen Text, nichts wird geschrieben
+  { const ziel4=path.join(dir,'nach-sperre.md'); let zu; dlgNext=()=>new Promise(r=>{ zu=r; }); dlgCalls.length=0; await exp(); await sleep(400);
+    const offen=dlgCalls.length===1; await js(`App.lock(); true`); await sleep(300); zu({canceled:false,filePath:ziel4}); await sleep(1200);
+    const t=await toastTxt(), gesperrt=await js(visible('screen-lock'));
+    R('Export: Sperre während des Speichern-Dialogs → keine Datei, keine Meldung auf dem Sperrbildschirm', offen&&gesperrt&&!fs.existsSync(ziel4)&&t==='', {offen,gesperrt,datei:fs.existsSync(ziel4),t});
+    await ensureFocus(); await fill('lock-pass',PP); await click('#unlock-btn'); await until(visible('screen-app'));
+    const st=await js(`AlienDesktop.saveText.write('0'.repeat(32),'x').then(()=>'OK',e=>String(e&&e.message||e))`);
+    R('Export: verfallene Wahl lässt sich nicht nachträglich beschreiben', /stale/.test(st)&&!fs.existsSync(ziel4), st); }
+  // (5) Fehlerweg: Ziel in einem fehlenden Ordner → Meldung „fehlgeschlagen“ mit Code, ohne Pfad
+  { const openNote=async()=>{ await js(`(()=>{ const n=[...document.querySelectorAll('#entry-list .entry .t')].find(n=>n.textContent===${JSON.stringify(T)}); if(n) n.click(); return !!n; })()`); await sleep(500); };
+    await openNote(); dlgNext={canceled:false,filePath:path.join(dir,'fehlt','x.md')}; await js(`App.hideToast(); true`); await exp(); await sleep(800);
+    const t=await toastTxt(); R('Export: Schreibfehler → „fehlgeschlagen“ mit Code, ohne Pfad', /fehlgeschlagen/.test(t)&&/ENOENT/.test(t)&&!t.includes(dir), t); }
+  // (6) Rückfall-Zweig in writeTo (Portal ohne Temp-Datei daneben): Temp-Name als Ordner belegt → atomar scheitert → neues Ziel per 'wx', Rechte 600
+  // Erzwungen über fs.openSync (Hülle und Prüfprogramm teilen das fs-Modul): jedes Öffnen einer Temp-Datei scheitert wie im Portal — unabhängig davon,
+  // wie atomic.js die Temp-Datei nennt (run-10 e2-3). tmpHits belegt, dass der Rückfall-Zweig wirklich lief.
+  { const echtOpen=fs.openSync; let tmpHits=0; fs.openSync=function(p,...a){ if(String(p).includes('.tmp-')){ tmpHits++; const e=new Error('portal'); e.code='EACCES'; throw e; } return echtOpen.call(fs,p,...a); };
+    try{
+      const ziel6=path.join(dir,'rueckfall.md'); dlgNext={canceled:false,filePath:ziel6}; await exp(); const da6=await warteDatei(ziel6); await sleep(200);
+      R('Export: Rückfall-Zweig (Temp-Datei unmöglich) schreibt ein neues Ziel vollständig, Rechte 600', tmpHits>0&&da6&&fs.readFileSync(ziel6,'utf8')===soll&&(fs.statSync(ziel6).mode&0o777)===0o600, {tmpHits,da6});
+      // hängender Symlink als Ziel: existsSync sagt „neu“, 'wx' darf trotzdem nicht durch den Link schreiben (Mutant 'wx'→'w', run-10 b-3 M12)
+      const ziel6b=path.join(dir,'link.md'), umgelenkt=path.join(dir,'umgelenkt.md'); fs.symlinkSync(umgelenkt,ziel6b); tmpHits=0; await js(`App.hideToast(); true`);
+      dlgNext={canceled:false,filePath:ziel6b}; await exp(); await sleep(800); const t=await toastTxt();
+      R('Export: Rückfall-Zweig schreibt nie durch einen hängenden Symlink (EEXIST, Meldung „fehlgeschlagen“)', tmpHits>0&&!fs.existsSync(umgelenkt)&&/fehlgeschlagen/.test(t)&&/EEXIST/.test(t), {tmpHits,umgelenkt:fs.existsSync(umgelenkt),t});
+      fs.unlinkSync(ziel6b);
+    } finally{ fs.openSync=echtOpen; } }
+  // (7) Brücke aus der App: falscher Name (Endung, Pfad, Leerzeichen, > 80 Zeichen) VOR dem Dialog abgewiesen; write ohne/mit fremder/verbrauchter
+  // Kennung abgewiesen; Inhalt leer/über CLIP_MAX abgewiesen; zwei Dialoge zugleich → der zweite „busy“
+  dlgCalls.length=0;
+  { const br=await js(`(async()=>{ const r=[]; for(const n of ['a.txt','../a.md','a.md.notes','a b.md','x'.repeat(81)+'.md','.md','ok.md']){ try{ await AlienDesktop.saveText.pick(n); r.push('OK'); }catch(e){ r.push('bad'); } } return r.join(','); })()`);
+    R('Export-Brücke: falsche Namen ohne Dialog abgewiesen (Endung, Pfad, Leerzeichen, > 80 Zeichen)', br==='bad,bad,bad,bad,bad,bad,OK'&&dlgCalls.length===1, {br,n:dlgCalls.length}); }
+  { const ziel7=path.join(dir,'brueck.md'); dlgNext={canceled:false,filePath:ziel7};
+    const r=await js(`(async()=>{ const r=[]; const tok=await AlienDesktop.saveText.pick('b.md'); r.push(typeof tok==='string'&&/^[0-9a-f]{32}$/.test(tok)?'tok':'kein');
+      const t=async(k,c)=>{ try{ await AlienDesktop.saveText.write(k,c); r.push('OK'); }catch(e){ r.push(/stale/.test(e.message)?'stale':/bad/.test(e.message)?'bad':'?'); } };
+      await t('f'.repeat(32),'x'); await t(tok,'x');   // fremde Kennung verbraucht die Wahl — danach gilt auch die echte nicht mehr
+      return r.join(','); })()`);
+    R('Export-Brücke: fremde Kennung abgewiesen und verbraucht die Wahl, nichts geschrieben', r==='tok,stale,stale'&&!fs.existsSync(ziel7), {r,datei:fs.existsSync(ziel7)});
+    dlgNext={canceled:false,filePath:ziel7};
+    const r2=await js(`(async()=>{ const r=[]; const tok=await AlienDesktop.saveText.pick('b.md');
+      const t=async(k,c)=>{ try{ r.push(await AlienDesktop.saveText.write(k,c)); }catch(e){ r.push(/stale/.test(e.message)?'stale':/bad/.test(e.message)?'bad':'?'); } };
+      await t(tok,'x'.repeat(128*1024+1)); await t(tok,'y'); return r.join(','); })()`);
+    R('Export-Brücke: Inhalt über CLIP_MAX abgewiesen, Kennung danach verbraucht', r2==='bad,stale'&&!fs.existsSync(ziel7), {r2});
+    dlgNext={canceled:false,filePath:ziel7};
+    const r3=await js(`(async()=>{ const tok=await AlienDesktop.saveText.pick('b.md'); const a=await AlienDesktop.saveText.write(tok,'z'.repeat(128*1024)); let b='?'; try{ await AlienDesktop.saveText.write(tok,'w'); b='OK'; }catch(e){ b=/stale/.test(e.message)?'stale':'?'; } return a+','+b; })()`);
+    R('Export-Brücke: genau CLIP_MAX Zeichen geschrieben, dieselbe Kennung kein zweites Mal', r3==='brueck.md,stale'&&fs.statSync(ziel7).size===128*1024, {r3});
+    // Ablaufzeit: die monotone Uhr der Hülle 61 s vorstellen (Hülle und Prüfprogramm teilen den Prozess) → Wahl verfallen
+    const ziel8=path.join(dir,'abgelaufen.md'); dlgNext={canceled:false,filePath:ziel8}; const tok8=await js(`AlienDesktop.saveText.pick('e.md')`);
+    const echt=performance.now; performance.now=()=>echt.call(performance)+61000; let r8; try{ r8=await js(`AlienDesktop.saveText.write(${JSON.stringify(tok8)},'x').then(()=>'OK',e=>/stale/.test(e.message)?'stale':e.message)`); } finally{ performance.now=echt; }
+    R('Export-Brücke: Wahl nach mehr als 60 s verfallen, nichts geschrieben', r8==='stale'&&!fs.existsSync(ziel8), {r8});
+    // ein neuer Dialog verwirft die alte Wahl, auch wenn er abgebrochen wird
+    dlgNext={canceled:false,filePath:ziel8}; const tokA=await js(`AlienDesktop.saveText.pick('f.md')`); dlgNext={canceled:true}; await js(`AlienDesktop.saveText.pick('g.md')`);
+    const r9=await js(`AlienDesktop.saveText.write(${JSON.stringify(tokA)},'x').then(()=>'OK',e=>/stale/.test(e.message)?'stale':e.message)`);
+    R('Export-Brücke: neuer (abgebrochener) Dialog verwirft die alte Wahl', r9==='stale'&&!fs.existsSync(ziel8), {r9}); }
+  { let zu; dlgNext=()=>new Promise(r=>{ zu=r; });
+    const r=await js(`(async()=>{ const a=AlienDesktop.saveText.pick('c.md'); await new Promise(r=>setTimeout(r,300)); let b='?'; try{ await AlienDesktop.saveText.pick('d.md'); b='OK'; }catch(e){ b=/busy/.test(e.message)?'busy':'?'; } window.__a=a; return b; })()`);
+    zu({canceled:true}); const a=await js(`window.__a.then(v=>String(v))`);
+    R('Export-Brücke: ein Dialog zur Zeit (zweiter „busy“)', r==='busy'&&a==='null', {r,a}); }
+  // (8) Backup über denselben Speicherweg, positiv (run-10 b-2): voller Inhalt auch über CLIP_MAX, Filter .notes, Rückfrage beim Überschreiben; .md/leer abgewiesen
+  { const zb=path.join(dir,'sicherung.notes'), big='AINV1'+'q'.repeat(300*1024); dlgNext={canceled:false,filePath:zb}; dlgCalls.length=0;
+    const n=await js(`AlienDesktop.saveBackup('alien-notes-2026-10-13.notes',${JSON.stringify(big)}).then(v=>String(v),e=>'ERR '+e.message)`); const o8=dlgCalls[0]||{};
+    R('Backup: voller Inhalt (> CLIP_MAX), Filter .notes, Rückfrage beim Überschreiben, Rechte 600', n==='sicherung.notes'&&fs.readFileSync(zb,'utf8')===big&&JSON.stringify(o8.filters)==='[{"name":"Alien Notes Backup","extensions":["notes"]}]'&&JSON.stringify(o8.properties)==='["showOverwriteConfirmation"]'&&(fs.statSync(zb).mode&0o777)===0o600, {n,filters:o8.filters,properties:o8.properties});
+    dlgCalls.length=0; const bb=await js(`(async()=>{ const r=[]; for(const [a,c] of [['x.md','AINV1'],['x.notes','']]){ try{ await AlienDesktop.saveBackup(a,c); r.push('OK'); }catch(e){ r.push('bad'); } } return r.join(','); })()`);
+    R('Backup: .md-Name und leerer Inhalt ohne Dialog abgewiesen', bb==='bad,bad'&&dlgCalls.length===0, {bb,n:dlgCalls.length}); }
+  // (9) gesperrt: App-Aufruf öffnet keinen Dialog
+  await js(`App.lock(); true`); await sleep(400); dlgCalls.length=0; await js(`try{ App.saveCurrent(); }catch(_){} true`); await sleep(500);
+  R('Export: gesperrt kein Dialog', dlgCalls.length===0, dlgCalls.length);
 }
 async function unreadable(){
   R('Lesefehler: keine Einrichtung', await until(visible('screen-lock'),15000)&&!(await js(visible('screen-setup'))));
@@ -778,6 +914,7 @@ app.on('browser-window-created',(_e,w)=>{ if(win) return; win=w;
       if(STEP==='fresh') await fresh(); else if(STEP==='restart') await restart(); else if(STEP==='unreadable') await unreadable();
       else if(STEP==='background') await background();
       else if(STEP==='markierung') await markierung();
+      else if(STEP==='export') await exportStep();
       else if(STEP==='quit'||STEP==='quithang'){ await quitStep(STEP==='quithang'); return; }   // endet in will-quit (eigene Endmarke)
       else if(STEP==='quitslow'){ await quitSlow(); return; }
       else if(STEP==='quitreject'){ await quitReject(); return; }

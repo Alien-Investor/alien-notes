@@ -1,5 +1,23 @@
 # Changelog — Alien Notes
 
+## v1.12 — 2026-10-13
+
+Eine Notiz als Datei speichern, dazu kleine Korrekturen rund ums Sperren und am Speichern-Dialog der Desktop-Fassung. Keine Änderung an Datei-Format,
+Verschlüsselung oder Berechtigungen; das Backup bleibt immer verschlüsselt.
+- **Als Datei:** Der neue Knopf „Als Datei“ im Editor speichert die offene Notiz als Markdown-Datei (`.md`). Sie enthält denselben Text wie beim
+  Kopieren, Checklisten als `- [ ]`/`- [x]`-Zeilen, und lässt sich in jedem Texteditor und in Obsidian öffnen. Die Datei ist **nicht verschlüsselt**,
+  deshalb fragt die App vorher nach. Der vorgeschlagene Dateiname nennt nur Datum und Uhrzeit, nie den Titel, sonst stünde der Titel zum Beispiel
+  in der Liste zuletzt verwendeter Dateien. Am Desktop geht es über den Speichern-Dialog; sperrt die App, während er offen ist, schreibt sie nichts
+  und sagt das nach dem Entsperren. In der Android-App geht es über den Teilen-Dialog. Dort gibt die App nur die Datei weiter, nicht zusätzlich den
+  Text als Nachricht. Die Kopie, die die Android-App dafür in ihrem privaten Zwischenspeicher ablegt, löscht sie beim nächsten Entsperren und beim
+  nächsten Start.
+- **Nach dem Sperren:** Die JavaScript-Engine hält den letzten Treffer einer internen Textsuche an einer Stelle fest, die jedes Skript der Seite
+  lesen kann. Dort konnte nach dem Sperren noch eine Zeile einer Notiz stehen, etwa die Vorschauzeile aus der Liste. Andere Programme kamen nicht
+  heran. Die App leert diese Stelle jetzt beim Sperren, wie schon Anzeigen und Felder, und lässt sie danach auch beim Import und beim
+  Passphrasen-Wechsel nicht wieder füllen.
+- **Desktop — Speichern-Dialog:** Scheitert das Speichern (Backup oder „Als Datei“), nennt die Meldung nur noch die Fehlerart, nicht mehr den vollen
+  Pfad. Außerdem bittet die App den Dialog, vor dem Ersetzen einer bestehenden Datei nachzufragen.
+
 ## v1.11 — 2026-10-10
 
 Sicherheitskorrektur für die Desktop-Fassung (Linux). Keine Änderung an Datei-Format, Verschlüsselung, Berechtigungen oder Daten; auf Android

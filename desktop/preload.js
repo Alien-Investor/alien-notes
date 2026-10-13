@@ -15,6 +15,10 @@ contextBridge.exposeInMainWorld('AlienDesktop',{
     del:()=>{ sync('store:del'); }
   },
   saveBackup:(name,content)=>ipcRenderer.invoke('backup:save',String(name),String(content)),   // → Dateiname oder null (abgebrochen)
+  saveText:{   // eine Notiz als .md (Klartext, v1.12), zweistufig: erst Dialog → Kennung oder null, dann den Text nur noch offen schreiben → Dateiname
+    pick:name=>ipcRenderer.invoke('export:pick',String(name)),
+    write:(tok,content)=>ipcRenderer.invoke('export:write',String(tok),String(content))
+  },
   onLock:cb=>{ if(typeof cb==='function') ipcRenderer.on('lock',()=>cb()); },
   onBackground:cb=>{ if(typeof cb==='function') ipcRenderer.on('bg',(_e,h)=>cb(h==='blur'?'blur':!!h)); }   // Fenster minimiert/versteckt (true), zurück (false), Fensterwechsel ('blur': nur Gate-Hygiene, keine Sperre)
 });

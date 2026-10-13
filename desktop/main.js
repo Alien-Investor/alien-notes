@@ -174,21 +174,48 @@ else {
     try{ fs.unlinkSync(VAULT_FILE); e.returnValue={ok:true}; }catch(err){ e.returnValue={ok:!!(err&&err.code==='ENOENT')}; }
   });
 
-  // Backup: Speichern-Dialog (im Flatpak über das Portal). null = abgebrochen → app.js setzt dann keinen Backup-Stempel.
+  // Speichern-Dialog (im Flatpak über das Portal). null = abgebrochen → app.js setzt dann keinen Backup-Stempel bzw. meldet nichts.
+  // showOverwriteConfirmation: ein bestehendes Ziel nur nach Rückfrage (Electron fragt sonst nicht; run-10 b-5). Fehler gehen nur als Code an die Seite,
+  // nie mit Pfad — die Meldung stünde sonst im Toast, nach einer Sperre auch auf dem Sperrbildschirm (run-10 b-8).
+  const pick=async(name,filters)=>{ const r=await dialog.showSaveDialog(win,{defaultPath:name,filters,properties:['showOverwriteConfirmation']}); return r.canceled||!r.filePath?null:r.filePath; };
+  function writeTo(file,content){
+    try{
+      // Rückfall nur für ein NEUES Ziel (Portal ohne Temp-Datei daneben): eine bestehende Datei nie direkt überschreiben (Audit run-6 #3)
+      try{ writeAtomic(file,content); }
+      catch(err){
+        if(fs.existsSync(file)) throw err;
+        const fd=fs.openSync(file,'wx',0o600);
+        try{ writeFull(fd,content); }catch(e2){ fs.closeSync(fd); try{ fs.unlinkSync(file); }catch(_){} throw e2; }
+        fs.closeSync(fd);
+      }
+    }catch(err){ throw new Error(String(err&&err.code||'write')); }
+    return path.basename(file);
+  }
   ipcMain.handle('backup:save',async(e,name,content)=>{
     if(!fromApp(e)) throw new Error('denied');
     if(typeof name!=='string'||!/^[\w.-]{1,80}\.notes$/.test(name)||typeof content!=='string'||!content||content.length>FILE_MAX) throw new Error('bad');
-    const r=await dialog.showSaveDialog(win,{defaultPath:name,filters:[{name:'Alien Notes Backup',extensions:['notes']}]});
-    if(r.canceled||!r.filePath) return null;
-    // Rückfall nur für ein NEUES Ziel (Portal ohne Temp-Datei daneben): ein bestehendes Backup nie direkt überschreiben (Audit run-6 #3)
-    try{ writeAtomic(r.filePath,content); }
-    catch(err){
-      if(fs.existsSync(r.filePath)) throw err;
-      const fd=fs.openSync(r.filePath,'wx',0o600);
-      try{ writeFull(fd,content); }catch(e2){ fs.closeSync(fd); try{ fs.unlinkSync(r.filePath); }catch(_){} throw e2; }
-      fs.closeSync(fd);
-    }
-    return path.basename(r.filePath);
+    const file=await pick(name,[{name:'Alien Notes Backup',extensions:['notes']}]); return file?writeTo(file,content):null;
+  });
+  // Eine Notiz als Markdown (v1.12, KLARTEXT): der zweite Speicherweg der Hülle, ZWEISTUFIG (run-10 b-1). export:pick öffnet den Dialog und liefert nur
+  // eine zufällige Kennung; den Text schickt die App erst danach mit export:write — und nur, wenn sie noch entsperrt ist. Sperrt sie, während der Dialog
+  // offen ist, kommt kein Text, und die Wahl verfällt (EXPORT_TTL, monotone Uhr). Nur .md, höchstens eine ganze Notiz (CLIP_MAX, wie „Kopieren“), ein
+  // Dialog zur Zeit, jede Kennung genau einmal. Die Datei liegt genau dort, wo der Nutzer sie hinlegt, und sonst nirgends.
+  const EXPORT_TTL=60000; let exportPending=null, exportPicking=false;
+  ipcMain.handle('export:pick',async(e,name)=>{
+    if(!fromApp(e)) throw new Error('denied');
+    if(typeof name!=='string'||!/^[\w.-]{1,80}\.md$/.test(name)) throw new Error('bad');
+    if(exportPicking) throw new Error('busy');
+    exportPicking=true; exportPending=null;
+    try{ const file=await pick(name,[{name:'Markdown',extensions:['md']}]); if(!file) return null;
+      const tok=crypto.randomBytes(16).toString('hex'); exportPending={tok,file,at:performance.now()}; return tok; }
+    finally{ exportPicking=false; }
+  });
+  ipcMain.handle('export:write',async(e,tok,content)=>{
+    if(!fromApp(e)) throw new Error('denied');
+    const p=exportPending; exportPending=null;   // jede Kennung genau einmal, auch bei Fehlern
+    if(!p||typeof tok!=='string'||tok!==p.tok||performance.now()-p.at>EXPORT_TTL) throw new Error('stale');
+    if(typeof content!=='string'||!content||content.length>CLIP_MAX) throw new Error('bad');
+    return writeTo(p.file,content);
   });
 
   // Jede Webansicht: keine Navigation, keine neuen Fenster, keine <webview>. Bekannte Links gehen an den System-Browser.

@@ -4,7 +4,8 @@ Lokale, verschlüsselte **Notizen- und Checklisten-App** für Android / Graphene
 Läuft komplett **offline** — keine Cloud, kein Server, kein Konto, keine Telemetrie.
 Die Android-App fordert **keine Internet-Berechtigung** an — nur die zwei normalen Berechtigungen für den Fingerabdrucksensor (siehe Sicherheit).
 Die Desktop-Fassung läuft als Flatpak **ohne Netzwerk-Berechtigung und ohne Zugriff auf deine Dateien**.
-Deine Notizen verlassen das Gerät nie im Klartext.
+Die App selbst schickt nie etwas weg und gibt Klartext nur heraus, wenn du es auslöst — etwa beim Kopieren, beim Markieren (am Linux-Desktop landet
+Markiertes in der Mittelklick-Auswahl) oder mit „Als Datei“. Was Tastatur, Bedienungshilfen oder andere Programme mitlesen, steuert sie nicht (siehe Grenzen).
 
 Schwester-App von [Alien Pass](https://github.com/Alien-Investor/alien-pass) und dem
 [Sachwert-Tresor](https://github.com/Alien-Investor/sachwert-tresor) — gleiche Architektur, gleiche Härtung, gleicher Alien-Investor-Stil.
@@ -149,6 +150,10 @@ Schlüsselableitung schafft, und schlägt eine passende Argon2-Stufe vor.
 - **Kopieren** legt die ganze Notiz in die Zwischenablage; die App leert sie nach der eingestellten Zeit (ab Werk 30 s, abschaltbar) und beim
   Sperren. Einzige Ausnahme: Bei „Sperren im Hintergrund: sofort“ bleibt das Kopierte bis zum Ablauf der Zeit stehen, damit es sich noch in eine
   andere App einfügen lässt (seit 1.3). In der Android-App ist Kopiertes als **sensibel** markiert — die System-Vorschau zeigt den Inhalt nicht (Android 13+).
+- **Als Datei** (seit 1.12): speichert die offene Notiz als Markdown-Datei (`.md`, derselbe Text wie beim Kopieren, Checklisten als `- [ ]`/`- [x]`),
+  lesbar in jedem Editor und in Obsidian. Die Datei ist **nicht verschlüsselt**, deshalb fragt die App vorher nach. Der Dateiname nennt nur Datum und
+  Uhrzeit, nie den Titel. Am Desktop über den Speichern-Dialog, in der Android-App über den Teilen-Dialog; die App übergibt dafür eine Kopie aus
+  ihrem privaten Cache und löscht sie beim nächsten Entsperren und beim nächsten Start. Das Backup bleibt immer verschlüsselt.
 - **Sperre, lockerer als beim Passwort-Manager:** ab Werk keine Sperre nach Inaktivität und im Hintergrund erst nach 30 Minuten (beides
   einstellbar bis „nie“ bzw. „sofort“). Die Hintergrund-Sperre greift, wenn du nach der gewählten Zeit zurückkehrst; bis dahin bleibt der
   Schlüssel im Arbeitsspeicher. „Jetzt sperren“ löscht Schlüssel und alles Angezeigte sofort. Die Datei auf dem Gerät ist immer verschlüsselt.

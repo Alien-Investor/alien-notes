@@ -24,7 +24,8 @@ description: |
   Alien Notes is a local, encrypted notes and checklist app. It runs fully offline — no cloud,
   no server, no account, no telemetry. The app requests no INTERNET permission — only the two
   normal permissions for the fingerprint sensor (USE_BIOMETRIC, USE_FINGERPRINT up to Android 8.1).
-  Your notes never leave the device in plaintext. Sister app of Alien Pass and Sachwert-Tresor.
+  The app itself never sends anything and only hands out plaintext when you trigger it, for example by copying or by saving a note as a file.
+  Sister app of Alien Pass and Sachwert-Tresor.
 
   Features:
   - Notes (free text, up to 100,000 characters) and checklists (up to 200 entries with boxes, "done to the bottom",
@@ -50,6 +51,8 @@ description: |
   - Copy puts the whole note into the clipboard; auto-clear after 15/30/60 s (default 30 s, can be switched off) and on lock; copied content
     is flagged sensitive so the Android 13+ system preview hides it. With "Lock in background: immediately" the copied note stays until the
     chosen time runs out so it can still be pasted into another app (since 1.3)
+  - As file (since 1.12): saves the open note as a Markdown file (.md, the same text as Copy) through the share sheet; the file is not
+    encrypted, so the app asks first; the file name only carries date and time, never the title; the backup always stays encrypted
   - Locking, more relaxed than a password manager: by default no lock after inactivity and in the background only after 30 minutes
     (both adjustable up to "never" / "immediately"); "Lock now" clears the key and everything on screen at once; the file is always encrypted.
     With "immediately" the Android app also locks while the file picker is open — unlock within five minutes and the import continues with the chosen file (since 1.2)

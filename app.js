@@ -16,7 +16,7 @@ const FONT_KEY='ai-notes-font', FONT_SIZES=['m','l','xl'];
    ============================================================ */
 const LS_KEY = 'ai-notes-vault';
 const LANG_KEY = 'ai-notes-lang';
-const APP_VERSION = '1.11';   // Anzeige in den Einstellungen; muss VERSION_NAME entsprechen (build-www.sh setzt es aus VERSION, roundtrip-test.mjs prüft es)
+const APP_VERSION = '1.12';   // Anzeige in den Einstellungen; muss VERSION_NAME entsprechen (build-www.sh setzt es aus VERSION, roundtrip-test.mjs prüft es)
 
 /* ===== KIT: i18n — Deutsch ist Quelle im HTML (data-i18n / data-i18n-html / data-i18n-ph), Englisch im I18N-Dict,
    dynamische Texte per tr(key,{params}) aus T {de,en}. ===== */
@@ -55,9 +55,9 @@ const I18N = {
   "cheat.nSrc":"1. first","cheat.n":"1. first","cheat.cSrc":"- [ ] open","cheat.c":"☐ open","cheat.dSrc":"- [x] done","cheat.d":"☑ done",
   "cheat.codeSrc":"`code`","cheat.code":"code","cheat.example":"Insert example",
   "f.fav":"Favourite","f.hide":"No preview","f.pinned":"Pin to the top","f.md":"Markdown preview",
-  "ed.done":"Done","ed.copy":"Copy","ed.delete":"Delete",
+  "ed.done":"Done","ed.copy":"Copy","ed.file":"As file","ed.delete":"Delete",
   "bk.title":"Encrypted backup",
-  "bk.intro":"The <code>.notes</code> file holds all notes <strong>encrypted</strong> (Argon2id + AES-256-GCM) — it only opens with the passphrase. Sync it between devices e.g. via Syncthing; nothing is ever exported in plaintext.",
+  "bk.intro":"The <code>.notes</code> file holds all notes <strong>encrypted</strong> (Argon2id + AES-256-GCM) — it only opens with the passphrase. Sync it between devices e.g. via Syncthing. The backup is always encrypted — “As file” in the editor, by contrast, saves a single note unencrypted.",
   "bk.export":"Create backup (.notes)",
   "bk.importTitle":"Import backup (merge)",
   "sn.title":"Import from Standard Notes","sn.pick":"Choose backup file","list.selTitle":"Select several notes","sel.all":"All","sel.none":"None","sel.trash":"Trash","sel.cat":"Category…","sel.cancel":"Cancel",
@@ -89,7 +89,7 @@ const I18N = {
   "set.pinDisable":"Discard PIN",
   "d.pick":"Select a note on the left or create a new one",
   "help.hDesk":"Desktop version (Linux)",
-  "help.lDesk":"<li><strong>No network — enforced by the system:</strong> the desktop app runs as a Flatpak without network permission; inside the sandbox there is no connection to the outside. On top of that the app itself blocks every connection. Check: <code>flatpak info --show-permissions org.alieninvestor.notes</code> — there is no <code>network</code>.</li><li><strong>Notes file:</strong> <code>~/.var/app/org.alieninvestor.notes/data/alien-notes/notes.ainv</code> — encrypted, readable only by you, rewritten completely on every change (never half-written). The app sees no other files: backup and import go through the system file dialog, which only grants the chosen file.</li><li><strong>Clipboard:</strong> copied notes are marked as a password for KDE — Klipper keeps them out of its history. Other clipboard managers may ignore the mark. The app clears the clipboard after the set time, also in the background, on lock and on quit, but only if its own copy is still there. The same applies to text you select in the app, with mouse or keyboard, including Tab into a filled passphrase field (on Linux instantly pasteable with a middle click). Klipper can mirror every copy into this middle-click selection as well (setting “Keep the selection and clipboard the same”) — the app clears it there too. Selected text does not carry the KDE mark: if Klipper is set to keep the selection in its history, turn that off. Ctrl+C and Ctrl+X in the app copy like the copy button.</li><li><strong>Syncing with the phone:</strong> on the phone “Create backup” into a Syncthing folder, on the desktop import it under Backup — and the other way round. See “Backup &amp; Sync”.</li><li><strong>Locking:</strong> after inactivity and when the window has been minimised or hidden for longer than the chosen time — with “immediately” right when minimising (setting “Lock in background”; “background” here means minimised or hidden; switching to another window does not count, but it clears typed passphrases and PINs). On <strong>screen lock and suspend the desktop app does not lock by itself</strong> — inside the Flatpak it is not told. So use the system lock and, if you want, a short inactivity lock; Ctrl+L locks immediately.</li><li><strong>Keyboard:</strong> Ctrl+F search, Ctrl+N new note, Ctrl+S finish the note (save and close), Ctrl+Z / Ctrl+Shift+Z undo / redo in the open note, Ctrl+A only selects the content of a filled-in field or, in the Markdown view, the open note, Ctrl+L lock, Esc closes. From about 1000 pixels window width, list and note sit side by side.</li><li><strong>Honest limits:</strong> the desktop app ships its own browser engine (Electron) — security updates for it only arrive with a new app version, not through the system. No protection against screenshots (Linux has no way to block them). Under X11 every running program can read keyboard and clipboard; Wayland separates programs better. No fingerprint.</li>",
+  "help.lDesk":"<li><strong>No network — enforced by the system:</strong> the desktop app runs as a Flatpak without network permission; inside the sandbox there is no connection to the outside. On top of that the app itself blocks every connection. Check: <code>flatpak info --show-permissions org.alieninvestor.notes</code> — there is no <code>network</code>.</li><li><strong>Notes file:</strong> <code>~/.var/app/org.alieninvestor.notes/data/alien-notes/notes.ainv</code> — encrypted, readable only by you, rewritten completely on every change (never half-written). The app sees no other files: backup, import and “As file” go through the system file dialog, which only grants the chosen file.</li><li><strong>Clipboard:</strong> copied notes are marked as a password for KDE — Klipper keeps them out of its history. Other clipboard managers may ignore the mark. The app clears the clipboard after the set time, also in the background, on lock and on quit, but only if its own copy is still there. The same applies to text you select in the app, with mouse or keyboard, including Tab into a filled passphrase field (on Linux instantly pasteable with a middle click). Klipper can mirror every copy into this middle-click selection as well (setting “Keep the selection and clipboard the same”) — the app clears it there too. Selected text does not carry the KDE mark: if Klipper is set to keep the selection in its history, turn that off. Ctrl+C and Ctrl+X in the app copy like the copy button.</li><li><strong>Syncing with the phone:</strong> on the phone “Create backup” into a Syncthing folder, on the desktop import it under Backup — and the other way round. See “Backup &amp; Sync”.</li><li><strong>Locking:</strong> after inactivity and when the window has been minimised or hidden for longer than the chosen time — with “immediately” right when minimising (setting “Lock in background”; “background” here means minimised or hidden; switching to another window does not count, but it clears typed passphrases and PINs). On <strong>screen lock and suspend the desktop app does not lock by itself</strong> — inside the Flatpak it is not told. So use the system lock and, if you want, a short inactivity lock; Ctrl+L locks immediately.</li><li><strong>Keyboard:</strong> Ctrl+F search, Ctrl+N new note, Ctrl+S finish the note (save and close), Ctrl+Z / Ctrl+Shift+Z undo / redo in the open note, Ctrl+A only selects the content of a filled-in field or, in the Markdown view, the open note, Ctrl+L lock, Esc closes. From about 1000 pixels window width, list and note sit side by side.</li><li><strong>Honest limits:</strong> the desktop app ships its own browser engine (Electron) — security updates for it only arrive with a new app version, not through the system. No protection against screenshots (Linux has no way to block them). Under X11 every running program can read keyboard and clipboard; Wayland separates programs better. No fingerprint.</li>",
   "help.hPin":"Quick unlock with a PIN (desktop)",
   "help.pPin":"Optionally a PIN replaces the passphrase after a lock (Settings → Quick unlock with a PIN). <strong>How it works:</strong> when you set it up, the app wraps a copy of the data key under a key derived from your PIN (Argon2id, same parameters as the notes file) and keeps that copy <em>in memory only</em>. A lock through inactivity or the background clears the session as before, but that wrapped copy stays; the PIN opens it again. Nothing of it is written to disk, the notes file stays unchanged and backups carry none of it. Quitting the app removes the copy, and after 24 hours at the latest the app discards it itself: the next start asks for the passphrase. <strong>What it costs:</strong> six digits are a tiny search space. With the file's Argon2 parameters an ordinary CPU tries them all in a few hours, a single graphics card in roughly ten minutes — never enough to protect the file, each extra digit only multiplies the effort by ten. The PIN only protects that copy in memory. With a PIN, “locked” therefore no longer means “key wiped from memory”: whoever can read the memory of the running program holds the wrapped key and can try PINs offline — the three attempts are a rule in the code, not a cryptographic limit. <strong>What discards the PIN:</strong> three wrong attempts, a passphrase change, deleting the notes, an altered or swapped notes file, the end of the 24 hours, and quitting the app. <strong>The deliberate bolt:</strong> “Lock now” (Ctrl+L) keeps the PIN but demands the passphrase once — afterwards the PIN applies again. If you share the computer with others or have unencrypted swap, leave the PIN off.",
   "set.bioTitle":"Fingerprint unlock (Android)",
@@ -119,7 +119,7 @@ const I18N = {
   "help.closeX":"Close ✕",
   "help.title":"Manual",
   "help.h1":"What is Alien Notes?",
-  "help.p1":"A <strong>local, encrypted notes app</strong> for notes and checklists. Runs fully <strong>offline</strong> — no cloud, no server, no telemetry, no account. The Android app does not even have an internet permission. Your notes never leave the device in plaintext.",
+  "help.p1":"A <strong>local, encrypted notes app</strong> for notes and checklists. Runs fully <strong>offline</strong> — no cloud, no server, no telemetry, no account. The Android app does not even have an internet permission. The app itself never sends anything and only hands out plaintext when you trigger it — for example by copying, by selecting text (on the Linux desktop it lands in the middle-click selection) or with “As file”.",
   "help.warn":"⚠ There is no reset and no backdoor. Forget your passphrase and the notes are gone for good. Make regular backups and keep the passphrase safe.",
   "help.h2":"First steps",
   "help.l2":"<li><strong>Choose a passphrase</strong> — at least 12 characters, better six dice words (the suggest button builds them from the EFF list). Write it down and store it safely.</li><li><strong>+</strong> creates a note. The title may stay empty — the first line of the text serves as the title. There is no save button: the app saves while you type and when you leave the note.</li><li><strong>Checklists:</strong> switch a note to “Checklist” — every line becomes an entry with a box; “Done to the bottom” sorts ticked entries down. Switching back turns the entries into “- [ ] …” or “- [x] …” lines. Long entries wrap. Enter starts a new entry (in the middle of the text it splits it), pasted text with several lines becomes several entries.</li><li><strong>Undo ↶ / Redo ↷:</strong> The buttons at the top of the editor take back the latest changes to the open note and bring them back again. Typing counts as one step until a short pause, every other change on its own, including an entry removed with ✕, a tick, sorting or switching between note and checklist. Up to 50 steps (fewer for very long notes), only while the note is open: closing and locking clear the history. With a keyboard: Ctrl+Z and Ctrl+Shift+Z (or Ctrl+Y).</li><li><strong>Categories</strong> work like folders: type one freely (suggestions from existing ones). The list filters via the chips at the top; the ★ chip shows favourites only, the ☐ chip only checklists with open items (both combine with a category). Pinned notes always sit at the top. <strong>No preview:</strong> the checkbox in the editor makes the list show only the title — against onlookers. <strong>Rename:</strong> tap the category chip, then the pencil ✎ next to it — every note of that category moves (including the trash); an empty name means “no category”.</li><li><strong>Several at once:</strong> the ☑ button next to the trash turns on checkboxes; tap rows to pick them (search and chips keep working, “All” picks every row shown; already picked notes stay picked even when a filter hides them). The bar at the bottom moves the picked notes to the trash (one “Undo” for all, at most 200 at once — that is what the trash holds), sets a category (existing ones are right there to pick, or just type a new one) or the favourite mark.</li><li><strong>Appearance:</strong> Settings → Appearance offers Black/Soft and three font sizes. Both are device settings — not in the file, not in the backup.</li><li>The search covers title, text, checklist entries and category.</li>",
@@ -131,10 +131,10 @@ const I18N = {
   "help.pTrash":"Deleted notes go to the trash for <strong>30 days</strong> — the icon right of the <strong>+</strong> in the search row; the number next to it says how much is in there. It shows only <strong>title, type and date of deletion</strong>. <strong>The trash holds 200 notes</strong>; once it is full the next deletion destroys the oldest one immediately and for good, and the confirmation tells you which one. <strong>Honestly:</strong> while a note sits in the trash it is also part of every backup of this device. To get rid of something right away use “Delete permanently” or “Empty trash”. <strong>The trash is device-local:</strong> a deletion travels to your other devices when merging, the <em>content</em> does not. So you can only restore on the device where you deleted.",
   "help.h7":"Backup & sync",
   "help.l7":"<li><strong>Create backup</strong> writes a <code>.notes</code> file (encrypted with your passphrase). It can safely go into Syncthing, onto a stick or into a backup.</li><li><strong>Import</strong> merges: per note the newer change wins, deletions are carried over (for one year). The file may use a different passphrase — your local one stays.</li><li>With two devices: export on both regularly and import the other's backup. Both sides end up at the same state.</li><li>Alien Pass and Alien Notes use the same file format family but separate files: a <code>.vault</code> file is refused here, a <code>.notes</code> file there — they never share keys.</li><li class=\"no-desk\"><strong>If “Lock in background” is set to “immediately”</strong>, the Android app locks when the file picker opens. The chosen file is not lost: unlock within five minutes and the import continues with exactly this file (backup as well as Standard Notes; for a <code>.notes</code> backup the file's passphrase prompt follows).</li>",
-  "help.h8":"Clipboard",
-  "help.l8":"<li>“Copy” puts the whole note into the clipboard (title, text or checklist as “- [x] …” lines).</li><li>The app clears the clipboard after the chosen time (default 30 s) and when it locks. With “Lock in background: immediately” the app locks as soon as you switch away, but the copied note stays until the chosen time runs out, so you can still paste it into another app. Notes are not always secret, so this can be switched off in Settings.</li><li>The Android app flags copied content as <strong>sensitive</strong>: the system preview shown when copying hides the content (Android 13+).</li>",
+  "help.h8":"Clipboard and file",
+  "help.l8":"<li>“Copy” puts the whole note into the clipboard (title, text or checklist as “- [x] …” lines).</li><li>The app clears the clipboard after the chosen time (default 30 s) and when it locks. With “Lock in background: immediately” the app locks as soon as you switch away, but the copied note stays until the chosen time runs out, so you can still paste it into another app. Notes are not always secret, so this can be switched off in Settings.</li><li>The Android app flags copied content as <strong>sensitive</strong>: the system preview shown when copying hides the content (Android 13+).</li><li>“As file” saves the open note as a Markdown file (<code>.md</code>, the same text as “Copy”). The file is <strong>not encrypted</strong> — after a confirmation it lives outside Alien Notes, wherever you put it. The file name only carries the date and time, never the title.</li><li class=\"no-desk\">In the Android app the file goes through the share sheet. The app hands over a copy from its private cache and deletes it on the next unlock and on the next start. The share sheet belongs to the system: it stays open even if the app locks behind it.</li>",
   "help.h9":"Security in detail",
-  "help.l9":"<li><strong>Key derivation:</strong> Argon2id (default 64 MiB, 3 passes) from your passphrase — memory-hard, so expensive for GPU attacks on a stolen file.</li><li><strong>Encryption:</strong> AES-256-GCM (WebCrypto). A random data key encrypts the notes; the passphrase only wraps that key. The file header is authenticated too — tampering is detected.</li><li><strong>Device:</strong> the Android app requests exactly two normal permissions, both for the fingerprint sensor: USE_BIOMETRIC and USE_FINGERPRINT (the latter only up to Android 8.1, brought in by the AndroidX biometric library). No internet, no storage, no contacts. Besides these the APK only carries the AndroidX-generated signature permission DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION, which grants nothing. It forbids screenshots and app-switcher preview (FLAG_SECURE, can be switched off), excludes itself from cloud, adb and device-to-device backups and keeps its fields out of the Android autofill framework (since 1.4): a password manager set up as the autofill service no longer sees the passphrase fields and cannot offer to save them.</li><li><strong>Third-party code:</strong> only the Argon2 library hash-wasm (MIT) and the EFF word list, both bundled and hash-checked in the build. No CDN, no tracker.</li><li><strong>Limits:</strong> no images or attachments, no sharing of plaintext, no per-note passwords. A passphrase cannot be recovered.</li>"
+  "help.l9":"<li><strong>Key derivation:</strong> Argon2id (default 64 MiB, 3 passes) from your passphrase — memory-hard, so expensive for GPU attacks on a stolen file.</li><li><strong>Encryption:</strong> AES-256-GCM (WebCrypto). A random data key encrypts the notes; the passphrase only wraps that key. The file header is authenticated too — tampering is detected.</li><li><strong>Device:</strong> the Android app requests exactly two normal permissions, both for the fingerprint sensor: USE_BIOMETRIC and USE_FINGERPRINT (the latter only up to Android 8.1, brought in by the AndroidX biometric library). No internet, no storage, no contacts. Besides these the APK only carries the AndroidX-generated signature permission DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION, which grants nothing. It forbids screenshots and app-switcher preview (FLAG_SECURE, can be switched off), excludes itself from cloud, adb and device-to-device backups and keeps its fields out of the Android autofill framework (since 1.4): a password manager set up as the autofill service no longer sees the passphrase fields and cannot offer to save them.</li><li><strong>Third-party code:</strong> only the Argon2 library hash-wasm (MIT) and the EFF word list, both bundled and hash-checked in the build. No CDN, no tracker.</li><li><strong>Limits:</strong> no images or attachments, no per-note passwords. A passphrase cannot be recovered.</li>"
 };
 const T = {
   "err.setupShort":{de:"Mindestens 12 Zeichen.",en:"At least 12 characters."},
@@ -239,6 +239,14 @@ const T = {
   "copy.doneNoClear":{de:"{what} kopiert",en:"{what} copied"},
   "copy.manual":{de:"Kopieren nicht möglich — bitte manuell markieren",en:"Copy not possible — please select manually"},
   "copy.empty":{de:"Nichts zu kopieren",en:"Nothing to copy"},
+  "exp.empty":{de:"Leere Notiz — nichts zu speichern",en:"Empty note — nothing to save"},
+  "exp.ask":{de:"Diese Notiz als Markdown-Datei speichern? Die Datei ist unverschlüsselt: Wer sie findet, kann sie lesen.",en:"Save this note as a Markdown file? The file is not encrypted: anyone who finds it can read it."},
+  "exp.askNative":{de:"Diese Notiz als Markdown-Datei teilen? Die Datei ist unverschlüsselt: Wer sie findet, kann sie lesen. Danach öffnet sich der Teilen-Dialog — dort ein Ziel wählen.",en:"Share this note as a Markdown file? The file is not encrypted: anyone who finds it can read it. The share sheet opens next — pick a destination there."},
+  "exp.ok":{de:"Speichern",en:"Save"},"exp.okNative":{de:"Teilen",en:"Share"},
+  "exp.done":{de:"Gespeichert: {n} — unverschlüsselt, liegt jetzt außerhalb von Alien Notes.",en:"Saved: {n} — not encrypted, it now lives outside Alien Notes."},
+  "exp.doneShare":{de:"Über den Teilen-Dialog bereitgestellt: {n} — unverschlüsselt.",en:"Offered via the share sheet: {n} — not encrypted."},
+  "exp.failed":{de:"Speichern fehlgeschlagen: {e}",en:"Saving failed: {e}"},
+  "exp.dropped":{de:"„Als Datei“ wurde nicht gespeichert: Die App hat gesperrt, während der Speichern-Dialog offen war.",en:"“As file” was not saved: the app locked while the save dialog was open."},
   "what.note":{de:"Notiz",en:"Note"},"what.sel":{de:"Markierung",en:"Selection"},
   "list.hidden":{de:"Vorschau aus",en:"Preview off"},
   "sel.count":{de:"{n} ausgewählt",en:"{n} selected"},"sel.count1":{de:"1 ausgewählt",en:"1 selected"},"sel.fav":{de:"★ Favorit",en:"★ Favourite"},"sel.unfav":{de:"☆ Favorit weg",en:"☆ Unfavourite"},
@@ -1177,7 +1185,8 @@ const App = (function(){
   // Beim Verlassen eines Gate-Bildschirms: wurde das Fenster schon während Argon2 versteckt, galt onHidden noch für „gesperrt“ —
   // bei „sofort“ jetzt nachholen statt die Notizen offen zu lassen (Audit run-7, Härtung)
   function leaveGate(){ if(DESK&&clipOwnedAt) clearClip(); if(bgAway&&settings().bgLock===0){ lock(); toast(tr('toast.autolocked')); return true; } return false; }
-  function enterApp(){ if(leaveGate()) return; applySecure(settings().secure!==0); screen('app'); tab('list'); renderAll(); resetIdle(); runPendingFile();
+  function enterApp(){ if(leaveGate()) return; applySecure(settings().secure!==0); screen('app'); tab('list'); renderAll(); resetIdle(); runPendingFile(); dropExports();
+    if(exportDropped){ exportDropped=false; toast(tr('exp.dropped'),{ms:8000}); }
     if(storedLen>MAX_FILE_BYTES) toast(tr('toast.fileOver',{m:MAX_FILE_BYTES/1048576}));   // Datei über der Schreibgrenze (älterer Build oder fremde Datei): ehrlich sagen, was noch gespeichert wird
     if(bioRearmDek){ const d=bioRearmDek; bioRearmDek=null; bioArm(d, KDF, WRAP, true).then(ok=>{ if(ok) toast(tr('bio.rearmed')); if(VAULT) renderSettings(); }); } }   // nach Neustart: Slot mit frischem Zufall neu bewaffnen; if(VAULT): während der Neu-Einrichtung gesperrt → sonst TypeError
   // keepClip (v1.3, aus Alien Pass v1.11): nur die Sofort-Sperre beim Verstecken (bgLock=0) setzt es — Kopiertes bleibt dann bis zum laufenden Zeitgeber
@@ -1193,6 +1202,7 @@ const App = (function(){
     pendingUnlock=null; pendingSecret=null; pendingOtpauth='';
     bioGen++; bioRearmDek=null; bioArmed=false; bioNeedsRearm=false;   // laufende Fingerabdruck-Vorgänge verfallen (Generation)
     clearRendered(); screen('lock'); boot();   // Sperrbildschirm sofort; boot() liest die Datei asynchron nach (Android-Plugin)
+    /(?:)/.exec('');   // RegExp.input/lastMatch/leftContext leeren: hielten nach der Sperre den letzten Treffer, z. B. die Vorschauzeile einer Notiz (preview(), gemessen v1.12; Querfund Tresor v3.10.1 Q-1)
   }
   // Nach dem Sperren darf nichts Entschlüsseltes im DOM oder in Formularfeldern bleiben
   function clearRendered(){
@@ -1785,6 +1795,49 @@ const App = (function(){
     set(u,!(h&&(h.i>0||h.dirty))); set(r,!(h&&!h.dirty&&h.i<h.stack.length-1));
     u.title=tr('ed.undo'); u.setAttribute('aria-label',tr('ed.undo')); r.title=tr('ed.redo'); r.setAttribute('aria-label',tr('ed.redo')); }
   function copyCurrent(){ if(!editing) return; copyText(noteText(readDraft()),'what.note'); }
+  // „Als Datei“ (v1.12): die offene Notiz als Markdown — KLARTEXT. Inhalt = derselbe Text wie „Kopieren“ (noteText) plus Zeilenende, nur nach Rückfrage.
+  // Name neutral (notiz-JJJJ-MM-TT-HHMMSS.md), nie der Titel: der stünde sonst im Dateiverlauf (KDE „Zuletzt verwendet“, Android), in Mail-Betreffs usw.
+  // Android: Datei in den App-Cache, je Export ein frischer Zufallsordner unter EXPORT_DIR (gleiche URI = gleiche Freigabe, Audit run-10 a-2), Teilen
+  // OHNE den Text als EXTRA_TEXT. EXPORT_DIR wird beim Start, beim Entsperren und vor jedem neuen Export geleert — NICHT beim Sperren: bei „Sperren im
+  // Hintergrund: sofort“ sperrt die App schon beim Öffnen des Teilen-Dialogs, das gewählte Ziel liest die Datei erst danach. Ein „abgebrochen“ des
+  // Share-Plugins löscht NICHT (es meldet auch echtes Teilen an ein Ziel im Dialog-Fenster so), es entfällt nur die Erfolgsmeldung.
+  // Desktop zweistufig (Audit run-10 b-1): erst der Speichern-Dialog (saveText.pick → Kennung), dann prüft die App, ob sie noch offen ist, und erst dann
+  // geht der Text an die Hülle (saveText.write) — sperrt sie währenddessen, wird nichts geschrieben. Browser: Download. Meldungen nur bei offener Sitzung.
+  const EXPORT_DIR='export';
+  let exportDropped=false;   // Desktop: Wahl im Dialog kam erst nach einer Sperre → nichts geschrieben; nach dem nächsten Entsperren sagen (run-10 d2-1)
+  function exportName(){ const d=new Date(), z=n=>String(n).padStart(2,'0');
+    return (LANG==='en'?'note-':'notiz-')+d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+'-'+z(d.getHours())+z(d.getMinutes())+z(d.getSeconds())+'.md'; }
+  async function dropExports(){ const FS=isNative&&CAP.Plugins&&CAP.Plugins.Filesystem; if(!FS) return;
+    try{ await FS.rmdir({path:EXPORT_DIR, directory:'CACHE', recursive:true}); }catch(_){} }   // fehlt der Ordner, wirft rmdir — dann ist nichts zu tun
+  // Leer = kein Titel, kein Text, kein Punkt mit Text (Leerzeichen zählen nicht) — sonst fragte die App bei einer frischen Checkliste „unverschlüsselt?“ (run-10 c-1)
+  // Wie „Fertig“/sanitizeEntry: Titel und Punkte über line() (unsichtbare Zeichen wie U+200B zählen nicht, run-10 e2-5), Text über trim() wie isBlank
+  const exportEmpty=d=>!line(d.title,CAPS.title)&&!String(d.body||'').trim()&&!(d.items||[]).some(x=>line(x.text,CAPS.item));
+  async function saveCurrent(){
+    if(!editing||!DEK||saveCurrent._busy) return; const session=VAULT, alive=()=>!!DEK&&VAULT===session;
+    if(exportEmpty(readDraft())) return toast(tr('exp.empty'));
+    if(!(await ask(tr(isNative?'exp.askNative':'exp.ask'),{ok:isNative?'exp.okNative':'exp.ok'}))) return;
+    if(!editing||!alive()||saveCurrent._busy) return;   // während der Rückfrage gesperrt, Notiz geschlossen oder schon unterwegs
+    const d=readDraft(); if(exportEmpty(d)) return toast(tr('exp.empty'));
+    const name=exportName(), content=noteText(d)+'\n';
+    saveCurrent._busy=true;
+    try{
+      if(isNative){
+        const FS=CAP.Plugins&&CAP.Plugins.Filesystem, SH=CAP.Plugins&&CAP.Plugins.Share; if(!FS||!SH) throw new Error('plugin');
+        const sub=Array.from(crypto.getRandomValues(new Uint8Array(8)),b=>b.toString(16).padStart(2,'0')).join('');
+        await dropExports(); if(!alive()) return;
+        const w=await FS.writeFile({path:EXPORT_DIR+'/'+sub+'/'+name, data:content, directory:'CACHE', encoding:'utf8', recursive:true});
+        if(!alive()){ dropExports(); return; }   // zwischen Schreiben und Teilen gesperrt: nicht teilen, Klartext gleich wieder weg (run-10 d2-2)
+        let shared=false; try{ await SH.share({title:name, url:w.uri}); shared=true; }catch(_){}
+        if(shared&&alive()) toast(tr('exp.doneShare',{n:name}),{ms:8000});
+      } else if(DESK){
+        const tok=await DESK.saveText.pick(name); if(!tok) return;   // abgebrochen
+        // während des Dialogs gesperrt: nichts schreiben und es sagen (ohne Namen) — gleich, wenn schon wieder entsperrt, sonst nach dem nächsten Entsperren
+        if(!alive()){ if(DEK) toast(tr('exp.dropped'),{ms:8000}); else exportDropped=true; return; }
+        const n=await DESK.saveText.write(tok, content); if(n&&alive()) toast(tr('exp.done',{n}),{ms:8000});
+      } else { downloadFile(name, content, 'text/markdown;charset=utf-8'); toast(tr('exp.done',{n:name}),{ms:8000}); }
+    }catch(e){ if(alive()) toast(tr('exp.failed',{e:String(e&&e.message||e)}),{ms:8000}); }
+    finally{ saveCurrent._busy=false; }
+  }
   async function deleteCurrent(){ if(!editing||!editId) return; if(!byId(editId)) return;
     // Erst den Entwurf festschreiben (stoppt den Autosave-Timer): feuerte er während der Rückfrage, ersetzte commitEditor das Objekt, und die
     // Identitätsprüfung unten traf nichts — Toast meldete „im Papierkorb“, die Notiz lebte weiter (Audit run-2 #5). Nach dem await frisch per ID holen.
@@ -1999,7 +2052,7 @@ const App = (function(){
     const btn=$('import-btn'), orig=btn.textContent; doImportVault._busy=true; btn.disabled=true; btn.textContent=tr('busy.decrypting');
     try{
       let incoming;
-      try{ const kek=await deriveKek(passBytes($('import-pass').value), f.kdf); const dek=await unwrapDek(f.wrap,kek,f.kdf,false); const obj=await decryptBody(f.body,dek,f.kdf); incoming=sanitizeVault(obj).entries; }
+      try{ const kek=await deriveKek(passBytes($('import-pass').value), f.kdf); const dek=await unwrapDek(f.wrap,kek,f.kdf,false); const obj=await decryptBody(f.body,dek,f.kdf); if(!VAULT||!DEK||pendingImport!==f) return; incoming=sanitizeVault(obj).entries; }
       catch(e){ if(pendingImport!==f) return; $('import-pass').value=''; if(VAULT) $('import-msg').textContent=e&&e.message==='toomany'?tr('err.tooMany'):tr('bk.mergeFail'); return; }
       if(!VAULT||!DEK||pendingImport!==f) return;                // während des Argon2-Laufs gesperrt (auch: gesperrt und neu entsperrt, lock() nullt pendingImport) → sauber abbrechen (Alien Pass v1.15)
       if(editing) doneEditor();                                  // offener Editor (Nutzer war während Argon2 unterwegs) würde nach dem Merge den alten Stand zurückschreiben (Audit run-1 #3)
@@ -2338,6 +2391,7 @@ const App = (function(){
     try{
       try{ const kOld=await deriveKek(passBytes(cur), KDF); await unwrapDek(WRAP,kOld,KDF,false); }   // alte Passphrase real prüfen
       catch(_){ return err('cp-err',tr('err.cpWrong')); }
+      if(!VAULT||!DEK) return;                                   // während Argon2 gesperrt: passCheck schickte die neue Passphrase sonst nach dem Reset in lock() durch RegExp (run-10 a-1)
       { const c=passCheck(p1); if(c.weak&&!(await ask(tr('confirm.weakPassCp',{why:whyText(c.why)}),{ok:'dlg.useAnyway'}))) return; }   // erst nach der alten Passphrase
       if(!VAULT||!DEK) return;                                   // während der Rückfrage gesperrt
       const kdf={m:KDF.m,t:KDF.t,p:KDF.p,salt:rand(16)};
@@ -2364,7 +2418,7 @@ const App = (function(){
   function kdfChanged(){ kdfTouched=true; }
 
   return {boot,doSetup,doUnlock,doTotp,cancelTotp,lock,lockNow,tab,dialogOk,renameCat,selStart,selCancel,toggleSel,selAll,selNone,selDelete,selCat,selFav,toastAction,hideToast,dialogCancel,dialogOpen,dialogKey,
-    newEntry,openEditor,doneEditor,copyCurrent,deleteCurrent,editorChanged,changeEntryType,mdModeEdit,mdModeView,mdToggle,mdCheat,mdExample,insertDate,
+    newEntry,openEditor,doneEditor,copyCurrent,saveCurrent,dropExports,deleteCurrent,editorChanged,changeEntryType,mdModeEdit,mdModeView,mdToggle,mdCheat,mdExample,insertDate,
     addItemRow,itemEnter,itemInput,itemPaste,itemBeforeInput,itemComposition,removeItemRow,itemChanged,sortDone,resetDone,histUndo,histRedo,histKey,histBefore,histInput,histCompStart,histDragEnd,histTapGuard,optChanged,
     renderList,setCatFilter,clearCatFilter,toggleFavFilter,toggleOpenFilter,openCatMenu,toggleCatMenu,catInput,pickCat,
     openTrash,renderTrash,restoreEntry,purgeEntry,emptyTrash,
@@ -2428,5 +2482,6 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(a&&de) de.parentNode.insertBefore(a,de); }
   App.enhancePassFields();   // vor applyI18n: setzt die Augen-Beschriftung
   applyI18n();
+  App.dropExports();   // Android: Klartext-Reste eines früheren „Als Datei“ aus dem App-Cache (v1.12)
   App.boot();
 });

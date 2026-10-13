@@ -54,7 +54,7 @@ html.desk .no-desk{display:none;}
 .ed-opts{display:flex;gap:6px 16px;flex-wrap:wrap;margin-top:12px;}
 .ed-opts label.chk{margin:0;}
 .ed-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
-.ed-actions .btn{flex:1;min-width:110px;}
+.ed-actions .btn{flex:1 1 calc(50% - 4px);min-width:110px;}   /* v1.12: immer zwei je Zeile (vier Knöpfe → 2×2, nie 3+1; run-10 c-10) */
 .seg.md-seg{max-width:260px;margin:0 0 8px;}
 /* Markdown-Spickzettel: ?-Knopf neben dem Kästchen, Kärtchen „so tippen → so sieht es aus“ (nur statischer Text) */
 .cheat-wrap{display:inline-flex;gap:8px;align-items:center;}
@@ -316,6 +316,7 @@ html:has(#tab-add:not(.hidden)){scroll-padding-top:3.25rem;}
         <div class="ed-actions">
           <button class="btn" type="button" data-action="doneEditor" data-i18n="ed.done">Fertig</button>
           <button class="btn ghost" type="button" data-action="copyCurrent" data-i18n="ed.copy">Kopieren</button>
+          <button class="btn ghost" type="button" data-action="saveCurrent" data-i18n="ed.file">Als Datei</button>
           <button id="ed-del" class="btn danger hidden" type="button" data-action="deleteCurrent" data-i18n="ed.delete">Löschen</button>
         </div>
       </div>
@@ -325,7 +326,7 @@ html:has(#tab-add:not(.hidden)){scroll-padding-top:3.25rem;}
     <div id="tab-backup" class="tabview hidden">
       <div class="card">
         <h2 data-i18n="bk.title">Verschlüsseltes Backup</h2>
-        <p class="muted" data-i18n-html="bk.intro">Die <code>.notes</code>-Datei enthält alle Notizen <strong>verschlüsselt</strong> (Argon2id + AES-256-GCM) — sie lässt sich nur mit der Passphrase öffnen. Für den Abgleich zwischen Geräten z.B. über Syncthing; nie unverschlüsselt exportiert.</p>
+        <p class="muted" data-i18n-html="bk.intro">Die <code>.notes</code>-Datei enthält alle Notizen <strong>verschlüsselt</strong> (Argon2id + AES-256-GCM) — sie lässt sich nur mit der Passphrase öffnen. Für den Abgleich zwischen Geräten z.B. über Syncthing. Das Backup ist immer verschlüsselt — „Als Datei“ im Editor speichert dagegen eine einzelne Notiz unverschlüsselt.</p>
         <button class="btn" style="margin-top:8px" data-action="exportVault"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v11"/><path d="M8 11.5l4 4 4-4"/><path d="M5 19.5h14"/></svg> <span data-i18n="bk.export">Backup erstellen (.notes)</span></button>
         <p id="bk-msg" class="muted" style="margin-top:10px"></p>
       </div>
@@ -507,12 +508,12 @@ html:has(#tab-add:not(.hidden)){scroll-padding-top:3.25rem;}
       <button class="btn ghost sm" data-action="closeHelp" data-i18n="help.closeX">Schließen ✕</button>
     </div>
     <h2 data-i18n="help.h1">Was ist Alien Notes?</h2>
-    <p data-i18n-html="help.p1">Eine <strong>lokale, verschlüsselte Notizen-App</strong> für Notizen und Checklisten. Läuft komplett <strong>offline</strong> — keine Cloud, kein Server, keine Telemetrie, kein Konto. Die Android-App hat nicht einmal eine Internet-Berechtigung. Deine Notizen verlassen das Gerät nie im Klartext.</p>
+    <p data-i18n-html="help.p1">Eine <strong>lokale, verschlüsselte Notizen-App</strong> für Notizen und Checklisten. Läuft komplett <strong>offline</strong> — keine Cloud, kein Server, keine Telemetrie, kein Konto. Die Android-App hat nicht einmal eine Internet-Berechtigung. Die App selbst schickt nie etwas weg und gibt Klartext nur heraus, wenn du es auslöst — etwa beim Kopieren, beim Markieren (am Linux-Desktop landet Markiertes in der Mittelklick-Auswahl) oder mit „Als Datei“.</p>
     <p class="warn" data-i18n="help.warn">⚠ Es gibt kein Reset und kein Backdoor. Vergisst du die Passphrase, sind die Notizen unwiederbringlich weg. Mach regelmäßig Backups und bewahre die Passphrase sicher auf.</p>
     <h2 class="only-desk" data-i18n="help.hDesk">Desktop-Fassung (Linux)</h2>
     <ul class="only-desk" data-i18n-html="help.lDesk">
       <li><strong>Kein Netz — vom System erzwungen:</strong> Die Desktop-App läuft als Flatpak ohne Netzwerk-Berechtigung; im Käfig gibt es keine Verbindung nach außen. Zusätzlich blockt die App selbst jede Verbindung. Nachprüfen: <code>flatpak info --show-permissions org.alieninvestor.notes</code> — dort steht kein <code>network</code>.</li>
-      <li><strong>Notizen-Datei:</strong> <code>~/.var/app/org.alieninvestor.notes/data/alien-notes/notes.ainv</code> — verschlüsselt, nur für dich lesbar, bei jeder Änderung vollständig neu geschrieben (nie halb). Sonst sieht die App keine Dateien: Backup und Import laufen über den Dateidialog des Systems, der nur die gewählte Datei freigibt.</li>
+      <li><strong>Notizen-Datei:</strong> <code>~/.var/app/org.alieninvestor.notes/data/alien-notes/notes.ainv</code> — verschlüsselt, nur für dich lesbar, bei jeder Änderung vollständig neu geschrieben (nie halb). Sonst sieht die App keine Dateien: Backup, Import und „Als Datei“ laufen über den Dateidialog des Systems, der nur die gewählte Datei freigibt.</li>
       <li><strong>Zwischenablage:</strong> Kopierte Notizen sind für KDE als Passwort markiert — Klipper nimmt sie nicht in den Verlauf. Andere Zwischenablage-Verwalter beachten die Markierung nicht unbedingt. Die App leert die Zwischenablage nach der eingestellten Zeit auch im Hintergrund, beim Sperren und beim Beenden, aber nur, wenn noch ihre eigene Kopie drin ist. Dasselbe gilt für Text, den du in der App markierst, mit Maus oder Tastatur, auch per Tab in ein gefülltes Passphrase-Feld (unter Linux sofort per Mittelklick einfügbar). Klipper kann jede Kopie zusätzlich in diese Mittelklick-Auswahl spiegeln (Einstellung „Auswahl und Zwischenablage synchronisieren“) — die App löscht sie dort mit. Markierter Text trägt die KDE-Markierung nicht: Wer in Klipper die Auswahl in den Verlauf übernehmen lässt, sollte das abschalten. Strg+C und Strg+X in der App kopieren wie der Kopier-Knopf.</li>
       <li><strong>Abgleich mit dem Handy:</strong> auf dem Handy „Backup erstellen“ in einen Syncthing-Ordner, am Desktop unter Sicherung importieren — und umgekehrt. Siehe „Backup &amp; Sync“.</li>
       <li><strong>Sperren:</strong> nach Inaktivität und wenn das Fenster länger als die eingestellte Zeit minimiert oder versteckt war — bei „sofort“ direkt beim Minimieren (Einstellung „Sperren im Hintergrund“; „Hintergrund“ heißt hier minimiert oder versteckt; ein Wechsel zu einem anderen Fenster zählt nicht, leert aber getippte Passphrasen und PINs). Bei <strong>Bildschirmsperre und Ruhezustand sperrt die Desktop-App nicht von selbst</strong> — im Flatpak erfährt sie davon nichts. Deshalb die Sperre des Systems nutzen und bei Bedarf eine kurze Inaktivitäts-Sperre einstellen; Strg+L sperrt sofort.</li>
@@ -552,11 +553,13 @@ html:has(#tab-add:not(.hidden)){scroll-padding-top:3.25rem;}
     </ul>
     <h2 data-i18n="help.hSn">Umzug von Standard Notes</h2>
     <p data-i18n-html="help.pSn">In Standard Notes die Einstellungen (Preferences) öffnen → <strong>Backups</strong> → unter „Data backups“ <strong>Decrypted</strong> wählen → <strong>Download backup</strong>. Unter Sicherung → „Aus Standard Notes übernehmen“ direkt das heruntergeladene ZIP wählen (die App liest daraus nur die Datei <code>Standard Notes Backup and Import File.txt</code>) oder diese Datei selbst. Klartext-, Markdown-, Code- und Rich-Text-Notizen werden Textnotizen (Markdown mit eingeschalteter Markdown-Ansicht), Super-Notizen werden in die kleine Markdown-Untermenge übersetzt (Tabellen als Textzeilen, Bilder und Dateien als Platzhalter), Checklisten werden Checklisten. Der erste Tag wird die Kategorie („Eltern/Kind“ bei verschachtelten Tags), Angeheftetes bleibt angeheftet, Sterne werden Favoriten, der Papierkorb landet im Papierkorb, soweit dort Platz ist (frische 30-Tage-Frist). <strong>Nie übernommen:</strong> Authenticator-Einträge (2FA-Geheimnisse — von Hand nach Aegis), Tabellen (Spreadsheet), Dateien. Ein zweiter Import desselben Backups legt keine Dubletten an, die neuere Fassung einer Notiz gewinnt. <strong>Danach das entschlüsselte Backup und das ZIP löschen</strong> — sie enthalten alle Notizen im Klartext.</p>
-    <h2 data-i18n="help.h8">Zwischenablage</h2>
+    <h2 data-i18n="help.h8">Zwischenablage und Datei</h2>
     <ul data-i18n-html="help.l8">
       <li>„Kopieren“ legt die ganze Notiz in die Zwischenablage (Titel, Text oder Checkliste als „- [x] …“-Zeilen).</li>
       <li>Die App leert die Zwischenablage nach der eingestellten Zeit (Standard 30 s) und beim Sperren. Bei „Sperren im Hintergrund: sofort“ sperrt die App beim App-Wechsel sofort, die kopierte Notiz bleibt aber bis zum Ablauf der eingestellten Zeit stehen — so lässt sie sich noch in eine andere App einfügen. Notizen sind nicht immer geheim, deshalb lässt sich das in den Einstellungen abschalten.</li>
       <li>Die Android-App markiert Kopiertes als <strong>sensibel</strong>: Die System-Vorschau beim Kopieren zeigt den Inhalt nicht (Android 13+).</li>
+      <li>„Als Datei“ speichert die offene Notiz als Markdown-Datei (<code>.md</code>, derselbe Text wie beim Kopieren). Die Datei ist <strong>nicht verschlüsselt</strong> — sie liegt nach einer Rückfrage außerhalb von Alien Notes, dort, wo du sie hinlegst. Der Dateiname nennt nur Datum und Uhrzeit, nie den Titel.</li>
+      <li class="no-desk">In der Android-App geht die Datei über den Teilen-Dialog. Die App übergibt dafür eine Kopie aus ihrem privaten Cache und löscht sie beim nächsten Entsperren und beim nächsten Start. Der Teilen-Dialog gehört zum System: Er bleibt offen, auch wenn die App dahinter sperrt.</li>
     </ul>
     <h2 data-i18n="help.h9">Sicherheit im Detail</h2>
     <ul data-i18n-html="help.l9">
@@ -564,7 +567,7 @@ html:has(#tab-add:not(.hidden)){scroll-padding-top:3.25rem;}
       <li><strong>Verschlüsselung:</strong> AES-256-GCM (WebCrypto). Ein zufälliger Datenschlüssel verschlüsselt die Notizen; die Passphrase verpackt nur diesen Schlüssel. Auch der Dateikopf ist authentisiert — Manipulation fällt auf.</li>
       <li><strong>Gerät:</strong> Die Android-App fordert genau zwei normale Berechtigungen an, beide für den Fingerabdrucksensor: USE_BIOMETRIC und USE_FINGERPRINT (letztere nur bis Android 8.1, mitgebracht von der AndroidX-Biometrie-Bibliothek). Kein Internet, kein Speicher, keine Kontakte. Daneben trägt die APK nur die von AndroidX erzeugte Signatur-Permission DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION, die nichts freigibt. Sie verbietet Screenshots und App-Umschalter-Vorschau (FLAG_SECURE, abschaltbar), nimmt sich aus Cloud-, adb- und Gerät-zu-Gerät-Backups heraus und nimmt ihre Felder vom Android-Autofill-Framework aus (seit 1.4): Ein Passwort-Manager, der als Autofill-Dienst eingerichtet ist, sieht die Passphrase-Felder nicht mehr und kann nicht anbieten, sie zu speichern.</li>
       <li><strong>Fremdcode:</strong> nur die Argon2-Bibliothek hash-wasm (MIT) und die EFF-Wortliste, beide gebündelt und beim Bauen per Hash geprüft. Kein CDN, kein Tracker.</li>
-      <li><strong>Grenzen:</strong> keine Bilder oder Anhänge, kein Teilen von Klartext, keine Passwörter je Notiz. Eine Passphrase lässt sich nicht wiederherstellen.</li>
+      <li><strong>Grenzen:</strong> keine Bilder oder Anhänge, keine Passwörter je Notiz. Eine Passphrase lässt sich nicht wiederherstellen.</li>
     </ul>
   </div>
 </div>
