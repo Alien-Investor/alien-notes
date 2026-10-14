@@ -1,5 +1,23 @@
 # Changelog — Alien Notes
 
+## v1.13 — 2026-10-14
+
+Pflege-Release: Kopieren über die Auswahlleiste von Android läuft jetzt über die App, die App bittet die Tastatur, nichts zu lernen, und die
+Desktop-Fassung legt ihre Temp-Dateien sicherer an. Keine Änderung an Datei-Format, Verschlüsselung oder Berechtigungen.
+- **Kopieren über die Auswahlleiste (Android):** Markierst du Text und tippst in der Leiste von Android auf „Kopieren“ oder „Ausschneiden“, übernimmt
+  das jetzt die App: Die Kopie ist als sensibel markiert (Android 13+), und die App leert die Zwischenablage nach der eingestellten Zeit und beim
+  Sperren, genau wie bei ihren eigenen Kopier-Knöpfen. Bisher blieb so Kopiertes in der Zwischenablage, auch nach dem Sperren. Ausschneiden lässt sich
+  mit ↶ zurücknehmen. Einträge wie „Teilen“, „Websuche“ oder „Übersetzen“ in dieser Leiste geben den Text weiterhin direkt an eine andere App weiter,
+  auch aus der Markdown-Ansicht; das bleibt eine benannte Grenze.
+- **Tastatur (Android):** Die App bittet die Tastatur-App jetzt in jedem Eingabefeld, aus dem Getippten nichts zu lernen; Gboard zeigt dann sein
+  Inkognito-Symbol. Das ist nur eine Bitte: Mitlesen kann die Tastatur trotzdem, und nicht jede Tastatur hält sich daran.
+- **Desktop — Temp-Dateien:** Beim Speichern entsteht kurz eine Temp-Datei neben der Zieldatei. Ihr Name hat jetzt einen Zufallsteil, und sie wird nur
+  neu angelegt, nie über eine vorhandene Datei oder Verknüpfung geschrieben. Bisher war der Name vorhersagbar: Hatte die App Dateizugriff am
+  Speichern-Dialog vorbei (etwa per Flatseal) und durfte im Zielordner ein anderes Konto Dateien anlegen, etwa in einem gemeinsamen Ordner, hätte dort
+  vorab eine Datei oder Verknüpfung liegen und so eine Markdown-Datei mitlesen können. Über den normalen Speichern-Dialog legt das System die
+  Temp-Datei selbst an. Eine Härtung, im Alltag ohne Wirkung.
+- **Handbuch:** Tipp „Drucken am Handy“ unter „Als Datei“; die Abschnitte zur Auswahlleiste und zur Tastatur sind an das neue Verhalten angepasst.
+
 ## v1.12 — 2026-10-13
 
 Eine Notiz als Datei speichern, dazu kleine Korrekturen rund ums Sperren und am Speichern-Dialog der Desktop-Fassung. Keine Änderung an Datei-Format,

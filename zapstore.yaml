@@ -50,7 +50,10 @@ description: |
     an in-app dialog — the Android system dialog does not inherit the screenshot protection
   - Copy puts the whole note into the clipboard; auto-clear after 15/30/60 s (default 30 s, can be switched off) and on lock; copied content
     is flagged sensitive so the Android 13+ system preview hides it. With "Lock in background: immediately" the copied note stays until the
-    chosen time runs out so it can still be pasted into another app (since 1.3)
+    chosen time runs out so it can still be pasted into another app (since 1.3); since 1.13 all of this also applies to text copied or cut
+    via Android's selection bar
+  - Asks the keyboard app not to learn from what you type (since 1.13; Gboard then shows its incognito icon — only a request, not every
+    keyboard honours it)
   - As file (since 1.12): saves the open note as a Markdown file (.md, the same text as Copy) through the share sheet; the file is not
     encrypted, so the app asks first; the file name only carries date and time, never the title; the backup always stays encrypted
   - Locking, more relaxed than a password manager: by default no lock after inactivity and in the background only after 30 minutes
