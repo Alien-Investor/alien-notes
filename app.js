@@ -16,7 +16,7 @@ const FONT_KEY='ai-notes-font', FONT_SIZES=['m','l','xl'];
    ============================================================ */
 const LS_KEY = 'ai-notes-vault';
 const LANG_KEY = 'ai-notes-lang';
-const APP_VERSION = '1.12';   // Anzeige in den Einstellungen; muss VERSION_NAME entsprechen (build-www.sh setzt es aus VERSION, roundtrip-test.mjs prüft es)
+const APP_VERSION = '1.13';   // Anzeige in den Einstellungen; muss VERSION_NAME entsprechen (build-www.sh setzt es aus VERSION, roundtrip-test.mjs prüft es)
 
 /* ===== KIT: i18n — Deutsch ist Quelle im HTML (data-i18n / data-i18n-html / data-i18n-ph), Englisch im I18N-Dict,
    dynamische Texte per tr(key,{params}) aus T {de,en}. ===== */
@@ -1257,7 +1257,9 @@ const App = (function(){
   if(DESK&&typeof DESK.onLock==='function') DESK.onLock(()=>{ if(DEK||pendingUnlock) lockSaving(); });   // Hülle meldet Ruhezustand/Bildschirmsperre — im Flatpak wirkungslos (kein logind im Käfig), Handbuch sagt es
 
   /* ---------- Zwischenablage (synchron im Klick-Handler aufrufen!) — wortgleich Alien Pass ---------- */
-  function fallbackCopy(text){ let ta=null; try{ ta=document.createElement('textarea'); ta.value=text; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); return document.execCommand('copy'); }catch(_){ return false; } finally{ if(ta){ ta.value=''; ta.remove(); } } }
+  // fbCopy (v1.13): solange fallbackCopy läuft, löst ihr execCommand('copy') synchron ein eigenes copy-Ereignis aus — der copy-Listener unten lässt es durch
+  let fbCopy=false;
+  function fallbackCopy(text){ let ta=null; try{ ta=document.createElement('textarea'); ta.value=text; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); fbCopy=true; return document.execCommand('copy'); }catch(_){ return false; } finally{ fbCopy=false; if(ta){ ta.value=''; ta.remove(); } } }
   let clipDue=false, clipTries=0, clipDeadline=0;   // Löschen war fällig, konnte aber (Hintergrund/kein Fokus) noch nicht ausgeführt werden; clipDeadline = Wanduhr-Frist der Kopie (0 = keine)
   const CLIP_MAX_TRIES=600;          // ~10 min Wiederholung im Vordergrund, dann aufgeben (Android leert spätestens nach 1 h selbst)
   // Gesperrt (auch in der Aegis-Wartestellung, wo settings() schon die eigene Einstellung kennt) gilt immer die Vorgabe — sonst lag bei clipClear 0 eine
@@ -1921,23 +1923,49 @@ const App = (function(){
   const isNative = !!(CAP && CAP.isNativePlatform && CAP.isNativePlatform());
   const SC = (isNative && CAP.Plugins && CAP.Plugins.SecureClip) ? CAP.Plugins.SecureClip   // eigenes Mini-Plugin (patch-hardening.mjs)
            : (DESK && DESK.clip) || null;
+  // Markierten Text lesen (Strg+C/Strg+X, am Desktop auch für die X11-Auswahl unten, auf Android für die Auswahlleiste).
+  // AUCH maskierte Felder (type=password) melden: Chromium legt ihre Markierung im KLARTEXT in die X11-Auswahl (Messung 23.09.2026, Electron 44, X11)
+  let selFrom=null;   // Feld, aus dem selText zuletzt gelesen hat (für clipGateSel, B-1)
+  const selText=()=>{ const a=document.activeElement; selFrom=null;
+    if(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA')&&typeof a.selectionStart==='number'){ selFrom=a; return a.value.substring(a.selectionStart,a.selectionEnd); }
+    // Liegt der Fokus nicht im Feld (Klick auf einen Knopf), liefert getSelection() für ein markiertes Passwortfeld dessen PUNKTE — als Meldung überschrieben
+    // sie den Hash des echten Werts in PRIMARY, Sperren und Frist ließen ihn liegen (Alien Pass Gerätetest 03.10.2026). Chromium beschreibt diese Auswahl als LEERE
+    // Range an der Stelle des Feldes, String() liefert trotzdem die Punkte. Dann das Feld dort auflösen und seinen echten markierten Wert nehmen — so stimmt
+    // der Hash, und Strg+C/Strg+X laufen weiter über die Brücke statt über Chromium ohne KDE-Hinweis (Pass-Audit Runde 4); sonst nichts.
+    const g=window.getSelection(); if(!g||!g.rangeCount) return '';
+    const r=g.getRangeAt(0);
+    // Android (v1.13): eine versteckte Feld-Markierung (Fokus schon auf einem Knopf) kopiert Chromium dort nicht — die App auch nicht (Release-Audit v1.13 a2)
+  if(r.collapsed){ if(!DESK) return ''; const n=r.startContainer&&r.startContainer.childNodes?r.startContainer.childNodes[r.startOffset]:null;
+      if(n&&(n.tagName==='INPUT'||n.tagName==='TEXTAREA')&&typeof n.selectionStart==='number'&&n.selectionStart!==n.selectionEnd){ selFrom=n; return n.value.substring(n.selectionStart,n.selectionEnd); }
+      return ''; }
+    return String(g); };
+  // Kopieren und Ausschneiden laufen über die App statt über Chromium: am Desktop über die Brücke, auf Android seit v1.13 über SecureClip (sensibel markiert,
+  // Frist, Löschen beim Sperren). Dort lösen die Auswahlleiste („Kopieren“/„Ausschneiden“) und Strg+C/Strg+X an einer angesteckten Tastatur dasselbe copy/cut
+  // aus — ohne Abfangen lag die Kopie unmarkiert und ohne Frist in der Zwischenablage, auch nach dem Sperren (Audit run-10 e2-8, Gerätetest 13.10.2026).
+  // „Teilen“, „Websuche“ und „Übersetzen“ in der Leiste gehen ohne Zwischenablage an eine andere App: benannte Grenze (UI-INVARIANTEN.md).
+  if((DESK&&DESK.clip&&typeof DESK.clip.selected==='function')||(isNative&&!DESK&&CAP.Plugins&&CAP.Plugins.SecureClip)){
+    // Android: bleibt der Fokus in einem Feld, während anderswo Text markiert ist, klappt Chromium die Feld-Markierung zusammen und kopiert die Seiten-Markierung —
+    // selText() liefert dann '' und die Kopie liefe unmarkiert an der App vorbei (Faktencheck v1.13 M4, im Testbrowser nachgestellt). Dann die Seiten-Markierung nehmen —
+    // AUCH wenn sie das Feld einschließt („Alle auswählen“, Griff über das Feld gezogen): Chromiums eigene Kopie nähme dann die Werte sichtbarer Felder mit,
+    // eine aufgedeckte Passphrase im Klartext; String(g) enthält keine Feldwerte (Release-Audit v1.13 a-1, gemessen).
+    const outSel=()=>{ const a=document.activeElement, g=window.getSelection(); if(DESK||!a||(a.tagName!=='INPUT'&&a.tagName!=='TEXTAREA')||!g||!g.rangeCount) return '';
+      return g.getRangeAt(0).collapsed?'':String(g); };
+    // Android: String(getSelection()) folgt CSS text-transform (Markdown-Überschrift „KOPF“ statt „Kopf“) — für die Dauer des Lesens abschalten, wie Chromiums
+    // eigene Kopie (Release-Audit v1.13 a-2). Am Desktop unverändert: dort hängt die PRIMARY-Meldung am selben Text, ändern nur mit Messung in der Hülle.
+    const plainSel=f=>{ if(DESK) return f(); const h=document.documentElement; h.classList.add('copy-plain'); try{ return f(); } finally{ h.classList.remove('copy-plain'); } };
+    // Strg+C auf Markiertem: nicht Chromium kopieren lassen (ohne KDE-Hinweis, ohne Löschen → Klipper-Verlauf), sondern über die Brücke bzw. SecureClip
+    document.addEventListener('copy',ev=>{ if(fbCopy) return; const t=plainSel(()=>selText()||outSel()); selFrom=null; if(!t) return; ev.preventDefault(); copyText(t,'what.sel'); });
+    // Strg+X / Shift+Entf ebenso (Audit run-7 #1); danach die Markierung im Feld entfernen: execCommand('delete') hält Rückgängig intakt
+    document.addEventListener('cut',ev=>{ const a=document.activeElement, t=selText(); selFrom=null; if(!t) return; ev.preventDefault(); copyText(t,'what.sel');
+      if(!a||(a.tagName!=='INPUT'&&a.tagName!=='TEXTAREA')||typeof a.selectionStart!=='number'||a.readOnly||a.disabled) return;   // Fokus auf Kästchen/Knopf: nur kopieren (setRangeText warf dort, Release-Audit v1.7 B-N1)
+      const ed=isEdField(a); if(ed) histPoint();   // Ausschneiden = eigener Schritt im Verlauf (v1.10)
+      let done=false; try{ done=document.execCommand('delete'); }catch(_){}
+      if(!done){ a.setRangeText('',a.selectionStart,a.selectionEnd,'end'); a.dispatchEvent(new Event('input',{bubbles:true})); }
+      if(ed) histPoint(); });
+  }
   // X11-Auswahl: mit der Maus Markiertes landet ohne Strg+C in der Auswahl (Mittelklick fügt ein). Am Desktop der Hülle melden
   // und mit der Kopier-Frist mitlöschen; läuft schon eine Frist, gilt diese (Alien Pass Gerätetest 22.09.2026).
   if(DESK&&DESK.clip&&typeof DESK.clip.selected==='function'){
-    // AUCH maskierte Felder (type=password) melden: Chromium legt ihre Markierung im KLARTEXT in die X11-Auswahl (Messung 23.09.2026, Electron 44, X11)
-    let selFrom=null;   // Feld, aus dem selText zuletzt gelesen hat (für clipGateSel, B-1)
-    const selText=()=>{ const a=document.activeElement; selFrom=null;
-      if(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA')&&typeof a.selectionStart==='number'){ selFrom=a; return a.value.substring(a.selectionStart,a.selectionEnd); }
-      // Liegt der Fokus nicht im Feld (Klick auf einen Knopf), liefert getSelection() für ein markiertes Passwortfeld dessen PUNKTE — als Meldung überschrieben
-      // sie den Hash des echten Werts in PRIMARY, Sperren und Frist ließen ihn liegen (Alien Pass Gerätetest 03.10.2026). Chromium beschreibt diese Auswahl als LEERE
-      // Range an der Stelle des Feldes, String() liefert trotzdem die Punkte. Dann das Feld dort auflösen und seinen echten markierten Wert nehmen — so stimmt
-      // der Hash, und Strg+C/Strg+X laufen weiter über die Brücke statt über Chromium ohne KDE-Hinweis (Pass-Audit Runde 4); sonst nichts.
-      const g=window.getSelection(); if(!g||!g.rangeCount) return '';
-      const r=g.getRangeAt(0);
-      if(r.collapsed){ const n=r.startContainer&&r.startContainer.childNodes?r.startContainer.childNodes[r.startOffset]:null;
-        if(n&&(n.tagName==='INPUT'||n.tagName==='TEXTAREA')&&typeof n.selectionStart==='number'&&n.selectionStart!==n.selectionEnd){ selFrom=n; return n.value.substring(n.selectionStart,n.selectionEnd); }
-        return ''; }
-      return String(g); };
     // Auch auf Sperr-/Einrichtungsbildschirm (DEK null): eine markierte Passphrase läge sonst unbegrenzt in der Auswahl — beim Verlassen des Bildschirms wird gelöscht (leaveGate)
     // Frist SYNCHRON vor der Meldung scharf machen: ein Klick auf „Jetzt sperren“ meldet per mouseup und sperrt im selben Klick — mit armClip erst in der
     // IPC-Antwort fand lock() noch kein clipOwnedAt, und die Markierung lag bis zum Ablauf der Frist in PRIMARY (Release-Audit v1.7 B-N2). Die IPC ist geordnet:
@@ -1953,15 +1981,6 @@ const App = (function(){
     const onSel=()=>{ const t=selText(); report(t,selFrom); selFrom=null; };
     reportSel=onSel;
     document.addEventListener('mouseup',onSel);
-    // Strg+C auf Markiertem: nicht Chromium kopieren lassen (ohne KDE-Hinweis, ohne Löschen → Klipper-Verlauf), sondern über die Brücke
-    document.addEventListener('copy',ev=>{ const t=selText(); selFrom=null; if(!t) return; ev.preventDefault(); copyText(t,'what.sel'); });
-    // Strg+X / Shift+Entf ebenso (Audit run-7 #1); danach die Markierung im Feld entfernen: execCommand('delete') hält Rückgängig intakt
-    document.addEventListener('cut',ev=>{ const a=document.activeElement, t=selText(); selFrom=null; if(!t) return; ev.preventDefault(); copyText(t,'what.sel');
-      if(!a||(a.tagName!=='INPUT'&&a.tagName!=='TEXTAREA')||typeof a.selectionStart!=='number'||a.readOnly||a.disabled) return;   // Fokus auf Kästchen/Knopf: nur kopieren (setRangeText warf dort, Release-Audit v1.7 B-N1)
-      const ed=isEdField(a); if(ed) histPoint();   // Ausschneiden = eigener Schritt im Verlauf (v1.10)
-      let done=false; try{ done=document.execCommand('delete'); }catch(_){}
-      if(!done){ a.setRangeText('',a.selectionStart,a.selectionEnd,'end'); a.dispatchEvent(new Event('input',{bubbles:true})); }
-      if(ed) histPoint(); });
     // Strg+A: Wer Strg VOR dem A loslässt, schickt ein keyup von „a“ ohne ctrlKey — die ganze Markierung blieb ungemeldet und ohne Frist in PRIMARY,
     // auch über die Sperre (Release-Audit v1.9 Runde 1, Befund a-1; v1.9 lässt Strg+A zudem im Dialog durch). Deshalb merkt sich das Capture-keydown
     // ein Strg+A, und das nächste keyup (egal welcher Taste) meldet.

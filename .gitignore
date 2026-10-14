@@ -34,6 +34,9 @@ release-build.log
 *.jks
 keystore.properties
 release-signing.properties
+# gebaute Pakete (auch Mess-APKs) nie ins Repo (Release-Audit v1.13 b)
+*.apk
+*.idsig
 
 # App-Trailer: regenerierbare Artefakte (Screenshots, Frames, Karten, Musik, Videos)
 trailer/out/

@@ -537,12 +537,63 @@ public class VaultStorePlugin extends Plugin {
     }
 }
 `;
+//   5) Tastatur-Bitte (v1.13, Entscheidung Nutzer 13.10.2026, alle drei Apps, ohne Schalter): jedes Eingabefeld bittet die Tastatur-App,
+//      nichts daraus zu lernen (IME_FLAG_NO_PERSONALIZED_LEARNING, API 26; Gboard zeigt dann sein Inkognito-Symbol). Nur eine BITTE — mitlesen kann
+//      die Tastatur trotzdem, und nicht jede beachtet sie. Chromium setzt das Flag nur für Inkognito-Profile, eine WebView ist nie eines; darum
+//      ODER-t eine eigene Unterklasse es NACH super in die EditorInfo (vorher gesetzt würde es überschrieben). Eingehängt über ein App-Layout
+//      gleichen Namens, das das Bibliotheks-Layout bridge_layout_main ersetzt (BridgeActivity.setContentView; Bridge sucht R.id.webview und
+//      prüft instanceof CapacitorWebView → setBridge bleibt gültig). Die Konstante setzt javac als Zahl ein: unter API 26 ignoriert die Tastatur das Bit.
+const WV = JAVA_DIR + '/NoLearnWebView.java';
+const WV_SRC = `package org.alieninvestor.notes;
+
+import android.content.Context;
+import android.util.AttributeSet;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputConnection;
+import com.getcapacitor.CapacitorWebView;
+
+// Alien Notes (v1.13): bittet die Tastatur-App, aus keinem Feld der App zu lernen (patch-hardening.mjs, Abschnitt 5).
+public class NoLearnWebView extends CapacitorWebView {
+
+    public NoLearnWebView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+    }
+
+    @Override
+    public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
+        InputConnection ic = super.onCreateInputConnection(outAttrs);
+        outAttrs.imeOptions |= EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING;
+        return ic;
+    }
+}
+`;
+const LAYOUT_DIR = 'android/app/src/main/res/layout';
+const LAYOUT = LAYOUT_DIR + '/bridge_layout_main.xml';
+const LAYOUT_SRC = `<?xml version="1.0" encoding="utf-8"?>
+<!-- Alien Notes (v1.13, patch-hardening.mjs): ersetzt das gleichnamige Layout aus Capacitor; einzige Abweichung ist die eigene WebView-Klasse (Tastatur-Bitte). -->
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.getcapacitor.BridgeActivity"
+    >
+
+    <org.alieninvestor.notes.NoLearnWebView
+        android:id="@+id/webview"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
+`;
+if (!existsSync(LAYOUT_DIR)) mkdirSync(LAYOUT_DIR, { recursive: true });
+
 let changed = false;
-for (const [file, src, label] of [[MAIN, MAIN_SRC, 'MainActivity (FLAG_SECURE + kein Autofill + Plugin-Registrierung)'], [CLIP, CLIP_SRC, 'SecureClipPlugin'], [BIO, BIO_SRC, 'BiometricPlugin'], [SEC, SEC_SRC, 'SecureScreenPlugin'], [VS, VS_SRC, 'VaultStorePlugin']]) {
+for (const [file, src, label] of [[MAIN, MAIN_SRC, 'MainActivity (FLAG_SECURE + kein Autofill + Plugin-Registrierung)'], [CLIP, CLIP_SRC, 'SecureClipPlugin'], [BIO, BIO_SRC, 'BiometricPlugin'], [SEC, SEC_SRC, 'SecureScreenPlugin'], [VS, VS_SRC, 'VaultStorePlugin'], [WV, WV_SRC, 'NoLearnWebView (Tastatur-Bitte)'], [LAYOUT, LAYOUT_SRC, 'bridge_layout_main.xml (eigene WebView)']]) {
   const cur = existsSync(file) ? readFileSync(file, 'utf8') : '';
   if (cur !== src) { writeFileSync(file, src); changed = true; console.log(label + ': geschrieben.'); }
 }
-if (!changed) console.log('MainActivity + SecureClipPlugin + BiometricPlugin + SecureScreenPlugin + VaultStorePlugin bereits aktuell.');
+if (!changed) console.log('MainActivity + SecureClipPlugin + BiometricPlugin + SecureScreenPlugin + VaultStorePlugin + NoLearnWebView + Layout bereits aktuell.');
 const jm = readFileSync(MAIN, 'utf8'), jb = readFileSync(BIO, 'utf8');
 const js = readFileSync(SEC, 'utf8'), jv = readFileSync(VS, 'utf8');
 if (!jm.includes('getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE)') || !jm.includes('setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS)') || !jm.includes('if ("autofill".equals(name)) return null;') || !jm.includes('return super.getSystemService(name);') || /\/\/[^\n]*if \("autofill"\.equals/.test(jm) || /\/\/[^\n]*dropAutofillRestore\(|\/\*/.test(jm)
@@ -571,4 +622,42 @@ if (!jm.includes('getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE)')
        return before(jb.indexOf('public void status(')) && before(jb.indexOf('public void unlock(')); })()
   || !/USE_FINGERPRINT"\s+android:maxSdkVersion="27"\s+tools:node="replace"/.test(readFileSync(MANIFEST, 'utf8'))) {   // cap sync bricht die Zeile um
   console.error('FEHLER: Java-Härtung unvollständig — Build abgebrochen!'); process.exit(1);
+}
+
+// Tastatur-Bitte (v1.13): Reihenfolge und Form gepinnt — das ODER muss NACH super stehen (vorher gesetzt überschriebe Chromium es), darf nicht zur
+// Zuweisung werden (löschte die Optionen des Feldes) und nicht auskommentiert sein; das Layout muss die eigene Klasse unter der ID webview tragen.
+// Dazu Wächter gegen ein Capacitor-Update: ändert sich Layout-Name, ID, setContentView oder die Signatur, fiele die Bitte sonst STILL weg.
+{
+  const jw = readFileSync(WV, 'utf8'), lw = readFileSync(LAYOUT, 'utf8');
+  const CAP_SRC = 'node_modules/@capacitor/android/capacitor/src/main';
+  const capRead = (f) => { try { return readFileSync(CAP_SRC + '/' + f, 'utf8'); } catch (_) { return ''; } };
+  const capLayout = capRead('res/layout/bridge_layout_main.xml'), capAct = capRead('java/com/getcapacitor/BridgeActivity.java');
+  const capBridge = capRead('java/com/getcapacitor/Bridge.java'), capWv = capRead('java/com/getcapacitor/CapacitorWebView.java');
+  const iSuper = jw.indexOf('InputConnection ic = super.onCreateInputConnection(outAttrs);'), iOr = jw.indexOf('outAttrs.imeOptions |= EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING;');
+  const bad = [];
+  if (!jw.includes('public class NoLearnWebView extends CapacitorWebView {')) bad.push('Klasse');
+  if (!jw.includes('public NoLearnWebView(Context context, AttributeSet attrs) {\n        super(context, attrs);')) bad.push('Konstruktor');
+  if (iSuper < 0 || iOr < 0 || iOr < iSuper) bad.push('ODER nicht nach super');
+  if (!/outAttrs\.imeOptions \|= EditorInfo\.IME_FLAG_NO_PERSONALIZED_LEARNING;\n        return ic;/.test(jw)) bad.push('return ic');
+  // ganzer Methodenrumpf wörtlich (Release-Audit v1.13 b: eine Bedingung vor dem ODER kam sonst durch) und genau eine solche Methode
+  if (!jw.includes('    @Override\n    public InputConnection onCreateInputConnection(EditorInfo outAttrs) {\n        InputConnection ic = super.onCreateInputConnection(outAttrs);\n        outAttrs.imeOptions |= EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING;\n        return ic;\n    }\n')
+      || (jw.match(/onCreateInputConnection\(/g) || []).length !== 2 || /\b(if|else|switch|try|for|while|return null)\b/.test(jw.replace(/\/\/[^\n]*/g, ''))) bad.push('Methodenrumpf');
+  if (/imeOptions\s*=[^=]/.test(jw) || /\/\*/.test(jw) || /\/\/[^\n]*(imeOptions|onCreateInputConnection|return ic)/.test(jw)) bad.push('Zuweisung oder auskommentiert');
+  if ((jw.match(/imeOptions/g) || []).length !== 1) bad.push('imeOptions mehrfach');
+  const lwCode = lw.replace(/<!--[\s\S]*?-->/g, '');   // nur Markup außerhalb von Kommentaren zählt
+  if (!lwCode.includes('<org.alieninvestor.notes.NoLearnWebView\n        android:id="@+id/webview"') || /CapacitorWebView/.test(lwCode) || (lwCode.match(/[\w-]+:id\s*=/g) || []).length !== 1 || (lwCode.match(/<[A-Za-z]/g) || []).length !== 2) bad.push('Layout');
+  if (!capLayout.includes('<com.getcapacitor.CapacitorWebView\n        android:id="@+id/webview"')) bad.push('Capacitor: Bibliotheks-Layout geändert');
+  if (!capAct.includes('setContentView(R.layout.bridge_layout_main);')) bad.push('Capacitor: setContentView geändert');
+  if (!capBridge.includes('findViewById(R.id.webview)') || !capBridge.includes('webView instanceof CapacitorWebView')) bad.push('Capacitor: Bridge sucht die WebView anders');
+  if (!capWv.includes('public InputConnection onCreateInputConnection(EditorInfo outAttrs) {') || !capWv.includes('public CapacitorWebView(Context context, AttributeSet attrs) {')) bad.push('Capacitor: CapacitorWebView geändert');
+  // captureInput: CapacitorWebView gäbe eine leere BaseInputConnection (TYPE_NULL) zurück und reichte Tastaturtext per evaluateJavascript weiter — nie setzen.
+  // Geprüft wird die von `cap sync` ERZEUGTE Konfiguration im Asset (die CLI liest .ts/.js VOR .json; Release-Audit v1.13 b2), dazu keine .ts/.js-Konfiguration.
+  { let cfg = null; try { cfg = JSON.parse(readFileSync('android/app/src/main/assets/capacitor.config.json', 'utf8')); } catch (_) { cfg = null; }
+    if (!cfg || (cfg.android && 'captureInput' in cfg.android) || 'captureInput' in cfg || existsSync('capacitor.config.ts') || existsSync('capacitor.config.js')) bad.push('captureInput/Konfiguration'); }
+  // Java ohne Kommentare und ohne Unicode-Escapes (javac löst \uXXXX VOR dem Parsen auf — ein \u000a beendete sonst einen Kommentar), genau eine Klasse
+  { const code = jw.replace(/\/\/[^\n]*/g, '');
+    if (/\\u[0-9a-fA-F]{4}/.test(jw) || (code.match(/\bclass\b/g) || []).length !== 1 || !code.includes('public class NoLearnWebView extends CapacitorWebView {')
+        || !code.includes('outAttrs.imeOptions |= EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING;') || /\bEditorInfo\s+[A-Za-z_]\w*\s*[=;]|\bint\s+EditorInfo\b/.test(code)) bad.push('Java-Form'); }
+  if (bad.length) { console.error('FEHLER: Tastatur-Bitte unvollständig (' + bad.join(', ') + ') — Build abgebrochen!'); process.exit(1); }
+  console.log('Tastatur-Bitte (NoLearnWebView + Layout) geprüft.');
 }

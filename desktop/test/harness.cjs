@@ -846,7 +846,7 @@ async function exportStep(){
   { const openNote=async()=>{ await js(`(()=>{ const n=[...document.querySelectorAll('#entry-list .entry .t')].find(n=>n.textContent===${JSON.stringify(T)}); if(n) n.click(); return !!n; })()`); await sleep(500); };
     await openNote(); dlgNext={canceled:false,filePath:path.join(dir,'fehlt','x.md')}; await js(`App.hideToast(); true`); await exp(); await sleep(800);
     const t=await toastTxt(); R('Export: Schreibfehler → „fehlgeschlagen“ mit Code, ohne Pfad', /fehlgeschlagen/.test(t)&&/ENOENT/.test(t)&&!t.includes(dir), t); }
-  // (6) Rückfall-Zweig in writeTo (Portal ohne Temp-Datei daneben): Temp-Name als Ordner belegt → atomar scheitert → neues Ziel per 'wx', Rechte 600
+  // (6) Rückfall-Zweig in writeTo (Portal ohne Temp-Datei daneben): Öffnen der Temp-Datei scheitert → atomar scheitert → neues Ziel per 'wx', Rechte 600
   // Erzwungen über fs.openSync (Hülle und Prüfprogramm teilen das fs-Modul): jedes Öffnen einer Temp-Datei scheitert wie im Portal — unabhängig davon,
   // wie atomic.js die Temp-Datei nennt (run-10 e2-3). tmpHits belegt, dass der Rückfall-Zweig wirklich lief.
   { const echtOpen=fs.openSync; let tmpHits=0; fs.openSync=function(p,...a){ if(String(p).includes('.tmp-')){ tmpHits++; const e=new Error('portal'); e.code='EACCES'; throw e; } return echtOpen.call(fs,p,...a); };

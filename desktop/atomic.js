@@ -1,22 +1,24 @@
 'use strict';
 // Alien Notes Desktop — Tresor und Backups vollständig und atomar schreiben. Nur fs, kein Electron: so lässt sich das Verhalten bei
 // voller Platte einzeln prüfen (desktop/test/atomic-test.cjs unter ulimit, aus verify-desktop.mjs).
-const fs=require('fs'); const path=require('path');
+const fs=require('fs'); const path=require('path'); const crypto=require('crypto');
 
 // Vollständig schreiben: writeSync ist EIN write(2) und schreibt bei voller Platte nur einen Teil, ohne Fehler (Audit run-6 #2).
 function writeFull(fd,data){
-  const b=Buffer.from(data,'utf8'); let o=0;
+  const b=Buffer.isBuffer(data)?data:Buffer.from(data,'utf8'); let o=0;
   while(o<b.length){ const n=fs.writeSync(fd,b,o,b.length-o); if(!(n>0)) throw new Error('short write'); o+=n; }
   fs.fsyncSync(fd);
   if(fs.fstatSync(fd).size!==b.length) throw new Error('short write');
 }
 // Atomar schreiben: Temp-Datei daneben, vollständig schreiben + fsync, umbenennen, Ordner fsyncen — nie eine halbe Datei.
 // Bewusst KEINE Vorgänger-Kopie: nach einem Passphrase-Wechsel läge dort der Tresor unter der alten Passphrase.
-// Temp mit 'w', nicht 'wx': im Flatpak ist die PID je Start gleich, ein Absturz-Rest würde sonst jedes Speichern sperren.
+// Temp mit Zufallsnamen, exklusiv und ohne Symlink-Folgen (O_EXCL|O_NOFOLLOW, v1.13, Audit run-10 b-6; Vorlage BTC Steuertool): ein vorbereiteter
+// Symlink am Temp-Namen lenkt Tresor, Backup oder Markdown-Datei nicht um, und ein Absturz-Rest sperrt kein späteres Speichern (die PID ist im Flatpak je Start gleich).
+const TMP_FLAGS=fs.constants.O_WRONLY|fs.constants.O_CREAT|fs.constants.O_EXCL|fs.constants.O_NOFOLLOW;
 function writeAtomic(file,data){
-  const dir=path.dirname(file); const tmp=path.join(dir,'.'+path.basename(file)+'.tmp-'+process.pid);
+  const dir=path.dirname(file); const tmp=path.join(dir,'.'+path.basename(file)+'.tmp-'+crypto.randomBytes(6).toString('hex'));
   try{
-    const fd=fs.openSync(tmp,'w',0o600); try{ writeFull(fd,data); }finally{ fs.closeSync(fd); }
+    const fd=fs.openSync(tmp,TMP_FLAGS,0o600); try{ writeFull(fd,data); }finally{ fs.closeSync(fd); }
     fs.renameSync(tmp,file);
   }catch(err){ try{ fs.unlinkSync(tmp); }catch(_){} throw err; }
   try{ const d=fs.openSync(dir,'r'); try{ fs.fsyncSync(d); }finally{ fs.closeSync(d); } }catch(_){}
