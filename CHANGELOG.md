@@ -1,5 +1,34 @@
 # Changelog — Alien Notes
 
+## v1.14 — 2026-10-16
+
+Neuer Notiztyp „Skizze“: mit dem Finger zeichnen, am Desktop mit der Maus. Dazu Pflege aus den Sicherheitsprüfungen von Alien Pass 1.22 und
+Sachwert-Tresor 3.11. **Die Notizen-Datei trägt jetzt die Version 2: ältere App-Versionen öffnen sie nicht mehr — Handy und Desktop gemeinsam
+aktualisieren.** Keine neuen Berechtigungen.
+- **Skizze:** Im Editor gibt es neben „Notiz“ und „Checkliste“ jetzt „Skizze“. Werkzeuge: Freihand, Linie, Pfeil, Rechteck, Ellipse, Dreieck und
+  Sechseck (Formen zieht man vom Start- bis zum Endpunkt auf), drei Strichstärken, durchgezogen oder gestrichelt, vier Farben (Cyan, Gelb, Rot, Weiß).
+  Der Radierer entfernt ganze Striche, ↶/↷ nehmen jeden Strich einzeln zurück, „Alles löschen“ fragt nach. Ein einblendbares Gitter hilft beim
+  Ausrichten, auf Wunsch rasten Formen und Linien daran ein. Ein zweiter Finger bricht den laufenden Strich ab; wer mit einem Stift zeichnet, dem
+  zählen Finger und Handballen nicht. Gespeichert werden Linien als Zahlen (Vektordaten) in der verschlüsselten Datei, keine Bilder; eine Skizze fasst bis zu 1000 Striche.
+  Die Liste zeigt Skizzen mit ✎ und der Zahl der Striche. „Kopieren“ und „Als Datei“ gibt es für Skizzen nicht.
+- **Dateiversion 2:** Damit eine ältere App-Version beim Abgleich keine Skizzen verliert, weist sie eine Datei von 1.14 ab und meldet „neuere
+  App-Version“. Ältere Backups lassen sich in 1.14 weiter einspielen. Passphrase und Fingerabdruck gelten unverändert weiter. Enthält eine Datei
+  Notizen mit Angaben, die erst eine spätere Version kennt, weist 1.14 sie ebenfalls ab, statt diese Angaben beim Abgleich still zu verwerfen.
+- **Entsperren:** Öffnet die richtige Passphrase eine Datei, deren Inhalt ungültig oder nachträglich verändert ist, meldet die App das jetzt als solches.
+  Es zählt nicht mehr als Fehlversuch, und das Entsperren per Fingerabdruck oder PIN wird dabei nicht mehr verworfen. Auch ein veränderter Dateikopf
+  löscht das Entsperren per Fingerabdruck nicht mehr; die App meldet die Veränderung.
+- **Rückfragen:** Wer im Dialog drückt und erst über dem Hintergrund loslässt, bricht die Rückfrage nicht mehr versehentlich ab.
+- **Englische Oberfläche:** Hinweistexte und Screenreader-Namen einiger Knöpfe sind übersetzt; nach dem Wechsel Englisch → Deutsch zeigen die
+  Editorfelder wieder deutsche Platzhalter.
+- **Desktop:** Wird markierter Text per Ziehen-und-Ablegen bewegt (etwa der Schlüssel beim Einrichten der Aegis-Hürde), löscht die App die dabei
+  entstandene Mittelklick-Auswahl jetzt ebenfalls mit der Kopier-Frist und beim Sperren; was in einem anderen Fenster abgelegt wurde, bleibt dort. Markiert man mit der Maus bis an den Rand eines Felds und lässt die Maus kurz ruhen, rollt das Feld nach;
+  diese Markierung blieb bisher in der X11-Auswahl stehen, auch nach dem Sperren. Ebenso, wenn die App bei noch gedrückter Maustaste sperrte. Beides
+  bestand schon vor 1.14 und ist behoben. Electron 44.7.2 mit nachgezogenen Sicherheitskorrekturen aus Chromium, V8, ANGLE und PDFium.
+- **Prüfungen beim Bauen:** Die fertige Android-App wird zusätzlich im Bytecode geprüft: Bildschirmschutz beim Start und die Registrierung der vier
+  eigenen Bausteine stehen an ihrem Platz, ohne Bedingung davor; der Schlüssel für das Entsperren per Fingerabdruck verlangt den Finger, und die
+  Kopie in die Zwischenablage ist als vertraulich markiert. Das Release-Skript lädt nur eine APK und ein Desktop-Paket hoch, die zum Versions-Tag passen.
+  Unbelegte Platzhalter in Handbuch und App-Texten stoppen den Bau.
+
 ## v1.13 — 2026-10-14
 
 Pflege-Release: Kopieren über die Auswahlleiste von Android läuft jetzt über die App, die App bittet die Tastatur, nichts zu lernen, und die

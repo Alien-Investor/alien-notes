@@ -1,6 +1,6 @@
 # Alien Notes
 
-Lokale, verschlüsselte **Notizen- und Checklisten-App** für Android / GrapheneOS und den **Linux-Desktop** (Flatpak).
+Lokale, verschlüsselte **Notizen-App mit Checklisten und Skizzen** für Android / GrapheneOS und den **Linux-Desktop** (Flatpak).
 Läuft komplett **offline** — keine Cloud, kein Server, kein Konto, keine Telemetrie.
 Die Android-App fordert **keine Internet-Berechtigung** an — nur die zwei normalen Berechtigungen für den Fingerabdrucksensor (siehe Sicherheit).
 Die Desktop-Fassung läuft als Flatpak **ohne Netzwerk-Berechtigung und ohne Zugriff auf deine Dateien**.
@@ -57,7 +57,7 @@ f368f90bf8df8c55bb6c286d3225ba8af445227ba69b3600dfbbf6a14409ba7c
 ## 🖥️ Installieren (Linux-Desktop, Flatpak)
 
 Derselbe Code wie auf dem Handy, verpackt mit Electron als **Flatpak** (x86_64). Das Dateiformat ist identisch: Backups vom Handy lassen
-sich am Desktop importieren und umgekehrt. Verteilung als Datei mit GPG-signierter Prüfsumme im [GitHub-Release](https://github.com/Alien-Investor/alien-notes/releases)
+sich am Desktop importieren und umgekehrt. **Seit 1.14 trägt die Datei die Version 2** — eine ältere App-Version öffnet sie nicht mehr; Handy und Desktop deshalb gemeinsam auf 1.14 bringen. Verteilung als Datei mit GPG-signierter Prüfsumme im [GitHub-Release](https://github.com/Alien-Investor/alien-notes/releases)
 und auf der eigenen Download-Adresse (siehe Schritt 1) — nicht auf Flathub, kein automatisches Update.
 
 **Voraussetzung:** Flatpak mit dem Flathub-Remote (für die Laufzeit `org.freedesktop.Platform` 25.08, die flatpak beim Installieren nachlädt):
@@ -128,6 +128,10 @@ Schlüsselableitung schafft, und schlägt eine passende Argon2-Stufe vor.
   „Erledigte nach unten“ und „Haken zurücksetzen“. Lange Einträge brechen um, Enter teilt einen Eintrag am Cursor, eingefügter Text mit
   mehreren Zeilen wird zu mehreren Einträgen (seit 1.9). Der Typ lässt sich umschalten — Zeilen werden Einträge und umgekehrt, mit Rückfrage,
   wenn dabei etwas gekürzt würde.
+- **Skizzen** (seit 1.14): mit dem Finger zeichnen, am Desktop mit der Maus, auf einer Fläche im Hochformat. Freihand, Linie, Pfeil, Rechteck,
+  Ellipse, Dreieck und Sechseck; drei Strichstärken, durchgezogen oder gestrichelt, vier Farben (Cyan, Gelb, Rot, Weiß); Strich-Radierer, ↶/↷ je Strich,
+  „Alles löschen“ mit Rückfrage, einblendbares Gitter mit Einrasten. Gespeichert werden Linien als Zahlen (Vektordaten) in derselben verschlüsselten
+  Datei, keine Bilder; bis zu 1000 Striche je Skizze. Kopieren und „Als Datei“ gibt es für Skizzen nicht.
 - **Kein Speichern-Knopf.** Die App speichert beim Tippen (nach 1,5 s Ruhe) und beim Verlassen der Notiz — verschlüsselt, jedes Mal
   die ganze Datei. Der Titel darf leer bleiben, dann dient die erste Zeile als Titel.
 - **Rückgängig und Wiederholen beim Bearbeiten** (seit 1.10): ↶ und ↷ oben im Editor nehmen bis zu 50 Schritte der offenen Notiz zurück
@@ -252,14 +256,18 @@ Schlüsselableitung schafft, und schlägt eine passende Argon2-Stufe vor.
 ## Dateiformat
 
 ```
-{ magic:"AINV1", ver:1,
+{ magic:"AINV1", ver:2,         // seit 1.14 (vorher 1; 1.14 liest beide, ältere Versionen weisen ver 2 ab)
   kdf:{name:"argon2id", m, t, p, salt},
   wrap:{iv, ct},      // Datenschlüssel, verpackt mit dem Passphrase-Schlüssel
   body:{iv, ct} }     // Notizen, verschlüsselt mit dem Datenschlüssel
 ```
 
-Zusatzdaten (AAD) für beide Teile: `AINV1|1|argon2id|m|t|p|salt|rolle` — eine veränderte Kopfzeile lässt die Entschlüsselung scheitern.
-Jede Notiz trägt `id`, `type` (text|list), `cat`, `title`, `body` oder `items`, `fav`, `pinned`, `md`, `created`, `updated`, `deleted`.
+Zusatzdaten (AAD): `AINV1|v|argon2id|m|t|p|salt|rolle` — für die Notizen (`body`) steht dort die Dateiversion, für den verpackten Schlüssel weiter die 1
+(so bleiben Passphrase und Fingerabdruck über den Wechsel gültig). Eine veränderte Kopfzeile lässt das Öffnen scheitern, eine gedrehte Version an der Entschlüsselung.
+Jede Notiz trägt `id`, `type` (text|list|sketch), `cat`, `title`, `body`, `items`, `fav`, `pinned`, `md`, `created`, `updated`, `deleted`, dazu `sk` bei einer
+Skizze mit Strichen und `hide`, wenn die Vorschau ausgeblendet ist; ein unbekanntes Feld weist die App als „neuere App-Version“ ab.
+Eine Skizze (`sk`) ist eine Liste von Strichen aus Ganzzahlen `[art, stärke, strichart, farbe, x0, y0, x1, y1, …]` in einer Fläche von 1200 × 1600;
+beim Laden prüft die App jeden Wert gegen feste Grenzen und weist eine Datei mit ungültiger Skizze ab, statt etwas zu kürzen.
 
 ## Open Source & selbst prüfen
 

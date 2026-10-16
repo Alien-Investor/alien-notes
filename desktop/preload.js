@@ -7,7 +7,7 @@ contextBridge.exposeInMainWorld('AlienDesktop',{
   clip:{   // gleiche Gestalt wie SecureClip auf Android
     write:o=>ipcRenderer.invoke('clip:write',String(o&&o.text||'')),
     clear:()=>ipcRenderer.invoke('clip:clear'),
-    selected:t=>ipcRenderer.invoke('clip:selected',String(t||''))   // markierter Text (X11-Auswahl) → wird mit der Frist mitgelöscht
+    selected:(t,peek)=>ipcRenderer.invoke('clip:selected',String(t||''),peek===true)   // markierter Text (X11-Auswahl) → wird mit der Frist mitgelöscht; peek = eigenes Ziehen (v1.14)
   },
   store:{   // der Tresor als Datei; synchron wie localStorage, wirft bei jedem Fehler
     read:()=>sync('store:read').data,

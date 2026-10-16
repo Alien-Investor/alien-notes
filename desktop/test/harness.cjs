@@ -805,12 +805,294 @@ async function markierung(){
       if(p1&&p2){ await drag(p1,p2); const s=await sel(), P=await prim(), zweite=ts[1]||'?'; await js('AlienDesktop.clip.clear()'); const weg=await leer();
         const vorb=P!==M&&s.includes((ts[0]||'').slice(1))&&!s.includes(zweite.slice(1,4))&&s.endsWith('\n');   // Ende genau vor der zweiten Notiz (Vorbedingung)
         R('v1.12: Ziehen in der Notizliste bis an den Anfang der nächsten Notiz: gelöscht', vorb&&weg, {vorb,weg,gleich:s===P,sEnde:JSON.stringify(s.slice(-4)),pEnde:JSON.stringify(P.slice(-4)),sLen:s.length,pLen:P.length,ts:ts.slice(0,2)}); }
-      else R('v1.12: Ziehen in der Notizliste — Ziel nicht gefunden', false, {p1,p2,ts}); } }
+      else R('v1.12: Ziehen in der Notizliste — Ziel nicht gefunden', false, {p1,p2,ts}); }
+  // (9c) v1.14, offene Desktop-Querfunde aus run-11: Ziehen vom Etikett „Aktuelle Passphrase“ (CSS uppercase) ÜBER das aufgedeckte Feld bis zum nächsten
+  // Etikett. GEMESSEN 16.10.2026 (Electron 44.7.2): den Feldwert legt Chromium NICHT nach PRIMARY (an seiner Stelle U+FFFC), die Großschrift steht in
+  // Meldung und PRIMARY gleich. Der Umfang kann abweichen (Range-Ende in einem Formularfeld: die Meldung nahm das nächste Etikett „WIEDERHOLEN“ mit,
+  // PRIMARY nicht) — dann bleibt reiner Etikett-Text ohne Geheimnis stehen (Hinweis, kein Fix: Zwischenablage nur auf Befund). Geprüft wird darum die
+  // Sicherheitseigenschaft: der aufgedeckte Feldwert nie in PRIMARY; Löschen und Gleichheit stehen als Messwerte daneben (DIAG=1).
+    { await js(`App.tab('settings'); true`); await sleep(300); const SP='mk-feld-geheim-'+process.pid;
+      await js(`(()=>{ const f=document.getElementById('cp-cur'); f.value=${JSON.stringify(SP)}; f.scrollIntoView({block:'center'}); return true; })()`); await sleep(200);
+      const eye=await at('button.pw-eye[data-showpass="cp-cur"]'); if(eye) await mclick(eye); const offen=await js(`document.getElementById('cp-cur').type==='text'`);
+      await mclick(await at('.tagline')); const M='mk-vorher-9c-'+process.pid; await clipboard.selection.writeText(M);
+      const p2=await atText('#tab-settings','Neue Passphrase'), p1=await atText('#tab-settings','Aktuelle');   // erst das Ziel (darf rollen), dann der Start
+      if(p1&&p2){ await drag(p1,p2); const s=await sel(), P=await prim(); await js('AlienDesktop.clip.clear()'); const weg=await leer();
+        const info={offen,weg,feldInP:P.includes(SP),feldInSel:s.includes(SP),grossP:/PASSPHRASE/.test(P),grossSel:/PASSPHRASE/.test(s),gleich:s===P,pLen:P.length,sLen:s.length,s:s.includes(SP)?'(Feld)':JSON.stringify(s),p:P.includes(SP)?'(Feld)':JSON.stringify(P)};
+        R('v1.14: Ziehen über das aufgedeckte Passphrase-Feld: Feldwert nicht in PRIMARY, Großschrift in Meldung und PRIMARY gleich', offen&&P!==M&&s.length>0&&!info.feldInP&&info.grossP===info.grossSel, info); }
+      else R('v1.14: Ziehen über das aufgedeckte Feld — Ziel nicht gefunden', false, {p1,p2});
+      await js(`(()=>{ const f=document.getElementById('cp-cur'); f.value=''; return true; })()`); if(eye) await mclick(eye); }
+  // (10) v1.14, Querfund Alien Pass v1.22 (run-12 c-2): .secret-box{user-select:all} (TOTP-Schlüssel der Hürden-Einrichtung) markiert schon beim Drücken
+  // alles; Bewegen startet in Chromium ein Ziehen-und-Ablegen OHNE mouseup — der Schlüssel lag ungemeldet in PRIMARY, auch nach Frist und Sperre. Seit
+  // v1.14 meldet dragstart. ALS LETZTES im Schritt: nach dem Ziehen nimmt die Seite in Pass keine Klicks mehr an (eigener Prozess je Schritt).
+    { await js(`window.__ds=0; window.__mu=0; window.__de=0; document.addEventListener('dragstart',()=>{ window.__ds++; },true); document.addEventListener('mouseup',()=>{ window.__mu++; },true); document.addEventListener('dragend',()=>{ window.__de++; },true); App.tab('settings'); true`); await sleep(300);
+      await click('[data-action="totpStart"]'); await sleep(500);
+      await js(`document.getElementById('totp-secret').scrollIntoView({block:'center'}); true`); await sleep(300);
+      const sec=await js(`document.getElementById('totp-secret').textContent`), p1=sec?await atText('#totp-secret',sec.slice(2,6)):null;
+      const p2=await js(`(()=>{ const n=document.querySelector('#totp-setup p.muted[data-i18n="set.totpSetup3"]'); if(!n) return null; const b=n.getBoundingClientRect(); return {x:Math.round(b.left+40),y:Math.round(b.top+b.height/2)}; })()`);
+      const M='mk-vorher-10-'+process.pid; await clipboard.selection.writeText(M);
+      if(p1&&p2){ await js(`window.__mu=0; true`); await drag(p1,p2); const P=await prim(), ds=await js(`window.__ds`), mu=await js(`window.__mu`), de=await js(`window.__de`), s=await sel(); const inP=sec.length>=16&&P.includes(sec.slice(0,16));
+        await js('AlienDesktop.clip.clear()'); const weg=await leer();
+        R('v1.14: Ziehen aus dem TOTP-Schlüssel (user-select:all → Ziehen-und-Ablegen): gemeldet, nach dem Löschen nicht mehr in PRIMARY', inP&&ds>0&&weg, {inP,ds,mu,de,weg,pLen:P.length,sLen:sec.length,selLen:s.length,gleich:s===P}); }
+      else R('v1.14: Ziehen aus dem TOTP-Schlüssel — Ziel nicht gefunden', false, {p1,p2,sLen:(sec||'').length});
+      await js(`App.totpCancel(); true`); } }
   await clipboard.selection.clear();
 }
 // v1.12: eine Notiz als Markdown-Datei — Knopf „Als Datei“ → Rückfrage → Speichern-Dialog (gestubbt) → erst dann der Text (zweistufig, run-10 b-1) → Datei
 // mit genau dem Text von „Kopieren“ plus Zeilenende; neutraler Name ohne Titel, nur .md, Abbruch an beiden Stellen schreibt nichts, Sperre während des
 // Dialogs schreibt nichts, die Brücke weist Fremdes vor dem Dialog ab, Kennungen gelten einmal. Dazu das Backup positiv über denselben Speicherweg (run-10 b-2).
+// v1.14: Skizze in der echten Hülle — echte Mausereignisse (sendInputEvent): Zeichnen markiert nichts (PRIMARY unverändert, kein dragstart), nimmt dem
+// Titel den Fokus, ein Mittelklick auf die Fläche fügt nichts ein (Linux-Mittelklick-Auswahl), Sperren leert die Fläche (Puffer 0×0)
+async function skizze(){
+  const wc=win.webContents, M='mk-skizze-'+process.pid;
+  const at=sel=>js(`(()=>{const n=document.querySelector(${JSON.stringify(sel)}); if(!n) return null; n.scrollIntoView({block:'center'}); const b=n.getBoundingClientRect(); return {x:Math.round(b.left),y:Math.round(b.top),w:Math.round(b.width),h:Math.round(b.height)};})()`);
+  R('Skizze: Sperrbildschirm', await until(visible('screen-lock'),15000));
+  await ensureFocus(); await fill('lock-pass',PP); await click('#unlock-btn'); R('Skizze: entsperrt', await until(visible('screen-app')));
+  await js(`window.__ds=0; document.addEventListener('dragstart',()=>{ window.__ds++; },true); true`);
+  await click('button[data-action="newEntry"]'); await sleep(300); await fill('f-title','Huellen-Skizze'); await click('#ft-sketch'); await sleep(400);
+  const typ=await js(`!document.getElementById('grp-sketch').classList.contains('hidden')&&document.getElementById('sk-canvas').width>0`);
+  // Fokus in den Titel (echter Klick), Marke in PRIMARY, dann von der Fläche über den Titel hinaus ziehen
+  const t=await at('#f-title'); await ensureFocus(); wc.sendInputEvent({type:'mouseDown',x:t.x+20,y:t.y+t.h/2,button:'left',clickCount:1}); wc.sendInputEvent({type:'mouseUp',x:t.x+20,y:t.y+t.h/2,button:'left',clickCount:1}); await sleep(300);
+  const imTitel=await js(`document.activeElement.id==='f-title'`); await clipboard.selection.writeText(M);
+  const c=await at('#sk-canvas'), t2=await js(`(()=>{const b=document.getElementById('f-title').getBoundingClientRect(); return {x:Math.round(b.left+20),y:Math.round(b.top+b.height/2)};})()`);
+  const p1={x:c.x+Math.round(c.w*0.2),y:c.y+Math.round(c.h*0.3)};
+  wc.sendInputEvent({type:'mouseDown',x:p1.x,y:p1.y,button:'left',clickCount:1});
+  for(let i=1;i<=16;i++){ const x=Math.round(p1.x+(t2.x-p1.x)*i/16), y=Math.round(p1.y+(t2.y-p1.y)*i/16); wc.sendInputEvent({type:'mouseMove',x,y,button:'left',modifiers:['leftButtonDown']}); await sleep(30); }
+  wc.sendInputEvent({type:'mouseUp',x:t2.x,y:t2.y,button:'left',clickCount:1}); await sleep(500);
+  const r={typ,imTitel,P:(await prim())===M, sel:await js(`String(getSelection())`), ds:await js(`window.__ds`), akt:await js(`document.activeElement.id||document.activeElement.tagName`), cnt:await js(`document.getElementById('ed-count').textContent`)};
+  R('Skizze: Ziehen mit der Maus zeichnet, markiert nichts (PRIMARY unverändert, kein dragstart), Titel verliert den Fokus', typ&&imTitel&&r.P&&r.sel===''&&r.ds===0&&r.akt!=='f-title'&&r.cnt==='1 Strich', r);
+  // Mittelklick auf die Fläche bei fokussiertem Titel: nichts eingefügt, kein Strich
+  await js(`document.getElementById('f-title').focus(); true`); const vor=await js(`document.getElementById('f-title').value`); await clipboard.selection.writeText('mk-mitte-'+process.pid);
+  const p2={x:c.x+Math.round(c.w*0.6),y:c.y+Math.round(c.h*0.6)}; wc.sendInputEvent({type:'mouseDown',x:p2.x,y:p2.y,button:'middle',clickCount:1}); wc.sendInputEvent({type:'mouseUp',x:p2.x,y:p2.y,button:'middle',clickCount:1}); await sleep(400);
+  const nach=await js(`document.getElementById('f-title').value`), cnt2=await js(`document.getElementById('ed-count').textContent`);
+  R('Skizze: Mittelklick auf die Fläche fügt nichts ein und zeichnet nicht', vor===nach&&cnt2==='1 Strich', {vor,nach,cnt2});
+  await click('button[data-action="doneEditor"]'); await sleep(500);
+  R('Skizze: gespeichert, Liste zeigt ✎', await until(`[...document.querySelectorAll('#entry-list .entry')].some(e=>e.textContent.includes('Huellen-Skizze')&&e.querySelector('.av').textContent==='✎')`,5000));
+  // wieder öffnen, dann sperren: Puffer frei
+  await js(`(()=>{ const e=[...document.querySelectorAll('#entry-list .entry')].find(e=>e.textContent.includes('Huellen-Skizze')); e.click(); return true; })()`); await sleep(500);
+  const offen=await js(`document.getElementById('sk-canvas').width>0`); await js(`App.lock(); true`); await sleep(400);
+  const w=await js(`document.getElementById('sk-canvas').width+'x'+document.getElementById('sk-canvas').height`);
+  R('Skizze: Sperren gibt den Puffer frei (0×0)', offen&&w==='0x0'&&await js(visible('screen-lock')), {offen,w});
+  await clipboard.selection.clear();
+}
+// v1.14 (Release-Audit run-12 b-1 MITTEL, Probe von Prüfer B übernommen): Markieren bis an den unteren Rand des Notizfelds, Maus ruht — Chromium rollt nach und
+// lässt die Markierung ohne Eingabeereignis wachsen; PRIMARY behielt den Stand der letzten Mausbewegung, die Meldung den Endstand, nichts wurde gelöscht.
+// Seit v1.14 setzt die App im mouseup die Markierung neu (reselect) → PRIMARY = Endstand, Frist und Sperre löschen ihn.
+async function nachrollen(){
+  const wc=win.webContents, G='GEHEIM-'+process.pid, M='mk-nachrollen-'+process.pid, REST=40;
+  const mouse=(type,x,y,o={})=>wc.sendInputEvent({type,x:Math.round(x),y:Math.round(y),button:o.button||'left',clickCount:o.cc||1,...(o.mod?{modifiers:o.mod}:{})});
+  const cnt=t=>(t.match(new RegExp(G,'g'))||[]).length;
+  const leer=async(ms=2500)=>{ const t0=Date.now(); let ok=false; while(Date.now()-t0<ms&&!(ok=(await prim())==='')) await sleep(100); return ok; };
+  R('Nachrollen: Sperrbildschirm', await until(visible('screen-lock'),15000));
+  await ensureFocus(); await fill('lock-pass',PP); await click('#unlock-btn'); R('Nachrollen: entsperrt', await until(visible('screen-app')));
+  await js(`App.setAutolock('0'); true`); await sleep(300);
+  const lines=Array.from({length:150},(_,i)=>'Zeile '+i+' '+G+' text').join('\n');
+  await click('button[data-action="newEntry"]'); await sleep(300); await fill('f-title','Lang-Feld'); await fill('f-body',lines); await sleep(300); await click('button[data-action="doneEditor"]'); await sleep(600);
+  for(const [off,hold] of [[1,3000],[3,3000]]){
+    await js(`(()=>{ const e=[...document.querySelectorAll('#entry-list .entry')].find(e=>e.textContent.includes('Lang-Feld')); e.click(); return true; })()`); await sleep(400);
+    // Markierung des vorigen Durchgangs aufheben: Drücken IN markierten Text und Bewegen startet in Chromium ein Ziehen-und-Ablegen statt einer neuen Markierung
+    // (ohne Fix sperrte der Test dazwischen, das räumte sie weg). Klick OHNE Bewegung prüft der Schritt markklick (run-12 b2-1).
+    const f=await js(`(()=>{ const t=document.getElementById('f-body'); t.setSelectionRange(0,0); t.scrollIntoView({block:'nearest'}); t.scrollTop=t.scrollHeight-t.clientHeight-${REST}; const b=t.getBoundingClientRect(); return {x:b.left,y:b.top,w:b.width,h:b.height,top:t.scrollTop,leer:t.selectionStart===t.selectionEnd}; })()`);
+    await clipboard.selection.writeText(M); await ensureFocus();
+    const a={x:f.x+30,y:f.y+40}, z={x:f.x+f.w/2,y:f.y+f.h-off};
+    mouse('mouseDown',a.x,a.y); for(let i=1;i<=14;i++){ mouse('mouseMove',a.x+(z.x-a.x)*i/14,a.y+(z.y-a.y)*i/14,{mod:['leftButtonDown']}); await sleep(30); }
+    await sleep(120); const y0=await js(`document.getElementById('f-body').scrollTop`); await sleep(hold); const y1=await js(`document.getElementById('f-body').scrollTop`);
+    mouse('mouseUp',z.x,z.y); await sleep(700);
+    const p=await prim(), sel=await js(`(()=>{ const t=document.getElementById('f-body'); return t.value.substring(t.selectionStart,t.selectionEnd); })()`);
+    // Vorbedingung: markiert und nachgerollt — gemessen am Rollstand VOR dem Drücken (f.top); y0 kommt 120 ms nach dem Ziehen, bis dahin ist das Feld oft schon unten
+    const vorb=f.leer&&p!==M&&cnt(sel)>0&&y1>f.top;
+    await js('AlienDesktop.clip.clear()'); const weg=await leer();
+    R(`Nachrollen im Notizfeld (Rand-${off}, Maus ruht ${hold} ms): PRIMARY = Endstand, nach dem Löschen leer`, vorb&&p===sel&&weg, {vorb,gleich:p===sel,weg,scroll:[f.top,y0,y1],primLen:p.length,selLen:sel.length,primMarker:cnt(p),selMarker:cnt(sel)});
+    if(!weg){ await js('App.lock(); true'); await sleep(1000); await ensureFocus(); await fill('lock-pass',PP); await click('#unlock-btn'); await until(visible('screen-app'),60000); await sleep(300); }
+    await clipboard.selection.clear(); }
+}
+// v1.14 (Release-Audit run-12 b2-1, Rückschritt aus dem Fix b-1; Proben von Prüfer B2 übernommen): ein Klick IN eine Markierung hebt sie auf (Cursor an die
+// Klickstelle), ein danach getipptes Zeichen überschreibt nichts — Notizfeld (gezogen, Doppelklick), Titel, Markdown-Ansicht. reselect nur nach einem Ziehen.
+const mouseOf2=wc=>(type,x,y,o={})=>wc.sendInputEvent({type,x:Math.round(x),y:Math.round(y),button:o.button||'left',clickCount:o.cc||1,...(o.mod?{modifiers:o.mod}:{})});
+const key2=(wc,k,mod)=>{ wc.sendInputEvent({type:'keyDown',keyCode:k,...(mod?{modifiers:mod}:{})}); if(!mod||!mod.includes('control')) wc.sendInputEvent({type:'char',keyCode:k,...(mod?{modifiers:mod}:{})}); wc.sendInputEvent({type:'keyUp',keyCode:k,...(mod?{modifiers:mod}:{})}); };
+const openByTitle=t=>js(`(()=>{ const e=[...document.querySelectorAll('#entry-list .entry')].find(e=>e.textContent.includes(${JSON.stringify(t)})); if(!e) return false; e.click(); return true; })()`);
+const fsel=id=>js(`(()=>{ const t=document.getElementById(${JSON.stringify(id)}); return {s:t.selectionStart,e:t.selectionEnd,d:t.selectionDirection,akt:document.activeElement&&document.activeElement.id,v:t.value}; })()`);
+const caretXY=(id,pos)=>js(`(()=>{ const n=document.getElementById(${JSON.stringify(id)}), cs=getComputedStyle(n), d=document.createElement('div');
+  ['fontFamily','fontSize','fontWeight','letterSpacing','lineHeight','wordBreak','overflowWrap','tabSize','paddingTop','paddingLeft','paddingRight','borderTopWidth','borderLeftWidth'].forEach(k=>d.style[k]=cs[k]);
+  Object.assign(d.style,{position:'absolute',visibility:'hidden',whiteSpace:n.tagName==='TEXTAREA'?'pre-wrap':'pre',boxSizing:'content-box',width:(n.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight))+'px',left:'0',top:'0'});
+  d.textContent=n.value.slice(0,${pos}); const m=document.createElement('span'); m.textContent=n.value.slice(${pos},${pos}+1)||'.'; d.appendChild(m); document.body.appendChild(d);
+  const b=n.getBoundingClientRect(), x=b.left+parseFloat(cs.borderLeftWidth)+m.offsetLeft+m.offsetWidth/2-n.scrollLeft, y=b.top+parseFloat(cs.borderTopWidth)+m.offsetTop+m.offsetHeight/2-n.scrollTop; d.remove(); return {x,y}; })()`);
+async function markklick(){
+  const wc=win.webContents, mouse=mouseOf2(wc), G='Klick-'+process.pid;
+  R('Sperrbildschirm', await until(visible('screen-lock'),15000));
+  await ensureFocus(); await fill('lock-pass',PP); await click('#unlock-btn'); if(!(await until(visible('screen-app')))){ R('entsperrt',false); return; }
+  await js(`App.setAutolock('0'); true`); await sleep(300);
+  const body='alpha beta gamma delta epsilon zeta eta theta iota kappa lambda my ny xi omikron '+G;
+  await click('button[data-action="newEntry"]'); await sleep(300); await fill('f-title','Titel-alpha-beta-gamma-delta'); await fill('f-body',body); await sleep(300); await click('button[data-action="doneEditor"]'); await sleep(600);
+  for(const [art,wie] of [['Ziehen','drag'],['Doppelklick','dbl']]){
+    await openByTitle('Titel-alpha'); await sleep(400);
+    await js(`(()=>{ const t=document.getElementById('f-body'); t.focus(); t.setSelectionRange(0,0); t.scrollTop=0; return true; })()`); await sleep(150);
+    await clipboard.selection.clear(); await ensureFocus();
+    const i0=body.indexOf('beta'), i1=body.indexOf('delta')+5;
+    const a=await caretXY('f-body',i0), z=await caretXY('f-body',i1-1);
+    if(wie==='drag'){ mouse('mouseDown',a.x-3,a.y); for(let i=1;i<=8;i++){ mouse('mouseMove',a.x-3+(z.x+4-(a.x-3))*i/8,a.y,{mod:['leftButtonDown']}); await sleep(30); } mouse('mouseUp',z.x+4,z.y); }
+    else { mouse('mouseDown',a.x,a.y,{cc:1}); mouse('mouseUp',a.x,a.y,{cc:1}); mouse('mouseDown',a.x,a.y,{cc:2}); mouse('mouseUp',a.x,a.y,{cc:2}); }
+    await sleep(400); const s1=await fsel('f-body'); const p1=await prim();
+    // Klick mitten in die Markierung (andere Stelle als das Drücken eben, Abstand > Doppelklick-Zeit)
+    await sleep(900); const mid=await caretXY('f-body',wie==='drag'?body.indexOf('gamma')+2:i0+2);
+    mouse('mouseDown',mid.x,mid.y,{cc:1}); await sleep(60); mouse('mouseUp',mid.x,mid.y,{cc:1}); await sleep(400);
+    const s2=await fsel('f-body');
+    const collapsed=s2.s===s2.e;
+    R(`Notizfeld, ${art} markiert, Klick hinein: Markierung aufgehoben`, s1.s<s1.e&&collapsed, {vorher:[s1.s,s1.e,s1.d,s1.akt], primGleich:p1===body.slice(s1.s,s1.e), nachher:[s2.s,s2.e,s2.d,s2.akt]});
+    key2(wc,'X'); await sleep(300); const s3=await fsel('f-body');
+    const lost=body.length-(s3.v.length-1);
+    R(`  → ein Zeichen getippt: kein markierter Text überschrieben`, lost===0, {laengeVorher:body.length, laengeNachher:s3.v.length, verloren:lost, umgebung:JSON.stringify(s3.v.slice(Math.max(0,s2.s-6),s2.s+8))});
+    await click('button[data-action="doneEditor"]'); await sleep(500);
+    // Text zurücksetzen
+    await openByTitle('Titel-alpha'); await sleep(300); await fill('f-body',body); await sleep(200); await click('button[data-action="doneEditor"]'); await sleep(500);
+  }
+  // Titel-Feld (einzeilig)
+  { await openByTitle('Titel-alpha'); await sleep(400); const T=await js(`document.getElementById('f-title').value`);
+    await clipboard.selection.clear(); await ensureFocus();
+    const i0=T.indexOf('alpha'), i1=T.indexOf('gamma')+5; const a=await caretXY('f-title',i0), z=await caretXY('f-title',i1-1);
+    mouse('mouseDown',a.x-3,a.y); for(let i=1;i<=8;i++){ mouse('mouseMove',a.x-3+(z.x+4-(a.x-3))*i/8,a.y,{mod:['leftButtonDown']}); await sleep(30); } mouse('mouseUp',z.x+4,z.y); await sleep(400);
+    const s1=await fsel('f-title'); await sleep(900); const mid=await caretXY('f-title',T.indexOf('beta')+2);
+    mouse('mouseDown',mid.x,mid.y,{cc:1}); await sleep(60); mouse('mouseUp',mid.x,mid.y,{cc:1}); await sleep(400); const s2=await fsel('f-title');
+    R('Titelfeld, Ziehen markiert, Klick hinein: Markierung aufgehoben', s1.s<s1.e&&s2.s===s2.e, {vorher:[s1.s,s1.e], nachher:[s2.s,s2.e,s2.akt]});
+    await click('button[data-action="doneEditor"]'); await sleep(500); }
+  // Markdown-Ansicht (Seiten-Markierung)
+  { await openByTitle('Titel-alpha'); await sleep(300); await click('#f-md'); await sleep(400);
+    const pos=async needle=>js(`(()=>{ const w=document.createTreeWalker(document.getElementById('md-view'),NodeFilter.SHOW_TEXT); let n; while((n=w.nextNode())){ const i=n.data.indexOf(${JSON.stringify(needle)}); if(i>=0){ const r=document.createRange(); r.setStart(n,i); r.setEnd(n,i+1); const b=r.getBoundingClientRect(); return {x:b.x+b.width/2,y:b.y+b.height/2}; } } return null; })()`);
+    const a=await pos('beta'), z=await pos('delta'); await clipboard.selection.clear(); await ensureFocus();
+    mouse('mouseDown',a.x-3,a.y); for(let i=1;i<=8;i++){ mouse('mouseMove',a.x-3+(z.x+30-(a.x-3))*i/8,a.y,{mod:['leftButtonDown']}); await sleep(30); } mouse('mouseUp',z.x+30,z.y); await sleep(400);
+    const g1=await js(`String(getSelection())`); await sleep(900); const mid=await pos('gamma');
+    mouse('mouseDown',mid.x,mid.y,{cc:1}); await sleep(60); mouse('mouseUp',mid.x,mid.y,{cc:1}); await sleep(400);
+    const g2=await js(`({c:getSelection().isCollapsed,t:String(getSelection())})`);
+    R('Markdown-Ansicht, Ziehen markiert, Klick hinein: Markierung aufgehoben', g1.length>0&&g2.c, {vorher:g1.length, nachher:g2});
+    await js(`getSelection().removeAllRanges(); true`); await click('#f-md'); await sleep(300); await click('button[data-action="doneEditor"]'); await sleep(500); }
+  await clipboard.selection.clear();
+}
+
+// v1.14 (run-12 b2-2): Sperre bei GEHALTENER Maustaste nach dem Nachrollen — per Strg+L, Zeitgeber (auch ohne Nachrollen) und Minimieren bei „sofort“; Gegenprobe
+// erst loslassen, dann sperren. Nach der Sperre darf kein Notiztext in PRIMARY stehen (lock() meldet die offene Markierung, die Hülle merkt den älteren Stand).
+async function sperrziehen(){
+  const wc=win.webContents, mouse=mouseOf2(wc), G='GEHEIM-'+process.pid, M='mk-b2-'+process.pid, REST=40;
+  const cnt=t=>(t.match(new RegExp(G,'g'))||[]).length;
+  R('Sperrbildschirm', await until(visible('screen-lock'),15000));
+  await ensureFocus(); await fill('lock-pass',PP); await click('#unlock-btn'); if(!(await until(visible('screen-app')))){ R('entsperrt',false); return; }
+  await js(`App.setAutolock('0'); true`); await sleep(300);
+  const lines=Array.from({length:150},(_,i)=>'Zeile '+i+' '+G+' text').join('\n');
+  await click('button[data-action="newEntry"]'); await sleep(300); await fill('f-title','Lang-Feld'); await fill('f-body',lines); await sleep(300); await click('button[data-action="doneEditor"]'); await sleep(600);
+  for(const wie of (process.env.AP_WIE||'strgL,timer,timerOhne,minimize,mouseup').split(',')){
+    await openByTitle('Lang-Feld'); await sleep(400);
+    const f=await js(`(()=>{ const t=document.getElementById('f-body'); t.setSelectionRange(0,0); t.scrollIntoView({block:'nearest'}); t.scrollTop=t.scrollHeight-t.clientHeight-${REST}; const b=t.getBoundingClientRect(); return {x:b.left,y:b.top,w:b.width,h:b.height,top:t.scrollTop}; })()`);
+    await clipboard.selection.writeText(M); await ensureFocus();
+    const a={x:f.x+30,y:f.y+40}, z={x:f.x+f.w/2,y:wie==='timerOhne'?f.y+f.h/2:f.y+f.h-1};
+    if(wie==='minimize') await js(`App.setBgLock('0'); true`);
+    mouse('mouseDown',a.x,a.y); for(let i=1;i<=14;i++){ mouse('mouseMove',a.x+(z.x-a.x)*i/14,a.y+(z.y-a.y)*i/14,{mod:['leftButtonDown']}); await sleep(30); }
+    await sleep(120); const pDrag=await prim(); await sleep(2500); const sel=await js(`(()=>{ const t=document.getElementById('f-body'); return t.value.substring(t.selectionStart,t.selectionEnd); })()`);
+    const pHold=await prim();
+    if(wie==='strgL'){ wc.sendInputEvent({type:'keyDown',keyCode:'Control'}); wc.sendInputEvent({type:'keyDown',keyCode:'L',modifiers:['control']}); wc.sendInputEvent({type:'keyUp',keyCode:'L',modifiers:['control']}); wc.sendInputEvent({type:'keyUp',keyCode:'Control'}); }
+    else if(wie==='timer'||wie==='timerOhne') await js(`setTimeout(()=>App.lock(),0); true`);
+    else if(wie==='minimize'){ win.minimize(); await sleep(1500); win.restore(); await sleep(800); }
+    else mouse('mouseUp',z.x,z.y);
+    await sleep(1500);
+    if(wie!=='mouseup') mouse('mouseUp',z.x,z.y,{});
+    await sleep(800);
+    const gesperrt=await js(visible('screen-lock'));
+    if(wie==='mouseup'){ await js('App.lock(); true'); await sleep(1200); }
+    const pEnd=await prim(); const weg=pEnd===''||pEnd===M;
+    if(wie==='minimize') await js(`App.setBgLock('1800'); true`).catch(()=>{});
+    R(`${wie==='timerOhne'?'OHNE Nachrollen (Mitte), ':'Nachrollen, '}dann ${wie==='strgL'?'Strg+L bei ruhender Maus':wie==='timer'||wie==='timerOhne'?'Sperre per Zeitgeber bei ruhender Maus':wie==='minimize'?'Minimieren (Hintergrund „sofort“) bei ruhender Maus':'Loslassen, dann Sperre (Gegenprobe)'}: nach der Sperre kein Notiztext in PRIMARY`, weg,
+      {gesperrt, primNachZug:pDrag.length, selBeiRuhe:sel.length, selMarker:cnt(sel), primBeiRuhe:pHold.length, primMarkerBeiRuhe:cnt(pHold), primNachSperre:pEnd.length, markerNachSperre:cnt(pEnd)});
+    await clipboard.selection.clear();
+    if(await js(visible('screen-lock'))){ await ensureFocus(); await fill('lock-pass',PP); await click('#unlock-btn'); await until(visible('screen-app'),60000); await sleep(400); }
+  }
+}
+
+// v1.14 (Release-Audit run-12 b3-1/b3-2, Proben von Prüfer B3 übernommen): die Hülle liest PRIMARY nur bei eigenem Ziehen (peek).
+// fremdanfang: eine FREMDE Auswahl, die Anfang/Ende/Wort/Zeichen der stehenden Markierung ist, bleibt nach einer Meldung (Taste) und Löschen bzw. Strg+L stehen.
+// spiegel: ein zweiter Prozess (desktop/test/fremd-app) hält PRIMARY und wird per SIGSTOP angehalten; nach Strg+C spiegelt ein ansprechbarer fremder Prozess die
+// Kopie nach PRIMARY (wie Klipper) — Frist, Strg+L und Beenden löschen sie trotzdem. PRIMARY wird dabei von AUSSEN gelesen (Lesungen im eigenen Prozess hängen mit).
+const {spawn:spawn3}=require('child_process');
+const keyNC3=(wc,k,mod)=>{ wc.sendInputEvent({type:'keyDown',keyCode:k,...(mod?{modifiers:mod}:{})}); wc.sendInputEvent({type:'keyUp',keyCode:k,...(mod?{modifiers:mod}:{})}); };
+const strgL3=wc=>{ wc.sendInputEvent({type:'keyDown',keyCode:'Control'}); wc.sendInputEvent({type:'keyDown',keyCode:'L',modifiers:['control']}); wc.sendInputEvent({type:'keyUp',keyCode:'L',modifiers:['control']}); wc.sendInputEvent({type:'keyUp',keyCode:'Control'}); };
+async function relock3(){ if(await js(visible('screen-lock'))){ await ensureFocus(); await fill('lock-pass',PP); await click('#unlock-btn'); await until(visible('screen-app'),60000); await sleep(400); } }
+const leer3=async(ms=3000)=>{ const t0=Date.now(); let ok=false; while(Date.now()-t0<ms&&!(ok=(await prim())==='')) await sleep(100); return ok; };
+const mdPos=needle=>js(`(()=>{ const w=document.createTreeWalker(document.getElementById('md-view'),NodeFilter.SHOW_TEXT); let n; while((n=w.nextNode())){ const i=n.data.indexOf(${JSON.stringify(needle)}); if(i>=0){ const r=document.createRange(); r.setStart(n,i); r.setEnd(n,i+1); const b=r.getBoundingClientRect(); return {x:b.x+b.width/2,y:b.y+b.height/2}; } } return null; })()`);
+async function fremdanfang(){
+  const wc=win.webContents, mouse=mouseOf2(wc), G='GEHEIM-'+process.pid;
+  R('Sperrbildschirm', await until(visible('screen-lock'),15000));
+  await ensureFocus(); await fill('lock-pass',PP); await click('#unlock-btn'); if(!(await until(visible('screen-app')))){ R('entsperrt',false); return; }
+  await js(`App.setAutolock('0'); true`); await sleep(300);
+  const lines=Array.from({length:12},(_,i)=>'Zeile '+i+' '+G+' text').join('\n');
+  await click('button[data-action="newEntry"]'); await sleep(300); await fill('f-title','Peek'); await fill('f-body',lines); await sleep(300); await click('button[data-action="doneEditor"]'); await sleep(600);
+  for(const v of (process.env.AP_V||'wort:frist,zeichen:frist,ende:frist,zeile:frist,wort:sperre,unbezogen:frist').split(',')){ const [art,wann]=v.split(':');
+    await openByTitle('Peek'); await sleep(400);
+    await js(`(()=>{ const t=document.getElementById('f-body'); t.focus(); t.setSelectionRange(0,0); t.scrollTop=0; return true; })()`); await sleep(150);
+    await clipboard.selection.clear(); await ensureFocus();
+    const i0=lines.indexOf('Zeile 1 '), i1=lines.indexOf('Zeile 3 ')+9;
+    const a=await caretXY('f-body',i0), z=await caretXY('f-body',i1);
+    mouse('mouseDown',a.x-2,a.y); for(let i=1;i<=8;i++){ mouse('mouseMove',a.x-2+(z.x-(a.x-2))*i/8,a.y+(z.y-a.y)*i/8,{mod:['leftButtonDown']}); await sleep(30); } mouse('mouseUp',z.x,z.y); await sleep(600);
+    const s=await fsel('f-body'); const S=s.v.slice(s.s,s.e); const pS=(await prim())===S;
+    const F=art==='wort'?S.split(' ')[0]:art==='zeichen'?S[0]:art==='ende'?S.slice(-3):art==='zeile'?S.split('\n')[0]:'fremd-'+process.pid;
+    await clipboard.selection.writeText(F); await sleep(200); const vorF=(await prim())===F;
+    // Meldung auslösen ohne die Markierung zu ändern: Umschalt drücken/loslassen (keydown + keyup melden)
+    keyNC3(wc,'Shift'); await sleep(600);
+    let gesperrt=false;
+    if(wann==='frist'){ await js('AlienDesktop.clip.clear()'); await sleep(800); }
+    else { strgL3(wc); await sleep(1500); gesperrt=await js(visible('screen-lock')); }
+    const pEnd=await prim();
+    R(`fremde Auswahl = ${art} der Markierung, dann ${wann==='frist'?'Löschen (wie Frist)':'Strg+L'}: fremde Auswahl bleibt stehen`, pEnd===F, {F:JSON.stringify(F.length>12?F.slice(0,12)+'…':F), selLen:S.length, pS, vorF, gesperrt, primNachher:pEnd===F?'fremd':pEnd===''?'leer':'anders'});
+    await clipboard.selection.clear();
+    if(gesperrt) await relock3();
+    else { await js(`(()=>{ const t=document.getElementById('f-body'); t.setSelectionRange(0,0); return true; })()`); await click('button[data-action="doneEditor"]'); await sleep(400); }
+  }
+}
+let fremdPid=0;
+const fremdAlle=[];
+async function fremdStart(F,buf,name){
+  const dir=path.join(__dirname,'fremd-app'), cfg=path.join(process.env.XDG_CONFIG_HOME||__dirname,'fremd'+(name||'')); fs.mkdirSync(cfg,{recursive:true});
+  const pr=spawn3(process.execPath,['--no-sandbox',dir],{env:{...process.env,XDG_CONFIG_HOME:cfg,FREMD_TEXT:F,FREMD_BUF:buf||'selection',AP_STEP:''},stdio:['ignore','pipe','ignore']});
+  fremdAlle.push(pr.pid); if(!name) fremdPid=pr.pid; let own=false; pr.stdout.on('data',d=>{ if(String(d).includes('OWN')) own=true; });
+  for(let i=0;i<100&&!own;i++) await sleep(100);
+  return own; }
+function fremdStop(){ try{ process.kill(fremdPid,'SIGSTOP'); return true; }catch(_){ return false; } }
+function fremdEnde(){ for(const p of fremdAlle.splice(0)){ try{ process.kill(p,'SIGCONT'); }catch(_){} try{ process.kill(p,'SIGTERM'); }catch(_){} } fremdPid=0; }
+process.on('exit',fremdEnde);
+function lies(G){ return new Promise(res=>{ const dir=path.join(__dirname,'fremd-app'), cfg=path.join(process.env.XDG_CONFIG_HOME||__dirname,'fremdR'); fs.mkdirSync(cfg,{recursive:true});
+  const pr=spawn3(process.execPath,['--no-sandbox',dir],{env:{...process.env,XDG_CONFIG_HOME:cfg,FREMD_MODE:'read',FREMD_MARK:G,AP_STEP:''},stdio:['ignore','pipe','ignore']});
+  let out=''; pr.stdout.on('data',d=>out+=d); const k=setTimeout(()=>{ try{ pr.kill('SIGKILL'); }catch(_){} },8000);
+  pr.on('exit',()=>{ clearTimeout(k); const m=out.match(/READ (\{.*\})/); res(m?JSON.parse(m[1]):{fehler:true}); }); }); }
+async function spiegel(){
+  const wc=win.webContents, mouse=mouseOf2(wc), G='GEHEIM-'+process.pid, F='fremd-haengt-'+process.pid, N=Number(process.env.AP_N||3);
+  R('Sperrbildschirm', await until(visible('screen-lock'),15000));
+  await ensureFocus(); await fill('lock-pass',PP); await click('#unlock-btn'); if(!(await until(visible('screen-app')))){ R('entsperrt',false); return; }
+  await js(`App.setAutolock('0'); true`); await sleep(300);
+  const body=Array.from({length:10},(_,i)=>'Absatz '+i+' '+G+' text.').join('\n\n');
+  await click('button[data-action="newEntry"]'); await sleep(300); await fill('f-title','Spiegel'); await fill('f-body',body); await sleep(200); await click('#f-md'); await sleep(300); await click('button[data-action="doneEditor"]'); await sleep(600);
+  await openByTitle('Spiegel'); await sleep(500); await ensureFocus();
+  { const a=await mdPos('Absatz 1 '), z=await mdPos('Absatz 2 '); mouse('mouseDown',a.x-4,a.y); for(let i=1;i<=8;i++){ mouse('mouseMove',a.x-4+(z.x+60-(a.x-4))*i/8,a.y+(z.y-a.y)*i/8,{mod:['leftButtonDown']}); await sleep(30); } mouse('mouseUp',z.x+60,z.y); }
+  await sleep(500); const S=await js(`String(getSelection())`); const pS=(await prim())===S;
+  const own=await fremdStart(F,'selection'); await sleep(300); const vorF=(await prim())===F; fremdStop(); await sleep(200);
+  if(process.env.AP_VOR==='clear'){ await Promise.race([js('AlienDesktop.clip.clear()'),sleep(3000)]); }   // Gegenprobe: ein LÖSCHEN (Frist) während des Hängens statt Meldungen
+  // run-12 r4-1: statt Tasten ein Klick mit 1 px Zittern IN die Markierung (ändert sie nicht → kein PRIMARY-Lesen beim hängenden Besitzer)
+  else if(process.env.AP_VOR==='zitter'){ const m=await mdPos('Absatz 1 '); mouse('mouseDown',m.x+20,m.y); await sleep(40); mouse('mouseMove',m.x+21,m.y,{mod:['leftButtonDown']}); await sleep(40); mouse('mouseUp',m.x+21,m.y); }
+  else for(let i=0;i<N;i++){ keyNC3(wc,'Down'); await sleep(40); }
+  await sleep(400);
+  // Kopieren (Strg+C auf der Markierung → Brücke → CLIPBOARD, eigener Besitz)
+  wc.sendInputEvent({type:'keyDown',keyCode:'Control'}); wc.sendInputEvent({type:'keyDown',keyCode:'C',modifiers:['control']}); wc.sendInputEvent({type:'keyUp',keyCode:'C',modifiers:['control']}); wc.sendInputEvent({type:'keyUp',keyCode:'Control'});
+  await sleep(600); const rc=()=>Promise.race([clipboard.readText(),sleep(3000).then(()=>'HAENGT')]); const kop0=await rc(); const kop=kop0===S;
+  // Klipper-Spiegel nachstellen: ein ANSPRECHBARER fremder Prozess übernimmt PRIMARY mit dem kopierten Text
+  const okQ=await fremdStart(S,'selection','Q'); await sleep(500);
+  const r0=await lies(G);
+  const tc=Date.now(); await Promise.race([js('AlienDesktop.clip.clear()'),sleep(6000)]); const clearMs=Date.now()-tc; await sleep(2500);
+  const r1=await lies(G); const c1r=await rc(); const c1=c1r===S;
+  strgL3(wc); await sleep(3000); const r2=await lies(G); const gesperrt=await js(visible('screen-lock'));
+  R('Vorbedingungen', own&&vorF&&pS&&kop&&okQ&&r0.mark>0, {own,vorF,pS,kop,kopHaengt:kop0==='HAENGT',okQ,spiegelVorher:r0});
+  R('Kopie aus CLIPBOARD gelöscht (Frist)', !c1, {c1, eigenesClipboardLesenHaengt:c1r==='HAENGT'});
+  R('gespiegelte Kopie in PRIMARY nach dem Löschen (Frist) weg', r1.mark===0, {r1,clearMs});
+  R('gespiegelte Kopie in PRIMARY nach Strg+L weg', r2.mark===0, {r2,gesperrt});
+  const t0=Date.now();
+  app.on('will-quit',ev=>{ ev.preventDefault(); const ms=Date.now()-t0; (async()=>{ const r3=await lies(G);
+    R('gespiegelte Kopie in PRIMARY beim Prozessende weg', r3.mark===0, {r3,ms});
+    fremdEnde(); R('Schritt vollständig',true); app.exit(0); })(); });
+  app.quit();
+}
 async function exportStep(){
   const dir=fs.mkdtempSync(path.join(process.env.XDG_DATA_HOME,'export-')), T='Export-Titel-'+process.pid, B='# Kopf\n\nText mit Ümlaut und „Zeichen“ '+process.pid+'\n\n- [x] erledigt';
   const toastTxt=()=>js(`(()=>{ const n=document.getElementById('toast'); return n&&!n.classList.contains('hidden')?document.getElementById('toast-msg').textContent:''; })()`);
@@ -915,6 +1197,12 @@ app.on('browser-window-created',(_e,w)=>{ if(win) return; win=w;
       else if(STEP==='background') await background();
       else if(STEP==='markierung') await markierung();
       else if(STEP==='export') await exportStep();
+      else if(STEP==='skizze') await skizze();
+      else if(STEP==='nachrollen') await nachrollen();
+      else if(STEP==='markklick') await markklick();
+      else if(STEP==='sperrziehen') await sperrziehen();
+      else if(STEP==='fremdanfang') await fremdanfang();
+      else if(STEP==='spiegel'){ await spiegel(); return; }   // endet in will-quit (eigene Endmarke)
       else if(STEP==='quit'||STEP==='quithang'){ await quitStep(STEP==='quithang'); return; }   // endet in will-quit (eigene Endmarke)
       else if(STEP==='quitslow'){ await quitSlow(); return; }
       else if(STEP==='quitreject'){ await quitReject(); return; }

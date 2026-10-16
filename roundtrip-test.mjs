@@ -1,7 +1,7 @@
 // Roundtrip-/Format-Test (Node, kein Browser). Evaluiert die Sentinel-Region aus app.js
 // (=== VAULT-FORMAT BEGIN/END ===) DIREKT — keine Nachbildung, damit Lese- und Schreibpfad
 // garantiert derselbe Code sind. Prüft Schlüsselhierarchie, AAD, Grenzen, Merge, Sanitizer, Papierkorb, TOTP.
-// Aus Alien Pass v1.8 übernommen und auf das Notizen-Modell (text/list, 13 Felder, Magic AINV1) angepasst.
+// Aus Alien Pass v1.8 übernommen und auf das Notizen-Modell (text/list/sketch, 14 Felder seit v1.14, Magic AINV1) angepasst.
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { inflateRawSync } from 'node:zlib';
@@ -11,18 +11,29 @@ globalThis.hashwasm = require('./vendor/hash-wasm/argon2.umd.min.js');
 const words = readFileSync('vendor/eff/eff_large_wordlist.txt','utf8').trim().split('\n').map(l=>l.split('\t')[1].trim());
 globalThis.EFF_WORDS = words;
 
-const src = readFileSync('app.js','utf8');
+// Mutanten-Probe (v1.14): RT_APP=<Datei> liest eine veränderte Kopie statt app.js (die echte Datei bleibt unangetastet)
+const src = readFileSync(process.env.RT_APP||'app.js','utf8');
+if(process.env.RT_APP) console.log('  ⚠ RT_APP aktiv: geprüft wird '+process.env.RT_APP+' statt app.js');   // run-12 c Hinweis 6
 // Versionsanzeige (Einstellungen) muss zur Datei VERSION passen
 { const vn=(readFileSync('VERSION','utf8').match(/^VERSION_NAME=(.+)$/m)||[])[1]?.trim();
   const av=(src.match(/^const APP_VERSION = '([^']*)';/m)||[])[1];
   if(!vn||av!==vn) throw new Error(`APP_VERSION (${av}) != VERSION_NAME (${vn})`);
   console.log('  ✓ APP_VERSION', av, '= VERSION_NAME'); }
+// CHANGELOG-Abschnitt der aktuellen Version ohne Platzhalter (v1.14, wie Sachwert-Tresor v3.11 run-11 b-3/e-3): früh, schon in der Batterie vor Commit
+// und Tag — make-release.sh prüft dasselbe noch einmal am Tag, bevor der Text öffentlich wird. Markdown-Links [Text](…) zählen nicht.
+{ const vn=(readFileSync('VERSION','utf8').match(/^VERSION_NAME=(.+)$/m)||[])[1]?.trim(), cl=readFileSync('CHANGELOG.md','utf8');
+  // Kopf auch ohne Datum finden (run-12 c-3: „## v1.15“ im Entwurf galt sonst als „noch kein Abschnitt“); jede [eckige Klammer] außer Link/Kästchen, mehrzeilig
+  const m0=new RegExp('^## v'+vn.replace(/\./g,'\\.')+'(?![0-9.])','m').exec(cl), i=m0?m0.index:-1, j=i<0?-1:cl.indexOf('\n## v',i+5), sec=i<0?'':cl.slice(i,j<0?undefined:j);
+  const ph=sec.match(/\[(?![ xX]\])[^\]]{1,300}\](?!\()|\b(TODO|TBD|FIXME|XXX)\b/);
+  if(ph) throw new Error(`Platzhalter im CHANGELOG-Abschnitt v${vn}: ${ph[0]}`);
+  console.log('  ✓ CHANGELOG v'+vn+(i<0?' (noch kein Abschnitt)':'')+' ohne Platzhalter'); }
 const a = src.indexOf('/* === VAULT-FORMAT BEGIN ==='), z = src.indexOf('/* === VAULT-FORMAT END === */');
 if(a<0||z<0) throw new Error('Sentinel nicht gefunden');
 const region = src.slice(a, z);
 if(/\b(document|window|localStorage)\s*[.\[]/.test(region)) throw new Error('Sentinel-Region enthält DOM-Code');
 const V = new Function(region + `
-  return {bufToB64,b64ToBuf,base32Encode,base32Decode,rand,randInt,cryptoId,passBytes,aad,deriveKek,newDek,wrapDek,unwrapDek,
+  return {bufToB64,b64ToBuf,base32Encode,base32Decode,rand,randInt,cryptoId,passBytes,aad,deriveKek,newDek,wrapDek,unwrapDek,FILE_VER,KEY_VER,FILE_VERS,
+    sanitizeSketch,skShape,skSnap,skSimplify,skHit,skSeg,badSketch,SK_W,SK_H,SK_STROKES,SK_PTS,SK_TOTAL,SK_BYTES,SK_KINDS,SK_SIZES,SK_COLORS,SK_GRID,SK_WIDTH,SK_NONE,
     encryptBody,decryptBody,serializeFile,parseFile,kdfOk,KDF_DEFAULT,KDF_BOUNDS,MAX_ENTRIES,MAX_FILE_BYTES,MAX_READ_BYTES,emptyVault,sanitizeEntry,sanitizeEntries,sanitizeVault,sanitizeSettings,
     SETTINGS_DEFAULT,SETTINGS_ALLOWED,BG_NEVER,normalizeTotp,otpauthUri,sanitizeItems,ITEMS_MAX,ENTRY_TYPES,CAPS,mergeEntries,winner,canon,purgeTombstones,tombstone,
     totpCode,totpRemaining,genWords,passStrength,passCheck,MAX_TOMBSTONES,liveCount,tombFrom,isWiped,wipeTrash,shapeIncoming,TRASH_DAYS,MAX_TRASH,TOMBSTONE_DAYS,ts,
@@ -31,7 +42,7 @@ const V = new Function(region + `
 let pass=0, fail=0; const ok=(c,m)=>{ if(c){pass++;console.log('  ✓',m);} else {fail++;console.log('  ✗ FEHLER:',m);} };
 const throwsWith=async(fn,code,m)=>{ try{ await fn(); ok(false,m+' (kein Fehler)'); }catch(e){ ok(e&&e.message===code,m+' → '+(e&&e.message)); } };
 const KDF_TEST={m:8192,t:1,p:1};   // klein für schnelle Tests; Format identisch
-const FIELDS=13;                   // Whitelist-Felder eines Eintrags: id,type,cat,title,body,items,fav,pinned,md,hide,created,updated,deleted
+const FIELDS=14;                   // Whitelist-Felder eines Eintrags: id,type,cat,title,body,items,sk,fav,pinned,md,hide,created,updated,deleted (sk seit v1.14)
 
 async function createVault(pass, vault, kdfP){
   const kdf=Object.assign({}, kdfP||KDF_TEST, {salt:V.rand(16)});
@@ -74,7 +85,7 @@ console.log('\n[2] AAD / Manipulation / Rollentrennung');
   }
   let threw=false; try{ await open(tamper(f=>{ f.body.ct=f.wrap.ct; f.body.iv=f.wrap.iv; }),'passphrase-eins-zwei'); }catch(_){ threw=true; } ok(threw,'wrap-Ciphertext als body abgelehnt (AAD-Rolle)');
   threw=false; try{ await open(tamper(f=>{ const b=Buffer.from(f.body.ct,'base64'); b[3]^=0xff; f.body.ct=b.toString('base64'); }),'passphrase-eins-zwei'); }catch(_){ threw=true; } ok(threw,'gekipptes Ciphertext-Byte scheitert');
-  threw=false; try{ await open(tamper(f=>{ f.ver=2; }),'passphrase-eins-zwei'); }catch(e){ threw=e.message==='newer'; } ok(threw,'ver=2 → "newer" (vor KDF)');
+  threw=false; try{ await open(tamper(f=>{ f.ver=3; }),'passphrase-eins-zwei'); }catch(e){ threw=e.message==='newer'; } ok(threw,'ver=3 → "newer" (vor KDF; 1 und 2 werden gelesen, seit v1.14)');
   await throwsWith(()=>Promise.resolve(V.parseFile(tamper(f=>{ f.kdf.m=1e9; }))),'kdfbounds','m=1e9 abgelehnt VOR KDF-Arbeit');
   await throwsWith(()=>Promise.resolve(V.parseFile(tamper(f=>{ f.kdf.m=262144; f.kdf.t=16; }))),'kdfbounds','Budget m·t überschritten abgelehnt');
   await throwsWith(()=>Promise.resolve(V.parseFile(tamper(f=>{ f.kdf.t=0; }))),'kdfbounds','t=0 abgelehnt');
@@ -88,9 +99,41 @@ console.log('\n[2] AAD / Manipulation / Rollentrennung');
   { const kdf=Object.assign({},KDF_TEST,{salt:V.rand(16)}); const dek=await V.newDek();
     const aadPass=new TextEncoder().encode(`AIPV1|1|argon2id|${kdf.m}|${kdf.t}|${kdf.p}|${V.bufToB64(kdf.salt)}|body`);
     const iv=V.rand(12); const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:aadPass},dek,new TextEncoder().encode('{}')));
-    let cross=false; try{ await V.decryptBody({iv,ct},dek,kdf); cross=true; }catch(_){ } ok(!cross,'AAD unterscheidet AIPV1 und AINV1 auch bei gleichem Schlüssel'); }
+    let cross=false, why=''; try{ await V.decryptBody({iv,ct,ver:1},dek,kdf); cross=true; }catch(e){ why=e&&e.message; } ok(!cross&&why==='body','AAD unterscheidet AIPV1 und AINV1 auch bei gleichem Schlüssel (scheitert an der AAD → „body“, nicht an der Version)'); }
   // IV-Eindeutigkeit
   const ivs=new Set(); for(let i=0;i<10000;i++) ivs.add(Buffer.from(V.rand(12)).toString('hex')); ok(ivs.size===10000,'10.000 IVs eindeutig');
+  // v1.14: Dateiversion 2. Nur die Body-AAD trägt die Version; die Schlüssel-Rollen (wrap, bio, pin, wrapTag) bleiben bytegleich auf 1 — sonst wären
+  // Passphrasen-, Fingerabdruck- und PIN-Slot jeder bestehenden Datei ungültig. Feste Zeichenketten: eine Änderung an aad() fällt hier sofort auf.
+  { const kdf={m:8192,t:1,p:1,salt:new Uint8Array(16).fill(7)}, td=new TextDecoder(), S='AINV1|1|argon2id|8192|1|1|BwcHBwcHBwcHBwcHBwcHBw==|';
+    ok(V.FILE_VER===2&&V.KEY_VER===1,'FILE_VER 2, KEY_VER 1');
+    ok(['wrap','bio','pin'].every(r=>td.decode(V.aad(kdf,r))===S+r)&&td.decode(V.aad(kdf,'body',1))===S+'body','AAD wrap/bio/pin und Body ver 1 wörtlich wie in 1.13');
+    ok(td.decode(V.aad(kdf,'body',2))==='AINV1|2|argon2id|8192|1|1|BwcHBwcHBwcHBwcHBwcHBw==|body','Body ver 2 trägt die 2'); }
+  { const vault=V.emptyVault(); vault.entries.push(V.sanitizeEntry(E({title:'Alt',body:'aus 1.13'})));
+    const kdf=Object.assign({},KDF_TEST,{salt:V.rand(16)}), kek=await V.deriveKek(V.passBytes('versions-passphrase-1'),kdf);
+    const dekX=await V.newDek(); const wrap=await V.wrapDek(dekX,kek,kdf);
+    // so schrieb 1.13: Kopf ver 1, Body-AAD mit 1
+    const iv=V.rand(12); const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:V.aad(kdf,'body',1)},dekX,new TextEncoder().encode(V.bodyJson(vault))));
+    const raw1=V.serializeFile(kdf,wrap,{iv,ct,ver:1});
+    // Fingerabdruck- und PIN-Slot, angelegt „unter 1.13“
+    const secret=V.rand(32), bkey=await V.bioKey(secret.slice()), bblob=await V.wrapDek(dekX,bkey,kdf,'bio');
+    const pkdf=Object.assign({},KDF_TEST,{salt:V.rand(16)}), pkey=await V.deriveKek(V.passBytes('135790'),pkdf), pblob=await V.wrapDek(dekX,pkey,kdf,'pin');
+    const f1=V.parseFile(raw1), o1=await open(raw1,'versions-passphrase-1');
+    ok(JSON.parse(raw1).ver===1&&f1.body.ver===1&&o1.vault.entries[0].body==='aus 1.13','ver-1-Datei wird gelesen (body.ver 1)');
+    const raw2=V.serializeFile(o1.f.kdf,o1.f.wrap,await V.encryptBody(o1.vault,o1.dek,o1.f.kdf)), f2=V.parseFile(raw2);
+    ok(JSON.parse(raw2).ver===2&&f2.body.ver===2&&(await open(raw2,'versions-passphrase-1')).vault.entries[0].body==='aus 1.13','zurückgeschrieben als ver 2, weiter lesbar');
+    ok(V.wrapTag(f1.kdf,f1.wrap)===V.wrapTag(f2.kdf,f2.wrap),'PIN-Bindung (wrapTag) über den Wechsel unverändert');
+    { const d=await V.unwrapDek(bblob,await V.bioKey(secret.slice()),f2.kdf,false,'bio'); const v=V.sanitizeVault(await V.decryptBody(f2.body,d,f2.kdf));
+      ok(v.entries[0].title==='Alt','Fingerabdruck-Slot aus der ver-1-Zeit öffnet die ver-2-Datei'); }
+    { const d=await V.unwrapDek(pblob,await V.deriveKek(V.passBytes('135790'),pkdf),f2.kdf,false,'pin'); const v=V.sanitizeVault(await V.decryptBody(f2.body,d,f2.kdf));
+      ok(v.entries[0].title==='Alt','PIN-Slot aus der ver-1-Zeit öffnet die ver-2-Datei'); }
+    const flip=(raw,v)=>{ const f=JSON.parse(raw); f.ver=v; return JSON.stringify(f); };
+    let t1=false; try{ await open(flip(raw2,1),'versions-passphrase-1'); }catch(e){ t1=e&&e.message==='body'; } ok(t1,'Kopf von 2 auf 1 gedreht: scheitert an der Body-AAD (Code „body“ = Schlüssel stimmt, Datei verändert, run-12 a-1)');
+    let t2=false; try{ await open(flip(raw1,2),'versions-passphrase-1'); }catch(e){ t2=e&&e.message==='body'; } ok(t2,'Kopf von 1 auf 2 gedreht: scheitert an der Body-AAD (Code „body“)');
+    let t3=''; try{ await open(raw2,'falsche-passphrase-zum-gegenpruefen'); }catch(e){ t3=e&&(e.message==='body'?'body':e.name); } ok(t3==='OperationError','Gegenprobe: falsche Passphrase scheitert schon am Auspacken (kein „body“, also weiter Fehlversuch)');
+    await throwsWith(()=>Promise.resolve(V.parseFile(flip(raw2,0))),'format','ver 0 abgelehnt');
+    await throwsWith(()=>Promise.resolve(V.parseFile(flip(raw2,'2'))),'format','ver als Zeichenkette abgelehnt');
+    await throwsWith(()=>Promise.resolve(V.serializeFile(kdf,wrap,{iv,ct})),'format','serializeFile ohne body.ver wirft (Kopf und AAD nie auseinander)');
+    await throwsWith(()=>V.decryptBody({iv,ct,ver:3},dekX,kdf),'format','decryptBody mit unbekannter Version wirft vor dem Entschlüsseln'); }
 }
 
 console.log('\n[3] Passphrase-Wechsel mit DEK-Rotation');
@@ -248,11 +291,11 @@ console.log('\n[9] Notizen-Modell: Typen text/list, Checklisten-Zeilen, Markdown
   { const j=V.bodyJson({entries:[V.sanitizeEntry(E({type:'text',body:'x',title:'hide'}),now),V.sanitizeEntry(E({type:'text',body:'x',hide:true}),now)],settings:{hide:false}});
     ok(!j.includes('"hide":false')&&j.includes('"hide":true')&&j.includes('"title":"hide"')&&(j.match(/"hide"/g)||[]).length===2,'Datei-JSON: hide nur wenn wahr (bestehende Notizen bleiben byteidentisch), Werte „hide“ unberührt');
     const back=V.sanitizeVault(JSON.parse(j),now); ok(back.entries[0].hide===false&&back.entries[1].hide===true&&Object.keys(back.entries[0]).length===FIELDS,'gelesen: fehlt = false, '+FIELDS+' Felder'); }
-  ok(JSON.stringify(V.ENTRY_TYPES)==='["text","list"]'&&V.entryType('list')==='list'&&V.entryType('login')==='text','ENTRY_TYPES = text|list, alles andere → text');
+  ok(JSON.stringify(V.ENTRY_TYPES)==='["text","list","sketch"]'&&V.entryType('list')==='list'&&V.entryType('sketch')==='sketch'&&V.entryType('login')==='text','ENTRY_TYPES = text|list|sketch, alles andere → text');
   // Tombstone: für JEDEN Typ dieselbe Feldmenge wie sanitizeEntry (Muster Alien Pass Test [10])
-  for(const type of ['text','list']){
-    const x=V.sanitizeEntry(E({type,body:'b',items:[{text:'a'}],cat:'c',fav:true,pinned:true,md:true,deleted:'2026-02-01T00:00:00.000Z',updated:'2026-02-01T00:00:00.000Z'}),now), w=V.tombFrom(x);
-    ok(Object.keys(w).length===FIELDS&&Object.keys(w).sort().join()===Object.keys(x).sort().join()&&w.type==='text'&&w.body===''&&w.items.length===0&&!w.fav&&!w.pinned&&!w.md,
+  for(const type of ['text','list','sketch']){
+    const x=V.sanitizeEntry(E({type,body:'b',items:[{text:'a'}],sk:[[0,1,0,0,10,10,20,20]],cat:'c',fav:true,pinned:true,md:true,deleted:'2026-02-01T00:00:00.000Z',updated:'2026-02-01T00:00:00.000Z'}),now), w=V.tombFrom(x);
+    ok(Object.keys(w).length===FIELDS&&Object.keys(w).sort().join()===Object.keys(x).sort().join()&&w.type==='text'&&w.body===''&&w.items.length===0&&w.sk.length===0&&!w.fav&&!w.pinned&&!w.md&&V.isWiped(w)&&!V.isWiped(x),
        'tombFrom() zu Typ '+type+': dieselben '+FIELDS+' Felder, restlos leer, Typ text'); }
   // Merge behält Pin/Markdown-Zustand des Gewinners
   const p=V.mergeEntries([E({id:'5555555555555555',pinned:false,updated:'2026-01-01T00:00:00.000Z'})],[E({id:'5555555555555555',pinned:true,md:true,updated:'2026-02-01T00:00:00.000Z'})]).entries[0];
@@ -290,6 +333,14 @@ console.log('\n[11] Fingerabdruck-Slot (Rolle bio, Blob-Format, Schlüssel-Läng
   const raw=V.serializeBioBlob(blob, wrap.ct); const back=V.parseBioBlob(raw);
   ok(back&&back.w===V.bufToB64(wrap.ct),'Blob trägt den Passphrase-Wrap (w) — Bindung an den Slot der Datei (run-3 #3)');
   ok(V.parseBioBlob(JSON.stringify({iv:V.bufToB64(blob.iv),ct:V.bufToB64(blob.ct)}))===null,'Blob ohne w → null');
+  // KDF-Kopf im Blob (run-12 a2-1): ein verändertes m/t/p/Salz heißt „Passphrase-Slot verändert“ (Slot bleibt), nie „Schlüssel ungültig“ (Slot gelöscht)
+  { const rk=V.serializeBioBlob(blob, wrap.ct, wrap.iv, kdf), bk2=V.parseBioBlob(rk), kp=(o)=>Object.assign({},kdf,o);
+    const flipSalt=kdf.salt.slice(); flipSalt[3]^=1;
+    ok(bk2&&typeof bk2.k==='string'&&V.bioWrapOk(bk2,wrap,kdf)&&rk.length<512,'Blob mit KDF-Kopf (k): gleicher Kopf passt, Länge '+rk.length+' < 512');
+    ok(!V.bioWrapOk(bk2,wrap,kp({t:kdf.t+1}))&&!V.bioWrapOk(bk2,wrap,kp({m:kdf.m*2}))&&!V.bioWrapOk(bk2,wrap,kp({p:kdf.p+1}))&&!V.bioWrapOk(bk2,wrap,kp({salt:flipSalt}))&&!V.bioWrapOk(bk2,wrap),'Blob mit k: verändertes m/t/p/Salz oder fehlender Kopf passt nicht');
+    const old=V.parseBioBlob(V.serializeBioBlob(blob, wrap.ct, wrap.iv)); ok(old&&old.k===null&&V.bioWrapOk(old,wrap,kp({t:kdf.t+1})),'Blob ohne k (bis 1.13) läuft weiter wie bisher');
+    const big=V.serializeBioBlob(blob, wrap.ct, wrap.iv, {m:4194304,t:99,p:16,salt:V.rand(16)}); ok(V.parseBioBlob(big)!==null&&big.length<512,'größte Parameter: Blob '+big.length+' Zeichen, gelesen');
+    const o2=JSON.parse(rk); ok(V.parseBioBlob(JSON.stringify(Object.assign({},o2,{k:'x'.repeat(201)})))===null&&V.parseBioBlob(JSON.stringify(Object.assign({},o2,{k:5})))===null&&V.parseBioBlob(JSON.stringify(Object.assign({},o2,{k:''})))===null,'k zu lang/kein String/leer → Blob verworfen'); }
   let badW=false; try{ V.serializeBioBlob(blob, V.rand(47)); badW=true; }catch(e){ ok(e.message==='bioblob','serializeBioBlob verlangt 48-Byte-Wrap'); } ok(!badW,'falsche Wrap-Länge wirft');
   ok(back&&V.bufToB64(back.ct)===V.bufToB64(blob.ct)&&V.bufToB64(back.iv)===V.bufToB64(blob.iv),'serializeBioBlob/parseBioBlob Roundtrip');
   ok(raw.length<512&&!raw.includes(V.bufToB64(secret)),'Blob enthaelt den Zufallsschluessel nicht');
@@ -798,5 +849,124 @@ console.log('\n[20] v1.9: Mehrzeiliges in einen Checklisten-Punkt (splitItemPast
   ok(!bad.length,'Fuzz 8000 Fälle: Invarianten halten'+(bad.length?' — erster Fund: '+JSON.stringify(bad[0]).slice(0,process.env.FUZZ_FULL?1e6:600):''));
   ok(eqN>40&&eq===eqN,`Fuzz: Einfügen in einen leeren Punkt = „Text → Checkliste“ (${eq}/${eqN})`);
 }
+
+console.log('\n[21] v1.14: Skizze — sanitizeSketch (Whitelist, Grenzen vor jeder Schleife, abweisen statt klemmen), Format, Zeichenhelfer, Fuzz');
+{
+  const S=V.sanitizeSketch, W=V.SK_W, H=V.SK_H, now=Date.parse('2026-10-16T12:00:00.000Z');
+  // feste Fälle
+  ok(V.SK_W===1200&&V.SK_H===1600&&V.SK_STROKES===1000&&V.SK_PTS===1500&&V.SK_TOTAL===20000&&V.SK_KINDS===7&&V.SK_SIZES===3&&V.SK_COLORS===4,'Grenzen: 1200×1600, 1000 Striche, 1500 Punkte je Strich, 20 000 Punkte, 7 Arten, 3 Stärken, 4 Farben');
+  ok(V.canon(S([[0,0,0,0,5,5]]))==='[[0,0,0,0,5,5]]'&&V.canon(S([[1,2,1,3,0,0,1200,1600]]))==='[[1,2,1,3,0,0,1200,1600]]'&&S([]).length===0,'gültig: Tupfer, Form bis an den Rand (einschließlich 1200/1600), leer');
+  const bad={'x 1201':[[1,0,0,0,0,0,1201,5]],'y 1601':[[1,0,0,0,0,0,5,1601]],'x -1':[[0,0,0,0,-1,5]],'Kommazahl':[[0,0,0,0,1.5,5]],'NaN':[[0,0,0,0,NaN,5]],'Infinity':[[0,0,0,0,Infinity,5]],
+    'Zeichenkette':[[0,0,0,0,'5',5]],'null':[[0,0,0,0,null,5]],'Art 7':[[7,0,0,0,1,1,2,2]],'Art -1':[[-1,0,0,0,1,1]],'Stärke 3':[[0,3,0,0,1,1]],'Strichart 2':[[0,0,2,0,1,1]],'Farbe 4':[[0,0,0,4,1,1]],
+    'Form mit 3 Punkten':[[1,0,0,0,1,1,2,2,3,3]],'Form mit 1 Punkt':[[3,0,0,0,1,1]],'ungerade Länge':[[0,0,0,0,1,1,2]],'kein Punkt':[[0,0,0,0]],'Strich kein Array':[{0:0,length:6}],'Strich null':[null],
+    'sk kein Array':{a:1},'sk Zeichenkette':'[[0,0,0,0,1,1]]','sk null':null,'verschachtelt':[[[0,0,0,0,1,1]]],'Loch im Array':[[0,0,0,0,,5]],'Kopf Kommazahl':[[0,0.5,0,0,1,1]]};
+  const fehl=Object.entries(bad).filter(([k,v])=>S(v)!==null).map(([k])=>k); ok(!fehl.length,'abgewiesen statt geklemmt: '+Object.keys(bad).length+' kaputte Formen'+(fehl.length?' — angenommen: '+fehl.join(', '):''));
+  const dot=[0,0,0,0,1,1], fh=n=>{ const a=[0,0,0,0]; for(let i=0;i<n;i++) a.push(i%W,(i*7)%H); return a; };
+  ok(S(Array(1000).fill(dot))!==null&&S(Array(1001).fill(dot))===null,'1000 Striche angenommen, 1001 abgewiesen');
+  ok(S([fh(1500)])!==null&&S([fh(1501)])===null,'1500 Punkte je Strich angenommen, 1501 abgewiesen');
+  { const full=Array.from({length:1000},(_,i)=>{ const a=[i%7===0?0:0,2,1,3]; for(let j=0;j<20;j++) a.push(1200,1600); return a; });
+    const r=S(full), j=JSON.stringify(r); ok(r!==null&&V.SK_TOTAL===20*1000&&j.length<=V.SK_BYTES,'alle Grenzen voll (1000 Striche × 20 Punkte, vierstellige Werte): angenommen, '+j.length+' ≤ SK_BYTES '+V.SK_BYTES);
+    const over=full.slice(); over[999]=over[999].concat([1200,1600]); ok(S(over)===null,'ein Punkt über SK_TOTAL: abgewiesen'); }
+  { const t0=Date.now(); const big=new Array(1e6).fill(dot); const r1=S(big); const t1=Date.now();
+    const long=[0,0,0,0].concat(new Array(2e6).fill(1)); const r2=S([long]); const t2=Date.now();
+    const many=Array.from({length:1000},()=>fh(1500)); const t3=Date.now(); const r3=S(many); const t4=Date.now();
+    ok(r1===null&&r2===null&&r3===null&&t1-t0<200&&t2-t1<50&&t4-t3<200,`Grenzen vor der Schleife: 1e6 Striche ${t1-t0} ms, Strich mit 2e6 Zahlen ${t2-t1} ms, 1000 volle Striche (Abbruch bei SK_TOTAL) ${t4-t3} ms`); }
+  { const inp=[[0,1,0,2,10,20,30,40]]; inp[0].fremd='x'; const r=S(inp); inp[0][4]=999;
+    ok(Object.isFrozen(r)&&Object.isFrozen(r[0])&&r[0]!==inp[0]&&r[0][4]===10&&!('fremd' in r[0]),'Ergebnis frisch, eingefroren, ohne fremde Eigenschaften, unabhängig von der Eingabe'); }
+  // Eintrag
+  const E2=o=>Object.assign({id:V.cryptoId(),title:'S',cat:'',created:'2026-01-01T00:00:00.000Z',updated:'2026-01-02T00:00:00.000Z',deleted:null},o);
+  { const a=V.sanitizeEntry(E2({type:'sketch'}),now), b2=V.sanitizeEntry(E2({type:'sketch',sk:[[0,0,0,0,1,1]],body:'x',items:[{text:'y'}],md:true}),now), c=V.sanitizeEntry(E2({type:'text',body:'b',sk:[[0,0,0,0,1,1]]}),now);
+    ok(a&&a.type==='sketch'&&a.sk.length===0&&a.sk===V.SK_NONE&&Object.keys(a).length===FIELDS,'Skizze ohne sk = leere Skizze (bodyJson lässt [] weg — sonst sperrte eine radierte Skizze die Datei)');
+    ok(b2&&b2.body===''&&b2.items.length===0&&b2.md===false&&b2.sk.length===1,'Skizze: body/items/md leer, sk übernommen');
+    ok(c&&c.sk===V.SK_NONE&&c.body==='b','sk an einer Textnotiz wird ignoriert (Whitelist)');
+    ok(V.sanitizeEntry(E2({type:'sketch',sk:[[9,0,0,0,1,1]]}),now)===null,'Skizze mit ungültigem sk: sanitizeEntry → null (wirft nie)'); }
+  { const good=E2({type:'sketch',sk:[[0,0,0,0,1,1]]}), badE=E2({type:'sketch',sk:[[0,0,0,9,1,1]]}), badT=E2({type:'sketch',sk:[[0,0,0,0,1201,1]],deleted:'2026-01-03T00:00:00.000Z'});
+    let w1='', w2='', w3='ok'; try{ V.sanitizeEntries([good,badE],now); }catch(e){ w1=e.message; } try{ V.sanitizeEntries([good,badT],now); }catch(e){ w2=e.message; }
+    try{ V.sanitizeEntries([good,Object.assign({},badE,{id:'kaputt'})],now); }catch(e){ w3=e.message; }
+    ok(w1==='sketch'&&w2==='sketch','Datei mit ungültiger Skizze (auch im Papierkorb): sanitizeEntries wirft „sketch“ — nichts still verworfen');
+    ok(w3==='ok','ungültige ID: Eintrag fällt weg wie bisher (kein Wurf)');
+    let w4=''; try{ V.sanitizeVault({entries:[badE]},now); }catch(e){ w4=e.message; } ok(w4==='sketch','sanitizeVault reicht „sketch“ durch'); }
+  { let w5=''; try{ V.sanitizeEntries([E2({type:'zeichnung3d',body:'x'})],now); }catch(e){ w5=e.message; }
+    let w6='ok'; try{ const r=V.sanitizeEntries([Object.assign(E2({body:'ohne Typ'}),{type:undefined})],now); w6=r[0].type; }catch(e){ w6=e.message; }
+    ok(w5==='newer'&&w6==='text','unbekannter Typ als Zeichenkette → „newer“ (nie still zu Text, run-12 a H-3); fehlender Typ liest sich als Text ('+w5+'/'+w6+')'); }
+  // Vorwärts-Wächter für Felder (run-12 a2 H-1): unbekanntes Feld an Eintrag oder Punkt → „newer“, nie still gekürzt; alle bisherigen Formen bleiben lesbar
+  { const thr=l=>{ try{ V.sanitizeEntries(l,now); return 'ok'; }catch(e){ return e.message; } };
+    const full=E2({type:'list',body:'',items:[{text:'a',done:true}],sk:[],fav:true,pinned:false,md:false,hide:true});
+    const v01=(()=>{ const o=E2({type:'text',body:'x'}); delete o.deleted; return Object.assign(o,{fav:false,pinned:false}); })();
+    const r=[thr([Object.assign(E2({type:'sketch'}),{o:1})]), thr([E2({type:'list',items:[{text:'a',done:false,due:'2027-01-01'}]})]), thr(JSON.parse('[{"id":"'+V.cryptoId()+'","type":"text","__proto__":{"x":1}}]')),
+      thr([full]), thr([v01]), thr([Object.assign(E2({}),{o:1,id:'kaputt'})])];
+    ok(r[0]==='newer'&&r[1]==='newer'&&r[2]==='newer'&&r[3]==='ok'&&r[4]==='ok'&&r[5]==='ok','unbekanntes Feld (Eintrag/Punkt/__proto__) → newer; alle 14 Felder, Form von v0.1, Müll ohne gültige ID → gelesen ('+r.join('/')+')'); }
+  { const t=V.sanitizeEntry(E2({type:'text',body:'b'}),now), k=V.sanitizeEntry(E2({type:'sketch',sk:[[2,1,1,1,5,6,7,8]]}),now), e0=V.sanitizeEntry(E2({type:'sketch'}),now);
+    const j=V.bodyJson({entries:[t,k,e0]}), back=V.sanitizeVault(JSON.parse(j),now).entries;
+    ok((j.match(/"sk"/g)||[]).length===1&&j.includes('"sk":[[2,1,1,1,5,6,7,8]]'),'Datei-JSON: sk nur bei Skizzen mit Strichen');
+    ok(back.length===3&&V.canon(back[1].sk)==='[[2,1,1,1,5,6,7,8]]'&&back[0].sk.length===0&&back[2].sk.length===0&&back[2].type==='sketch','zurückgelesen: gleich, leere Skizze bleibt Skizze'); }
+  { const a=V.sanitizeEntry(E2({id:'1234567890abcdef',type:'sketch',sk:[[0,0,0,0,1,1]],updated:'2026-01-02T00:00:00.000Z'}),now), b3=V.sanitizeEntry(E2({id:'1234567890abcdef',type:'sketch',sk:[[0,0,0,0,1,1],[1,0,0,0,1,1,9,9]],updated:'2026-01-03T00:00:00.000Z'}),now);
+    const m=V.mergeEntries([a],[b3]).entries[0]; ok(m.sk.length===2,'Abgleich: neuere Skizze gewinnt samt Strichen');
+    const ts=V.tombstone(b3,'2026-01-04T00:00:00.000Z'); ok(V.isWiped(ts)&&ts.sk.length===0&&!V.isWiped(Object.assign({},b3,{deleted:'2026-01-04T00:00:00.000Z'})),'Löschmarke: Striche weg; Papierkorb behält sie'); }
+  // Zeichenhelfer
+  ok(V.skSnap(24,W)===0&&V.skSnap(25,W)===50&&V.skSnap(1199,W)===1200&&V.skSnap(-30,W)===0&&V.skSnap(5000,H)===1600,'skSnap: aufs 50er-Gitter, in der Fläche');
+  { const tri=V.skShape(5,100,100,500,700), d=(p,q)=>Math.hypot(p[0]-q[0],p[1]-q[1]);
+    const hex=V.skShape(6,0,0,600,300), side=[...Array(6)].map((_,i)=>d(hex[i],hex[i+1]));
+    const inBox=(pts,l,t,r,b)=>pts.every(p=>p[0]>=l-1e-9&&p[0]<=r+1e-9&&p[1]>=t-1e-9&&p[1]<=b+1e-9);
+    ok(Math.abs(d(tri[0],tri[1])-d(tri[1],tri[2]))<1e-6&&Math.abs(d(tri[1],tri[2])-d(tri[2],tri[0]))<1e-6&&tri[0][1]<tri[1][1]&&inBox(tri,100,100,500,700),'Dreieck regelmäßig (gleichseitig), Spitze oben, im Rahmen');
+    ok(side.every(x=>Math.abs(x-side[0])<1e-6)&&inBox(hex,0,0,600,300),'Sechseck regelmäßig, im Rahmen');
+    ok(inBox(V.skShape(4,10,20,110,220),10,20,110,220)&&inBox(V.skShape(3,110,220,10,20),10,20,110,220),'Ellipse und Rechteck im Rahmen (auch rückwärts aufgezogen)'); }
+  { const raw=[]; for(let i=0;i<400;i++) raw.push(100+i*1.3+Math.sin(i)*0.4, 200+i*0.7); raw.push(5000,-20);
+    const q=V.skSimplify(raw); ok(q.length%2===0&&q.length<raw.length&&q.every(Number.isInteger)&&q.every((v,i)=>v>=0&&v<=(i%2?H:W))&&q[0]===100&&q[1]===200&&q[q.length-2]===1200&&q[q.length-1]===0,
+      'skSimplify: ganzzahlig, in der Fläche, Anfang/Ende bleiben, weniger Punkte ('+raw.length/2+' → '+q.length/2+')');
+    ok(V.canon(V.skSimplify([7,8]))==='[7,8]'&&V.skSimplify([]).length===0,'skSimplify: ein Punkt bleibt, leer bleibt leer'); }
+  { const L=[1,1,0,0,100,100,500,100]; ok(V.skHit(L,300,104,12)&&!V.skHit(L,300,140,12)&&V.skHit([0,2,0,0,50,50],55,55,12)&&V.skHit([3,0,0,0,100,100,300,300],100,200,12)&&!V.skHit([3,0,0,0,100,100,300,300],200,200,12),'skHit: trifft Strecke, Tupfer und Rand, nicht das Innere einer Form'); }
+  // Verschlüsseln/Entschlüsseln erhält jede Skizze bitgleich (ver 2)
+  { const vault=V.emptyVault(); vault.entries.push(V.sanitizeEntry(E2({type:'sketch',title:'K',sk:[[0,1,0,0,0,0,1200,1600,600,800],[6,2,1,3,10,10,1190,1590]]}),now));
+    const c=await createVault('skizzen-passphrase-1',vault); const o=await open(c.raw,'skizzen-passphrase-1');
+    ok(JSON.parse(c.raw).ver===2&&V.canon(o.vault.entries[0].sk)===V.canon(vault.entries[0].sk),'verschlüsselt/entschlüsselt: Striche bitgleich, Datei ver 2'); }
+  // Fuzz: Erzeuger kennt die Gültigkeit jedes Falls — gültig muss angenommen (und gleich zurückgegeben), ungültig muss abgewiesen werden
+  let seed=20261016; const rnd=()=>(seed=(seed*1103515245+12345)&0x7fffffff)/0x7fffffff, ri=n=>Math.floor(rnd()*n);
+  const BADV=[1.5,-1,NaN,Infinity,'1',null,undefined,true,[],{}];   // dazu je Position: x 1201, y 1601 (1201 ist als y gültig)
+  let nOk=0, nBad=0; const funde=[]; const t0=Date.now();
+  for(let it=0;it<6000;it++){
+    const ns=ri(rnd()<0.1?60:12), sk=[]; let pts=0;
+    for(let i=0;i<ns;i++){ const k=ri(7), np=k?2:1+ri(rnd()<0.05?400:30); const a=[k,ri(3),ri(2),ri(4)]; for(let j=0;j<np;j++) a.push(ri(1201),ri(1601)); pts+=np; sk.push(a); }
+    let valid=ns<=1000&&pts<=20000, how='gültig';
+    if(ns&&rnd()<0.55){ const i=ri(ns), s=sk[i], m=ri(9);
+      if(m===0){ const j=4+ri(s.length-4), pool=BADV.concat([j%2?1601:1201]); s[j]=pool[ri(pool.length)]; how='Wert'; valid=false; }
+      else if(m===1){ s[ri(4)]=[7,3,2,4,-1,0.5,'0'][ri(7)]; how='Kopf'; valid=false; }
+      else if(m===2){ s.push(5); how='ungerade'; valid=false; }
+      else if(m===3){ if(s[0]!==0){ s.push(1,1); how='Form +Punkt'; valid=false; } else { s.length=4; how='ohne Punkt'; valid=false; } }
+      else if(m===4){ sk[i]={...s}; how='Objekt'; valid=false; }
+      else if(m===5){ sk[i]=[s]; how='verschachtelt'; valid=false; }
+      else if(m===6){ s[4]=1200; s[5]=1600; how='Rand'; }                          // bleibt gültig (einschließlich)
+      else if(m===7){ s[4]=0; s[5]=0; how='Null'; }                                // bleibt gültig
+      else { sk.push(null); how='null'; valid=false; } }
+    const r=S(sk);
+    if(valid){ nOk++; if(!r||V.canon(r)!==V.canon(sk)||V.canon(S(r))!==V.canon(r)||JSON.stringify(r).length>V.SK_BYTES) funde.push({it,how,ns,pts,r:!!r}); }
+    else { nBad++; if(r!==null) funde.push({it,how,ns,pts,angenommen:true}); }
+  }
+  const dt=Date.now()-t0;
+  ok(!funde.length,`Fuzz 6000 Skizzen (${nOk} gültig, ${nBad} kaputt): gültige gleich zurück und idempotent, kaputte abgewiesen`+(funde.length?' — erster Fund: '+JSON.stringify(funde[0]).slice(0,process.env.FUZZ_FULL?1e6:400):''));
+  ok(nOk>1500&&nBad>1500&&dt<5000,`Fuzz erreicht genug Fälle beider Arten in unter 5 s (${dt} ms)`);
+}
+
+console.log('\n[22] v1.14: echte Datei von 1.13 (test-data/v113-vault.json, einmalig mit dem Code von v1.13 erzeugt, Spieldaten) — lesen, abgleichen, als ver 2 schreiben');
+{ const raw=readFileSync('test-data/v113-vault.json','utf8'), PPF='fixture-v113-spieldaten-passphrase';
+  const f=V.parseFile(raw); ok(JSON.parse(raw).ver===1&&f.body.ver===1,'Fixture ist eine ver-1-Datei');
+  const o=await open(raw,PPF), live=o.vault.entries.filter(e=>!e.deleted), byT=t=>o.vault.entries.find(e=>e.title===t);
+  ok(live.length===3&&byT('Einkauf 1.13').body==='Milch\nBrot\nÄpfel'&&byT('Einkauf 1.13').pinned&&byT('Packliste 1.13').items.length===2&&byT('Markdown 1.13').md,'1.14 liest Text, Checkliste und Markdown-Notiz von 1.13');
+  ok(byT('Im Papierkorb 1.13')&&byT('Im Papierkorb 1.13').deleted&&o.vault.entries.some(e=>e.id==='e113e113e113e113'&&V.isWiped(e)),'Papierkorb-Eintrag und Löschmarke von 1.13 kommen mit');
+  ok(o.vault.entries.every(e=>Object.keys(e).length===FIELDS&&e.sk===V.SK_NONE),'alle Einträge mit 14 Feldern, sk leer');
+  // Abgleich mit einer 1.14-Datei, die eine Skizze trägt, dann als ver 2 schreiben
+  const mine=[V.sanitizeEntry({id:'f114f114f114f114',type:'sketch',title:'Skizze 1.14',sk:[[0,1,0,0,10,10,20,20]],created:'2026-10-15T00:00:00.000Z',updated:'2026-10-15T00:00:00.000Z',deleted:null})];
+  const m=V.mergeEntries(mine,V.shapeIncoming(mine,o.vault.entries)); ok(m.entries.length===6&&m.entries.filter(e=>!e.deleted).length===4&&m.entries.some(e=>e.type==='sketch'),'Abgleich 1.13 → 1.14: alles kommt dazu (fremder Papierkorb als Löschmarke), die Skizze bleibt ('+JSON.stringify({n:m.entries.length,a:m.added,d:m.deleted})+')');
+  const v2=Object.assign({},o.vault,{entries:m.entries}); const raw2=V.serializeFile(o.f.kdf,o.f.wrap,await V.encryptBody(v2,o.dek,o.f.kdf)); const o2=await open(raw2,PPF);
+  ok(JSON.parse(raw2).ver===2&&o2.vault.entries.length===6&&V.canon(o2.vault.entries.find(e=>e.type==='sketch').sk)==='[[0,1,0,0,10,10,20,20]]','mit derselben Passphrase als ver 2 geschrieben und wieder gelesen');
+  // Fingerabdruck- und PIN-Slot ECHT unter v1.13 erzeugt (test-data/v113-slots.json, run-12 a H-1: vorher baute [2] die Slots mit dem Code von 1.14 nach)
+  const sl=JSON.parse(readFileSync('test-data/v113-slots.json','utf8')), f2=V.parseFile(raw2);
+  for(const [wo,ff] of [['ver-1-Datei',o.f],['ver-2-Datei',f2]]){
+    const bb=V.parseBioBlob(sl.bio.blob); const db=await V.unwrapDek(bb,await V.bioKey(new Uint8Array(Buffer.from(sl.bio.secret,'base64'))),ff.kdf,false,'bio');
+    const vb=V.sanitizeVault(await V.decryptBody(ff.body,db,ff.kdf));
+    const pk=await V.deriveKek(V.passBytes(sl.pin.pin),{m:sl.pin.pkdf.m,t:sl.pin.pkdf.t,p:sl.pin.pkdf.p,salt:new Uint8Array(Buffer.from(sl.pin.pkdf.salt,'base64'))});
+    const dp=await V.unwrapDek({iv:new Uint8Array(Buffer.from(sl.pin.iv,'base64')),ct:new Uint8Array(Buffer.from(sl.pin.ct,'base64'))},pk,ff.kdf,false,'pin');
+    const vp=V.sanitizeVault(await V.decryptBody(ff.body,dp,ff.kdf));
+    ok(vb.entries.some(e=>e.title==='Einkauf 1.13')&&vp.entries.some(e=>e.title==='Einkauf 1.13')&&V.bioWrapOk(bb,ff.wrap),'Fingerabdruck- und PIN-Slot aus 1.13 öffnen die '+wo+' (1.14)'); } }
 
 console.log(`\n${pass} ok, ${fail} Fehler`); process.exit(fail?1:0);

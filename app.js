@@ -16,7 +16,7 @@ const FONT_KEY='ai-notes-font', FONT_SIZES=['m','l','xl'];
    ============================================================ */
 const LS_KEY = 'ai-notes-vault';
 const LANG_KEY = 'ai-notes-lang';
-const APP_VERSION = '1.13';   // Anzeige in den Einstellungen; muss VERSION_NAME entsprechen (build-www.sh setzt es aus VERSION, roundtrip-test.mjs prüft es)
+const APP_VERSION = '1.14';   // Anzeige in den Einstellungen; muss VERSION_NAME entsprechen (build-www.sh setzt es aus VERSION, roundtrip-test.mjs prüft es)
 
 /* ===== KIT: i18n — Deutsch ist Quelle im HTML (data-i18n / data-i18n-html / data-i18n-ph), Englisch im I18N-Dict,
    dynamische Texte per tr(key,{params}) aus T {de,en}. ===== */
@@ -39,12 +39,15 @@ const I18N = {
   "btn.cancel":"Cancel",
   "tab.list":"Notes","tab.add":"New","tab.backup":"Backup","tab.settings":"Settings",
   "list.search":"Search notes …",
-  "list.newTitle":"New note",
+  "list.newTitle":"New note","aria.help":"Help / manual","aria.catPick":"Choose category","aria.cats":"Categories","f.hideTitle":"The list shows only the title","md.cheatTitle":"Markdown cheat sheet",
   "trash.title":"Trash",
   "trash.intro":"Deleted notes stay here for <strong>30 days</strong> and can be brought back, at most <strong>200</strong> at a time — once the trash is full, every further deletion destroys the oldest one straight away. After that the content is erased for good on the next unlock; the deletion marker for syncing remains until a year after the deletion. <strong>While a note sits here it is also part of every backup of this device.</strong> “Delete permanently” destroys it right away. <strong>The trash is device-local:</strong> the deletion travels to your other devices when merging, the content does not — you can only restore where you deleted.",
   "trash.back":"Back to the notes",
   "trash.emptyBtn":"Empty trash",
-  "type.text":"Note","type.list":"Checklist",
+  "type.text":"Note","type.list":"Checklist","type.sketch":"Sketch",
+  "sk.tool":"Tool","sk.stroke":"Stroke","sk.eraser":"Eraser","sk.more":"More","sk.clear":"Clear all","sk.canvas":"Drawing area",
+  "sk.t0":"Freehand","sk.t1":"Line","sk.t2":"Arrow","sk.t3":"Rectangle","sk.t4":"Ellipse","sk.t5":"Triangle","sk.t6":"Hexagon",
+  "sk.w0":"Thin","sk.w1":"Medium","sk.w2":"Thick","sk.solid":"Solid","sk.dashed":"Dashed","sk.c0":"Cyan","sk.c1":"Yellow","sk.c2":"Red","sk.c3":"White",
   "f.title":"Title","f.titlePh":"Title (empty = first line of the text)",
   "f.cat":"Category","f.catPh":"e.g. Private, Work, Ideas — empty = none",
   "md.edit":"Text","md.view":"Preview",
@@ -119,10 +122,10 @@ const I18N = {
   "help.closeX":"Close ✕",
   "help.title":"Manual",
   "help.h1":"What is Alien Notes?",
-  "help.p1":"A <strong>local, encrypted notes app</strong> for notes and checklists. Runs fully <strong>offline</strong> — no cloud, no server, no telemetry, no account. The Android app does not even have an internet permission. The app itself never sends anything and only hands out plaintext when you trigger it — for example by copying, by selecting text (on the Linux desktop it lands in the middle-click selection) or with “As file”.",
+  "help.p1":"A <strong>local, encrypted notes app</strong> for notes, checklists and sketches. Runs fully <strong>offline</strong> — no cloud, no server, no telemetry, no account. The Android app does not even have an internet permission. The app itself never sends anything and only hands out plaintext when you trigger it — for example by copying, by selecting text (on the Linux desktop it lands in the middle-click selection) or with “As file”.",
   "help.warn":"⚠ There is no reset and no backdoor. Forget your passphrase and the notes are gone for good. Make regular backups and keep the passphrase safe.",
   "help.h2":"First steps",
-  "help.l2":"<li><strong>Choose a passphrase</strong> — at least 12 characters, better six dice words (the suggest button builds them from the EFF list). Write it down and store it safely.</li><li><strong>+</strong> creates a note. The title may stay empty — the first line of the text serves as the title. There is no save button: the app saves while you type and when you leave the note.</li><li><strong>Checklists:</strong> switch a note to “Checklist” — every line becomes an entry with a box; “Done to the bottom” sorts ticked entries down. Switching back turns the entries into “- [ ] …” or “- [x] …” lines. Long entries wrap. Enter starts a new entry (in the middle of the text it splits it), pasted text with several lines becomes several entries.</li><li><strong>Undo ↶ / Redo ↷:</strong> The buttons at the top of the editor take back the latest changes to the open note and bring them back again. Typing counts as one step until a short pause, every other change on its own, including an entry removed with ✕, a tick, sorting or switching between note and checklist. Up to 50 steps (fewer for very long notes), only while the note is open: closing and locking clear the history. With a keyboard: Ctrl+Z and Ctrl+Shift+Z (or Ctrl+Y).</li><li><strong>Categories</strong> work like folders: type one freely (suggestions from existing ones). The list filters via the chips at the top; the ★ chip shows favourites only, the ☐ chip only checklists with open items (both combine with a category). Pinned notes always sit at the top. <strong>No preview:</strong> the checkbox in the editor makes the list show only the title — against onlookers. <strong>Rename:</strong> tap the category chip, then the pencil ✎ next to it — every note of that category moves (including the trash); an empty name means “no category”.</li><li><strong>Several at once:</strong> the ☑ button next to the trash turns on checkboxes; tap rows to pick them (search and chips keep working, “All” picks every row shown; already picked notes stay picked even when a filter hides them). The bar at the bottom moves the picked notes to the trash (one “Undo” for all, at most 200 at once — that is what the trash holds), sets a category (existing ones are right there to pick, or just type a new one) or the favourite mark.</li><li><strong>Appearance:</strong> Settings → Appearance offers Black/Soft and three font sizes. Both are device settings — not in the file, not in the backup.</li><li>The search covers title, text, checklist entries and category.</li>",
+  "help.l2":"<li><strong>Choose a passphrase</strong> — at least 12 characters, better six dice words (the suggest button builds them from the EFF list). Write it down and store it safely.</li><li><strong>+</strong> creates a note. The title may stay empty — the first line of the text serves as the title. There is no save button: the app saves while you type and when you leave the note.</li><li><strong>Checklists:</strong> switch a note to “Checklist” — every line becomes an entry with a box; “Done to the bottom” sorts ticked entries down. Switching back turns the entries into “- [ ] …” or “- [x] …” lines. Long entries wrap. Enter starts a new entry (in the middle of the text it splits it), pasted text with several lines becomes several entries.</li><li><strong>Sketches:</strong> Switch a note to “Sketch” and draw with your finger (with the mouse on the desktop) on the portrait canvas. Tools: freehand, line, arrow, rectangle, ellipse, triangle and hexagon (drag shapes from the start to the end point), three widths, solid or dashed, four colours. The eraser removes whole strokes. The grid shows guide lines, a second tap makes shapes and lines snap to it. A second finger cancels the current stroke; when you draw with a stylus, fingers and the palm do not count. “Clear all” (under ⋯) asks first. Lines are stored, not images; a sketch holds up to 1000 strokes. Copy and “As file” are not available for sketches.</li><li><strong>Undo ↶ / Redo ↷:</strong> The buttons at the top of the editor take back the latest changes to the open note and bring them back again. Typing counts as one step until a short pause, every other change on its own, including an entry removed with ✕, a tick, sorting or switching between note, checklist and sketch; in a sketch every stroke, every eraser swipe and “Clear all”. Up to 50 steps (fewer for very long notes), only while the note is open: closing and locking clear the history. With a keyboard: Ctrl+Z and Ctrl+Shift+Z (or Ctrl+Y).</li><li><strong>Categories</strong> work like folders: type one freely (suggestions from existing ones). The list filters via the chips at the top; the ★ chip shows favourites only, the ☐ chip only checklists with open items (both combine with a category). Pinned notes always sit at the top. <strong>No preview:</strong> the checkbox in the editor makes the list show only the title — against onlookers. <strong>Rename:</strong> tap the category chip, then the pencil ✎ next to it — every note of that category moves (including the trash); an empty name means “no category”.</li><li><strong>Several at once:</strong> the ☑ button next to the trash turns on checkboxes; tap rows to pick them (search and chips keep working, “All” picks every row shown; already picked notes stay picked even when a filter hides them). The bar at the bottom moves the picked notes to the trash (one “Undo” for all, at most 200 at once — that is what the trash holds), sets a category (existing ones are right there to pick, or just type a new one) or the favourite mark.</li><li><strong>Appearance:</strong> Settings → Appearance offers Black/Soft and three font sizes. Both are device settings — not in the file, not in the backup.</li><li>The search covers title, text, checklist entries and category (for sketches title and category).</li>",
   "help.h3":"Markdown preview",
   "help.p3":"Every text note (not checklists) has a “Markdown preview” switch. Editing always stays the plain text field; the preview renders a small subset: headings (<code>#</code> to <code>###</code>), <strong>bold</strong> (<code>**…**</code>), <em>italic</em> (<code>*…*</code>), lists (<code>-</code>, <code>1.</code> — numbered ones always start at 1), boxes (<code>- [ ]</code>, <code>- [x]</code>), code (<code>`…`</code>, ``` blocks or 4 spaces of indentation — so no indented sub-items), rules (<code>---</code>). Links are deliberately shown as text, never clickable — the app has no network anyway.",
   "help.h4":"Locking",
@@ -134,7 +137,7 @@ const I18N = {
   "help.h8":"Clipboard and file",
   "help.l8":"<li>“Copy” puts the whole note into the clipboard (title, text or checklist as “- [x] …” lines).</li><li>The app clears the clipboard after the chosen time (default 30 s) and when it locks. With “Lock in background: immediately” the app locks as soon as you switch away, but the copied note stays until the chosen time runs out, so you can still paste it into another app. Notes are not always secret, so this can be switched off in Settings.</li><li>The Android app flags copied content as <strong>sensitive</strong>: the system preview shown when copying hides the content (Android 13+).</li><li class=\"no-desk\">In the Android app, both also apply to text you select and copy or cut via Android's selection bar. Entries such as “Share”, “Web search” or “Translate” in that bar hand the text straight to another app, without the clipboard, also from the Markdown view. The app can neither flag it as sensitive nor take it back.</li><li>“As file” saves the open note as a Markdown file (<code>.md</code>, the same text as “Copy”). The file is <strong>not encrypted</strong> — after a confirmation it lives outside Alien Notes, wherever you put it. The file name only carries the date and time, never the title.</li><li class=\"no-desk\">In the Android app the file goes through the share sheet. The app hands over a copy from its private cache and deletes it on the next unlock and on the next start. The share sheet belongs to the system: it stays open even if the app locks behind it.</li><li class=\"no-desk\"><strong>Printing on the phone:</strong> open the <code>.md</code> file in a Markdown or text app that can export a PDF, and print the PDF, ideally with an app without network permission. The PDF is not encrypted either; delete it after printing.</li>",
   "help.h9":"Security in detail",
-  "help.l9":"<li><strong>Key derivation:</strong> Argon2id (default 64 MiB, 3 passes) from your passphrase — memory-hard, so expensive for GPU attacks on a stolen file.</li><li><strong>Encryption:</strong> AES-256-GCM (WebCrypto). A random data key encrypts the notes; the passphrase only wraps that key. The file header is authenticated too — tampering is detected.</li><li><strong>Device:</strong> the Android app requests exactly two normal permissions, both for the fingerprint sensor: USE_BIOMETRIC and USE_FINGERPRINT (the latter only up to Android 8.1, brought in by the AndroidX biometric library). No internet, no storage, no contacts. Besides these the APK only carries the AndroidX-generated signature permission DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION, which grants nothing. It forbids screenshots and app-switcher preview (FLAG_SECURE, can be switched off), excludes itself from cloud, adb and device-to-device backups and keeps its fields out of the Android autofill framework (since 1.4): a password manager set up as the autofill service no longer sees the passphrase fields and cannot offer to save them.</li><li><strong>Third-party code:</strong> only the Argon2 library hash-wasm (MIT) and the EFF word list, both bundled and hash-checked in the build. No CDN, no tracker.</li><li><strong>Limits:</strong> no images or attachments, no per-note passwords. A passphrase cannot be recovered. The keyboard app on your phone sees everything you type. The Android app asks it not to learn from what you type (Gboard then shows its incognito icon). This is only a request: not every keyboard honours it, and the keyboard still sees what you type. To be sure, use a keyboard without personalised learning or turn it off there.</li>"
+  "help.l9":"<li><strong>Key derivation:</strong> Argon2id (default 64 MiB, 3 passes) from your passphrase — memory-hard, so expensive for GPU attacks on a stolen file.</li><li><strong>Encryption:</strong> AES-256-GCM (WebCrypto). A random data key encrypts the notes; the passphrase only wraps that key. The file header is authenticated too — tampering is detected.</li><li><strong>Device:</strong> the Android app requests exactly two normal permissions, both for the fingerprint sensor: USE_BIOMETRIC and USE_FINGERPRINT (the latter only up to Android 8.1, brought in by the AndroidX biometric library). No internet, no storage, no contacts. Besides these the APK only carries the AndroidX-generated signature permission DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION, which grants nothing. It forbids screenshots and app-switcher preview (FLAG_SECURE, can be switched off), excludes itself from cloud, adb and device-to-device backups and keeps its fields out of the Android autofill framework (since 1.4): a password manager set up as the autofill service no longer sees the passphrase fields and cannot offer to save them.</li><li><strong>Third-party code:</strong> only the Argon2 library hash-wasm (MIT) and the EFF word list, both bundled and hash-checked in the build. No CDN, no tracker.</li><li><strong>File version:</strong> since 1.14 the notes file carries version 2. Older app versions no longer open it and report “newer app version” instead of silently losing sketches when syncing — so update phone and desktop together. Older backups can still be imported.</li><li><strong>Limits:</strong> no photos, image files or attachments (the app stores sketches as lines, i.e. vector data, in the encrypted file), no per-note passwords. A passphrase cannot be recovered. The keyboard app on your phone sees everything you type. The Android app asks it not to learn from what you type (Gboard then shows its incognito icon). This is only a request: not every keyboard honours it, and the keyboard still sees what you type. To be sure, use a keyboard without personalised learning or turn it off there.</li>"
 };
 const T = {
   "err.setupShort":{de:"Mindestens 12 Zeichen.",en:"At least 12 characters."},
@@ -150,6 +153,9 @@ const T = {
   "toast.fileOver":{de:"Notizen-Datei über {m} MB: bis zum Aufräumen werden nur noch Änderungen gespeichert, die sie nicht weiter vergrößern (Löschen, Haken, kleine Korrekturen).",en:"Notes file over {m} MB: until you tidy up, only changes that do not grow it further are saved (deleting, ticks, small edits)."},
   "bk.tooBig":{de:" ⚠ Über {m} MB — lässt sich erst wieder einspielen, wenn die Notizen-Datei kleiner ist (Notizen löschen, Papierkorb leeren).",en:" ⚠ Over {m} MB — can only be imported again once the notes file is smaller (delete notes, empty the trash)."},
   "err.tooMany":{de:"Zu viele Notizen (max. 5.000).",en:"Too many notes (max. 5,000)."},
+  "err.fileContent":{de:"Die Datei ließ sich öffnen, ihr Inhalt ist aber beschädigt oder ungültig. Nichts wurde geändert.",en:"The file opened, but its content is damaged or invalid. Nothing was changed."},
+  "err.fileSketch":{de:"Die Datei enthält eine ungültige Skizze (beschädigt oder aus einer neueren App-Version). Nichts wurde geändert.",en:"The file contains an invalid sketch (damaged or from a newer app version). Nothing was changed."},
+  "err.fileBody":{de:"Der Schlüssel stimmt, aber die Datei wurde verändert oder ist beschädigt. Nichts wurde geändert.",en:"The key is correct, but the file was changed or is damaged. Nothing was changed."},
   "err.saveFailed":{de:"⚠ Speichern fehlgeschlagen — Änderung verworfen (Speicher voll?).",en:"⚠ Save failed — change discarded (storage full?)."},
   "err.storeRead":{de:"Notizen-Datei nicht lesbar — es wurde nichts überschrieben. Rechte und Datenträger prüfen, dann neu starten.",en:"Notes file not readable — nothing was overwritten. Check permissions and disk, then restart."},
   "err.cpShort":{de:"Neue Passphrase: mindestens 12 Zeichen.",en:"New passphrase: at least 12 characters."},
@@ -182,7 +188,7 @@ const T = {
   "bio.naEnrolled":{de:"Im System ist kein Fingerabdruck eingerichtet (Android-Einstellungen → Sicherheit).",en:"No fingerprint enrolled in the system (Android settings → Security)."},
   "bio.naHardware":{de:"Dieses Gerät hat keinen Fingerabdrucksensor der Klasse „stark“ (Android-Einstufung).",en:"This device has no fingerprint sensor of Android's 'strong' class."},
   "bio.naNow":{de:"Fingerabdrucksensor derzeit nicht verfügbar.",en:"Fingerprint sensor currently unavailable."},
-  "bio.wrapMismatch":{de:"Der Passphrase-Schlüssel der Notizen-Datei wurde verändert — Fingerabdruck verweigert. Bitte Passphrase; falls sie nicht mehr passt, das letzte Backup zurückspielen.",en:"The notes file's passphrase key was altered — fingerprint refused. Use the passphrase; if it no longer works, restore the last backup."},
+  "bio.wrapMismatch":{de:"Die Notizen-Datei passt nicht mehr zum Fingerabdruck (Schlüsselbereich verändert) — Fingerabdruck verweigert, er bleibt aber eingerichtet. Mit der Passphrase entsperren; öffnet auch sie nicht, ist die Datei beschädigt oder ersetzt.",en:"The notes file no longer matches the fingerprint (key section altered) — fingerprint refused, but it stays set up. Unlock with the passphrase; if that fails too, the file is damaged or was replaced."},
   "bio.aborted":{de:"Fingerabdruck nicht aktiviert — Vorgang durch Sperre oder Passphrase-Wechsel abgebrochen",en:"Fingerprint not enabled — interrupted by lock or passphrase change"},
   "bio.busy":{de:"Bitte erst den laufenden Fingerabdruck-Vorgang abschließen.",en:"Finish the pending fingerprint step first."},
   "bio.held":{de:"Bewusst gesperrt: Diesmal ist die Passphrase nötig — danach gilt der Fingerabdruck wieder.",en:"Locked deliberately: the passphrase is required this time — the fingerprint works again afterwards."},
@@ -259,7 +265,7 @@ const T = {
   "toast.selFav":{de:"{n} Notizen als Favorit",en:"{n} notes marked favourite"},"toast.selUnfav":{de:"Favorit entfernt bei {n} Notizen",en:"Favourite removed from {n} notes"},
   "chip.open":{de:"☐ Offen",en:"☐ Open"},"chip.openTitle":{de:"Nur Checklisten mit offenen Einträgen",en:"Only checklists with open items"},
   "chip.all":{de:"Alle",en:"All"},"chip.none":{de:"Ohne Kategorie",en:"No category"},"chip.fav":{de:"★ Favoriten",en:"★ Favourites"},
-  "pill.list":{de:"Liste",en:"List"},"pill.pin":{de:"Oben",en:"Pinned"},
+  "pill.list":{de:"Liste",en:"List"},"pill.sketch":{de:"Skizze",en:"Sketch"},"pill.pin":{de:"Oben",en:"Pinned"},
   "list.empty":{de:"Noch keine Notizen.\nTippe auf + für die erste Notiz.",en:"No notes yet.\nTap + for the first note."},
   "list.noMatch":{de:"Keine Treffer.",en:"No matches."},
   "list.count1":{de:"1 Notiz",en:"1 note"},
@@ -271,6 +277,23 @@ const T = {
   "add.titleEdit":{de:"Notiz bearbeiten",en:"Edit note"},
   "add.titleNewList":{de:"Neue Checkliste",en:"New checklist"},
   "add.titleEditList":{de:"Checkliste bearbeiten",en:"Edit checklist"},
+  "add.titleNewSketch":{de:"Neue Skizze",en:"New sketch"},
+  "add.titleEditSketch":{de:"Skizze bearbeiten",en:"Edit sketch"},
+  "ed.strokes":{de:"{n} Striche",en:"{n} strokes"},
+  "ed.strokes1":{de:"1 Strich",en:"1 stroke"},
+  "list.sketch":{de:"Skizze · {n} Striche",en:"Sketch · {n} strokes"},
+  "list.sketch1":{de:"Skizze · 1 Strich",en:"Sketch · 1 stroke"},
+  "list.sketchEmpty":{de:"Leere Skizze",en:"Empty sketch"},
+  "sk.grid0":{de:"Gitter aus (tippen: Gitter an)",en:"Grid off (tap: grid on)"},
+  "sk.grid1":{de:"Gitter an (tippen: Formen rasten ein)",en:"Grid on (tap: shapes snap)"},
+  "sk.grid2":{de:"Gitter an, Formen rasten ein (tippen: aus)",en:"Grid on, shapes snap (tap: off)"},
+  "sk.full":{de:"Skizze ist voll — für weitere Striche eine neue Skizze anlegen",en:"Sketch is full — start a new sketch for more strokes"},
+  "sk.invalid":{de:"Skizze lässt sich so nicht speichern — nichts geschrieben",en:"This sketch cannot be saved — nothing written"},
+  "sk.clearAsk":{de:"Alle {n} Striche löschen? Mit ↶ holst du sie zurück.",en:"Delete all {n} strokes? ↶ brings them back."},
+  "sk.clearAsk1":{de:"Den Strich löschen? Mit ↶ holst du ihn zurück.",en:"Delete the stroke? ↶ brings it back."},
+  "sk.clearOk":{de:"Alles löschen",en:"Clear all"},
+  "confirm.toSketch":{de:"In eine Skizze umwandeln? Text bzw. Einträge werden nicht übernommen, ein eingetragener Titel bleibt. Mit ↶ holst du sie zurück.",en:"Convert to a sketch? Text or entries are not carried over, an entered title stays. ↶ brings them back."},
+  "confirm.fromSketch":{de:"Skizze umwandeln? Die Zeichnung wird nicht übernommen, der Titel bleibt. Mit ↶ holst du sie zurück.",en:"Convert the sketch? The drawing is not carried over, the title stays. ↶ brings it back."},
   "ed.count":{de:"{c} Zeichen · {w} Wörter",en:"{c} characters · {w} words"},
   "ed.items":{de:"{d} von {n} erledigt",en:"{d} of {n} done"},
   "ed.meta":{de:"Angelegt {c} · Geändert {u}",en:"Created {c} · Updated {u}"},
@@ -363,9 +386,10 @@ const _i18nCache = new WeakMap();
 function tr(key, params){ const e=T[key]; const s=e?(e[LANG]!==undefined?e[LANG]:e.de):key;
   return params?s.replace(/\{(\w+)\}/g,(m,k)=>Object.prototype.hasOwnProperty.call(params,k)?String(params[k]):m):s; }   // EIN Durchlauf, kein Ketten-Ersetzen
 function applyI18n(){
-  document.querySelectorAll('[data-i18n],[data-i18n-html],[data-i18n-ph]').forEach(el=>{
+  // title/aria-label seit v1.14 (Kit H-6, Alien Pass v1.22 a-9): vorher blieben Tooltips und Screenreader-Namen im Englischen deutsch
+  document.querySelectorAll('[data-i18n],[data-i18n-html],[data-i18n-ph],[data-i18n-title],[data-i18n-aria]').forEach(el=>{
     let c=_i18nCache.get(el); if(!c){ c={}; _i18nCache.set(el,c); }
-    [['data-i18n','textContent'],['data-i18n-html','innerHTML'],['data-i18n-ph','placeholder']].forEach(([attr,prop])=>{
+    [['data-i18n','textContent'],['data-i18n-html','innerHTML'],['data-i18n-ph','placeholder'],['data-i18n-title','title'],['data-i18n-aria','ariaLabel']].forEach(([attr,prop])=>{
       const key=el.getAttribute(attr); if(!key) return;
       if(c[prop]===undefined) c[prop]=el[prop];   // Original (DE) merken
       const en=I18N[key]; el[prop]=(LANG==='en'&&en!==undefined)?en:c[prop];
@@ -404,7 +428,12 @@ function passBytes(p){ return enc.encode(String(p).normalize('NFKC')); }
    erzeugt, auf Lese- UND Schreibpfad identisch.
    Eigenes Magic gegenüber Alien Pass (AIPV1): Alien Pass weist eine Notizen-Datei ab und umgekehrt — die Apps teilen
    nie Schlüssel oder Slots, auch wenn der Nutzer dieselbe Passphrase wählt. */
-const MAGIC='AINV1', FILE_VER=1;
+// FILE_VER 2 seit v1.14 (Notiztyp „Skizze“): 1.13 und älter weisen die Datei als „neuere App-Version“ ab, statt Skizzen beim Abgleich still zu leeren
+// (sie machten aus einem unbekannten Typ eine leere Textnotiz, und die gekürzte Fassung gewann bei gleichem updated). Gelesen werden 1 und 2.
+// KEY_VER: die Schlüssel-Rollen (wrap, bio, pin und damit wrapTag) tragen weiter die 1 — sonst wären Passphrasen-, Fingerabdruck- und PIN-Slot jeder
+// bestehenden Datei ungültig (persistOnce wickelt nie neu ein, kein KEK im RAM). Nur die Body-AAD trägt die Dateiversion: ein gedrehtes ver im Kopf
+// scheitert so am Entschlüsseln. Die Version reist am Body-Objekt mit (parseFile → body.ver, encryptBody → ver:FILE_VER, serializeFile schreibt body.ver).
+const MAGIC='AINV1', FILE_VER=2, KEY_VER=1, FILE_VERS=[1,2];
 const KDF_DEFAULT={m:65536,t:3,p:1};
 const KDF_BOUNDS={mMin:8192,mMax:262144,tMin:1,tMax:16,pMin:1,pMax:4,budget:786432};
 const KDF_CONFIRM_M=131072;
@@ -416,7 +445,7 @@ const MAX_FILE_BYTES=20*1024*1024, MAX_ENTRIES=5000;
 const MAX_READ_BYTES=2*MAX_FILE_BYTES;
 function kdfOk(k){ const B=KDF_BOUNDS; return !!k && Number.isInteger(k.m)&&Number.isInteger(k.t)&&Number.isInteger(k.p)
   && k.m>=B.mMin&&k.m<=B.mMax && k.t>=B.tMin&&k.t<=B.tMax && k.p>=B.pMin&&k.p<=B.pMax && k.m*k.t<=B.budget; }
-function aad(kdf, role){ return enc.encode(`${MAGIC}|${FILE_VER}|argon2id|${kdf.m}|${kdf.t}|${kdf.p}|${bufToB64(kdf.salt)}|${role}`); }
+function aad(kdf, role, ver){ return enc.encode(`${MAGIC}|${ver===undefined?KEY_VER:ver}|argon2id|${kdf.m}|${kdf.t}|${kdf.p}|${bufToB64(kdf.salt)}|${role}`); }
 async function argon2Raw(pass, kdf){
   if(!kdfOk(kdf)) throw new Error('kdfbounds');
   const raw=await globalThis.hashwasm.argon2id({password:pass, salt:kdf.salt, parallelism:kdf.p, iterations:kdf.t, memorySize:kdf.m, hashLength:32, outputType:'binary'});
@@ -439,23 +468,32 @@ function bioKey(raw){ if(!(raw instanceof Uint8Array)||raw.length!==32) throw ne
 // sonst könnte ein manipulierter wrap in der Datei per Fingerabdruck-Sitzung stillschweigend weitergeschrieben und in jedes Backup kopiert werden (Audit run-3 #3)
 // `wi` (v1.8, Audit run-8 #1) = b64 der Wrap-IV, OPTIONAL: Slots von ≤ v1.7 tragen nur `w` und laufen unverändert weiter; neue Slots binden
 // IV + Ciphertext, damit eine gekippte IV nicht ungeprüft in die Sitzung und mit dem nächsten persist() in Datei und Backups wandert.
+// `k` (v1.14, Release-Audit run-12 a2-1) = KDF-Kopf der Datei als AAD-Zeichenkette der Rolle wrap, OPTIONAL wie `wi`: ein verändertes m/t/p/Salz ließ das
+// Auspacken des Fingerabdruck-Slots an der AAD scheitern, doBio hielt das für einen ungültigen Schlüssel und löschte Blob und Keystore-Slot (auch nach dem
+// Zurückspielen des Backups blieb er weg). Mit `k` landet ein veränderter Kopf im wrapMismatch-Zweig: Slot bleibt, ehrliche Meldung. Nur Kopfdaten, kein Geheimnis.
 function parseBioBlob(raw){ if(typeof raw!=='string'||raw.length>512) return null; let o; try{ o=JSON.parse(raw); }catch(_){ return null; } if(!o||typeof o!=='object') return null; const iv=b64Bytes(o.iv), ct=b64Bytes(o.ct), w=b64Bytes(o.w); if(!(iv&&iv.length===12&&ct&&ct.length===48&&w&&w.length===48)) return null;
-  if(o.wi===undefined||o.wi===null) return {iv,ct,w:o.w,wi:null}; const wi=b64Bytes(o.wi); return (wi&&wi.length===12)?{iv,ct,w:o.w,wi:o.wi}:null; }
-function serializeBioBlob(blob, wrapCt, wrapIv){ if(!(wrapCt instanceof Uint8Array)||wrapCt.length!==48) throw new Error('bioblob'); if(wrapIv!==undefined&&!(wrapIv instanceof Uint8Array&&wrapIv.length===12)) throw new Error('bioblob');
-  const o={iv:bufToB64(blob.iv), ct:bufToB64(blob.ct), w:bufToB64(wrapCt)}; if(wrapIv) o.wi=bufToB64(wrapIv); return JSON.stringify(o); }
-// Passt der Passphrase-Slot der Datei zum Fingerabdruck-Blob? Ciphertext immer, IV nur wenn der Blob sie kennt (Übergang ≤ v1.7)
-function bioWrapOk(blob, wrap){ return !!blob&&!!wrap&&blob.w===bufToB64(wrap.ct)&&(!blob.wi||blob.wi===bufToB64(wrap.iv)); }
+  let k=null; if(o.k!==undefined&&o.k!==null){ if(typeof o.k!=='string'||!o.k||o.k.length>200) return null; k=o.k; }
+  if(o.wi===undefined||o.wi===null) return {iv,ct,w:o.w,wi:null,k}; const wi=b64Bytes(o.wi); return (wi&&wi.length===12)?{iv,ct,w:o.w,wi:o.wi,k}:null; }
+function serializeBioBlob(blob, wrapCt, wrapIv, kdf){ if(!(wrapCt instanceof Uint8Array)||wrapCt.length!==48) throw new Error('bioblob'); if(wrapIv!==undefined&&!(wrapIv instanceof Uint8Array&&wrapIv.length===12)) throw new Error('bioblob');
+  const o={iv:bufToB64(blob.iv), ct:bufToB64(blob.ct), w:bufToB64(wrapCt)}; if(wrapIv) o.wi=bufToB64(wrapIv); if(kdf) o.k=dec.decode(aad(kdf,'wrap')); return JSON.stringify(o); }
+// Passt der Passphrase-Slot der Datei zum Fingerabdruck-Blob? Ciphertext immer, IV und KDF-Kopf nur wenn der Blob sie kennt (Übergang ≤ v1.7 bzw. ≤ v1.13)
+function bioWrapOk(blob, wrap, kdf){ return !!blob&&!!wrap&&blob.w===bufToB64(wrap.ct)&&(!blob.wi||blob.wi===bufToB64(wrap.iv))&&(!blob.k||(!!kdf&&blob.k===dec.decode(aad(kdf,'wrap')))); }
 // Bindung des PIN-Slots (nur RAM) an die Datei: KDF-Header (m/t/p/Salz über die AAD-Zeichenkette) + Wrap-IV + Wrap-Ciphertext — jede Abweichung
 // heißt „Datei geändert“, nie „falsche PIN“ (Audit run-8 #1/#10)
 function wrapTag(kdf, wrap){ return dec.decode(aad(kdf,'wrap'))+'|'+bufToB64(wrap.iv)+'|'+bufToB64(wrap.ct); }
 // Body-JSON: „hide“ (v1.1 Punkt 6) steht nur in der Datei, wenn es wahr ist — fehlt = false (sanitizeEntry). Sonst wüchse JEDE bestehende Notiz beim
 // ersten Speichern um 13 Byte, und bei einer übergroßen Datei fräße das die 4-KB-Toleranz fürs Löschen (verify-store [7], 200 × 100 KB). Ein
 // Eintragsfeld heißt nie anders als hier gelistet, Titel/Text sind Werte, keine Schlüssel — der Replacer trifft nur das Feld.
-function bodyJson(obj){ return JSON.stringify(obj,(k,v)=>k==='hide'&&v===false?undefined:v); }
-async function encryptBody(obj, dek, kdf){ const iv=rand(12); const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:aad(kdf,'body')}, dek, enc.encode(bodyJson(obj)))); return {iv,ct}; }
-async function decryptBody(body, dek, kdf){ const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:body.iv,additionalData:aad(kdf,'body')}, dek, body.ct); return JSON.parse(dec.decode(pt)); }
-function serializeFile(kdf, wrap, body){
-  return JSON.stringify({magic:MAGIC, ver:FILE_VER,
+// Ebenso „sk“ (v1.14): steht nur bei Skizzen mit Strichen in der Datei, fehlt = [] — sonst wüchse jede Notiz um 8 Byte.
+function bodyJson(obj){ return JSON.stringify(obj,(k,v)=>(k==='hide'&&v===false)||(k==='sk'&&Array.isArray(v)&&v.length===0)?undefined:v); }
+async function encryptBody(obj, dek, kdf){ const iv=rand(12); const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:aad(kdf,'body',FILE_VER)}, dek, enc.encode(bodyJson(obj)))); return {iv,ct,ver:FILE_VER}; }
+// JSON-Fehler NACH erfolgreicher Entschlüsselung heißt 'format' (Inhalt), nicht falscher Schlüssel — die Pforten zählen dann keinen Fehlversuch (v1.14)
+// GCM-Fehler am Body heißt 'body' (v1.14, run-12 a-1): alle Aufrufer erreichen decryptBody erst nach gelungenem unwrapDek, der Schlüssel stimmte also —
+// Kopf (z. B. gedrehte Version) oder Body wurden verändert. Die Pforten zählen dann keinen Fehlversuch und behalten Fingerabdruck- und PIN-Slot.
+async function decryptBody(body, dek, kdf){ if(!FILE_VERS.includes(body.ver)) throw new Error('format');
+  let pt; try{ pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:body.iv,additionalData:aad(kdf,'body',body.ver)}, dek, body.ct); }catch(_){ throw new Error('body'); } try{ return JSON.parse(dec.decode(pt)); }catch(_){ throw new Error('format'); } }
+function serializeFile(kdf, wrap, body){ if(!FILE_VERS.includes(body.ver)) throw new Error('format');   // Kopf = Version der Body-AAD, nie auseinander
+  return JSON.stringify({magic:MAGIC, ver:body.ver,
     kdf:{name:'argon2id', m:kdf.m, t:kdf.t, p:kdf.p, salt:bufToB64(kdf.salt)},
     wrap:{iv:bufToB64(wrap.iv), ct:bufToB64(wrap.ct)},
     body:{iv:bufToB64(body.iv), ct:bufToB64(body.ct)}});
@@ -466,13 +504,13 @@ function parseFile(raw){
   if(raw.length>MAX_READ_BYTES) throw new Error('toolarge');
   let f; try{ f=JSON.parse(raw); }catch(_){ throw new Error('format'); }
   if(!f||typeof f!=='object'||f.magic!==MAGIC) throw new Error('format');
-  if(f.ver!==FILE_VER) throw new Error((Number.isInteger(f.ver)&&f.ver>FILE_VER)?'newer':'format');
+  if(!FILE_VERS.includes(f.ver)) throw new Error((Number.isInteger(f.ver)&&f.ver>FILE_VER)?'newer':'format');
   const k=f.kdf; if(!k||typeof k!=='object'||k.name!=='argon2id') throw new Error('format');
   const kdf={m:k.m, t:k.t, p:k.p, salt:b64Bytes(k.salt)};
   if(!kdf.salt||kdf.salt.length!==16) throw new Error('format');
   if(!kdfOk(kdf)) throw new Error('kdfbounds');
   const wrap={iv:b64Bytes(f.wrap&&f.wrap.iv), ct:b64Bytes(f.wrap&&f.wrap.ct)};
-  const body={iv:b64Bytes(f.body&&f.body.iv), ct:b64Bytes(f.body&&f.body.ct)};
+  const body={iv:b64Bytes(f.body&&f.body.iv), ct:b64Bytes(f.body&&f.body.ct), ver:f.ver};
   if(!wrap.iv||wrap.iv.length!==12||!wrap.ct||wrap.ct.length!==48) throw new Error('format');
   if(!body.iv||body.iv.length!==12||!body.ct||body.ct.length<16) throw new Error('format');
   return {kdf, wrap, body};
@@ -498,10 +536,58 @@ const TRASH_DAYS=30, MAX_TRASH=200;
 const UNDO_MS=6000;   // so lange steht „Rückgängig“ nach dem Löschen im Toast
 function emptyVault(){ return {version:VAULT_VERSION, entries:[], settings:Object.assign({},SETTINGS_DEFAULT), totp:null, meta:{lastBackup:null, lastBackupCount:0}}; }
 const ID_RE=/^[0-9a-f]{16}$/;
-// Eintrag = Notiz ('text': body mit Zeilenumbrüchen) oder Checkliste ('list': items). issuer/label gehören zur Aegis-Hürde (TOTP).
+// Eintrag = Notiz ('text': body mit Zeilenumbrüchen), Checkliste ('list': items) oder Skizze ('sketch': sk, v1.14). issuer/label gehören zur Aegis-Hürde (TOTP).
 const CAPS={title:200,body:100000,item:500,cat:40,issuer:100,label:200};
 const ITEMS_MAX=200;   // Checklisten-Zeilen je Eintrag
-const ENTRY_TYPES=['text','list'];
+const ENTRY_TYPES=['text','list','sketch'];
+/* Skizze (v1.14): Striche als Vektoren in einer logischen Fläche SK_W × SK_H (3:4), nur Ganzzahlen. Ein Strich = [art, stärke, strichart, farbe, x0, y0, x1, y1, …]:
+   art 0 Freihand (1…SK_PTS Punkte), 1 Linie, 2 Pfeil, 3 Rechteck, 4 Ellipse, 5 Dreieck, 6 Sechseck (Formen genau 2 Punkte: Start und Ende des aufgezogenen
+   Rahmens; Dreieck/Sechseck regelmäßig darin eingepasst); stärke 0–2 (SK_WIDTH), strichart 0 durchgezogen / 1 gestrichelt, farbe 0–3 (Cyan, Gelb, Rot,
+   Weiß aus dem Theme). Grenzen werden VOR jeder Schleife geprüft, jede Abweichung weist ab (nie klemmen). Die Byte-Größe ist durch die Zählgrenzen
+   gedeckelt (≤ SK_TOTAL·10 + SK_STROKES·12 Zeichen < SK_BYTES); der Schreiber (commitEditor) prüft SK_BYTES zusätzlich. */
+const SK_W=1200, SK_H=1600, SK_STROKES=1000, SK_PTS=1500, SK_TOTAL=20000, SK_BYTES=220000, SK_KINDS=7, SK_SIZES=3, SK_COLORS=4, SK_GRID=50, SK_WIDTH=[4,9,18];
+const SK_NONE=Object.freeze([]);   // sk aller Nicht-Skizzen: EIN gemeinsames leeres Array (der Verlauf vergleicht per ===)
+function sanitizeSketch(sk){
+  if(!Array.isArray(sk)||sk.length>SK_STROKES) return null;
+  const out=[]; let total=0;
+  for(let i=0;i<sk.length;i++){ const s=sk[i];
+    if(!Array.isArray(s)) return null; const n=s.length;
+    if(n<6||n>4+2*SK_PTS||n%2) return null;                                   // Kopf + 1…SK_PTS Punkte, gerade Anzahl
+    const k=s[0], w=s[1], d=s[2], c=s[3];
+    if(!Number.isInteger(k)||k<0||k>=SK_KINDS||!Number.isInteger(w)||w<0||w>=SK_SIZES||(d!==0&&d!==1)||!Number.isInteger(c)||c<0||c>=SK_COLORS) return null;
+    if(k!==0&&n!==8) return null;                                             // Formen: genau Start und Ende
+    total+=(n-4)/2; if(total>SK_TOTAL) return null;                           // laufend gezählt, Abbruch vor den Koordinaten
+    for(let j=4;j<n;j+=2){ const x=s[j], y=s[j+1]; if(!Number.isInteger(x)||!Number.isInteger(y)||x<0||x>SK_W||y<0||y>SK_H) return null; }
+    out.push(Object.freeze(s.slice()));                                       // frisch, nur die Zahlen (keine fremden Eigenschaften)
+  }
+  return Object.freeze(out);
+}
+// Zeichenhelfer (rein, unter Node getestet): Gitter, Formpunkte, Vereinfachen, Treffertest des Radierers
+const skSnap=(v,max)=>Math.max(0,Math.min(max,Math.round(v/SK_GRID)*SK_GRID));
+// Eckpunkte einer Form (Gleitkomma, nur zum Zeichnen/Treffen). Dreieck (Spitze oben) und Sechseck (flach oben) regelmäßig, eingepasst und mittig im Rahmen.
+function skShape(k,x0,y0,x1,y1){ const l=Math.min(x0,x1), r=Math.max(x0,x1), t=Math.min(y0,y1), b=Math.max(y0,y1), w=r-l, h=b-t, cx=(l+r)/2, cy=(t+b)/2;
+  if(k===1||k===2) return [[x0,y0],[x1,y1]];
+  if(k===3) return [[l,t],[r,t],[r,b],[l,b],[l,t]];
+  if(k===4){ const pts=[]; for(let i=0;i<=48;i++){ const a=i/48*2*Math.PI; pts.push([cx+w/2*Math.cos(a),cy+h/2*Math.sin(a)]); } return pts; }
+  if(k===5){ const a=Math.min(w,h*2/Math.sqrt(3)), th=a*Math.sqrt(3)/2; return [[cx,cy-th/2],[cx+a/2,cy+th/2],[cx-a/2,cy+th/2],[cx,cy-th/2]]; }
+  if(k===6){ const rr=Math.min(w/2,h/Math.sqrt(3)), pts=[]; for(let i=0;i<=6;i++){ const a=i*Math.PI/3; pts.push([cx+rr*Math.cos(a),cy+rr*Math.sin(a)]); } return pts; }
+  return []; }
+// Freihand vereinfachen: ganzzahlig, in der Fläche, ohne Doppelpunkte (Mindestabstand 2), dann Ramer-Douglas-Peucker (eps 1,5) — Anfang und Ende bleiben
+function skSimplify(pts){ const q=[]; for(let i=0;i+1<pts.length;i+=2){ const x=Math.max(0,Math.min(SK_W,Math.round(pts[i]))), y=Math.max(0,Math.min(SK_H,Math.round(pts[i+1])));
+    if(!Number.isFinite(x)||!Number.isFinite(y)) continue; const n=q.length; if(n&&Math.hypot(x-q[n-2],y-q[n-1])<2&&i+2<pts.length) continue; q.push(x,y); }
+  const m=q.length/2; if(m<=2) return q; const keep=new Uint8Array(m); keep[0]=keep[m-1]=1; const st=[[0,m-1]];
+  while(st.length){ const [a,b]=st.pop(); let dm=0, im=-1; const ax=q[2*a], ay=q[2*a+1], bx=q[2*b], by=q[2*b+1], L=Math.hypot(bx-ax,by-ay);
+    for(let i=a+1;i<b;i++){ const px=q[2*i], py=q[2*i+1]; const dd=L?Math.abs((bx-ax)*(ay-py)-(ax-px)*(by-ay))/L:Math.hypot(px-ax,py-ay); if(dd>dm){ dm=dd; im=i; } }
+    if(im>0&&dm>1.5){ keep[im]=1; st.push([a,im],[im,b]); } }
+  const out=[]; for(let i=0;i<m;i++) if(keep[i]) out.push(q[2*i],q[2*i+1]); return out; }
+// Abstand Punkt–Strecke
+function skSeg(px,py,ax,ay,bx,by){ const dx=bx-ax, dy=by-ay, L=dx*dx+dy*dy; let t=L?((px-ax)*dx+(py-ay)*dy)/L:0; t=Math.max(0,Math.min(1,t)); return Math.hypot(px-(ax+t*dx),py-(ay+t*dy)); }
+// Trifft der Radierer bei (x,y) mit Toleranz tol den Strich? (Stärke/2 kommt dazu)
+function skHit(s,x,y,tol){ const lim=tol+SK_WIDTH[s[1]]/2; let pts;
+  if(s[0]===0){ pts=[]; for(let j=4;j<s.length;j+=2) pts.push([s[j],s[j+1]]); } else pts=skShape(s[0],s[4],s[5],s[6],s[7]);
+  if(pts.length===1) return Math.hypot(x-pts[0][0],y-pts[0][1])<=lim;
+  for(let i=1;i<pts.length;i++) if(skSeg(x,y,pts[i-1][0],pts[i-1][1],pts[i][0],pts[i][1])<=lim) return true;
+  return false; }
 function str(v,cap){ return typeof v==='string' ? v.slice(0,cap) : ''; }
 // Einzeilige Anzeigetexte (Titel, Kategorie, Checklisten-Zeile): Steuer-, Nullbreiten- und Bidi-Zeichen raus, Whitespace auf ein Leerzeichen, getrimmt
 const CTRL_RE=/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f​-‏‪-‮⁠-⁯﻿]/g;   // Tab/LF/CR bleiben für den Whitespace-Kollaps
@@ -539,7 +625,8 @@ function normalizeTotp(v){
   return {secret, algorithm:alg, digits, period, issuer:str(o.issuer,CAPS.issuer), label:str(o.label,CAPS.label)};
 }
 function otpauthUri(t){ const lbl=encodeURIComponent(t.label||t.issuer||'Alien Notes'); let s=`otpauth://totp/${lbl}?secret=${t.secret}`; if(t.issuer) s+=`&issuer=${encodeURIComponent(t.issuer)}`; if(t.algorithm!=='SHA1') s+=`&algorithm=${t.algorithm}`; if(t.digits!==6) s+=`&digits=${t.digits}`; if(t.period!==30) s+=`&period=${t.period}`; return s; }
-// Whitelist (13 Felder): baut ein frisches Objekt; ungültige ID → null (Aufrufer verwirft). hide = „Keine Vorschau“ (v1.1 Punkt 6): die Liste zeigt nur den Titel.
+// Whitelist (14 Felder, sk seit v1.14): baut ein frisches Objekt; ungültige ID → null (Aufrufer verwirft); ungültige Skizze → null (sanitizeEntries weist die
+// ganze Datei ab, der Editor zeigt einen Hinweis — sanitizeEntry selbst wirft nie, der Editor-Pfad bräche sonst). hide = „Keine Vorschau“ (v1.1 Punkt 6): die Liste zeigt nur den Titel.
 // GELÖSCHTE Einträge laufen durch dieselbe Whitelist wie lebende (Papierkorb) — sie behalten ihren Inhalt und
 // verlieren ihn erst durch wipeTrash()/tombstone().
 function sanitizeEntry(e, now){
@@ -556,10 +643,11 @@ function sanitizeEntry(e, now){
   if(deleted) deleted=new Date(Math.min(Date.parse(deleted),maxT)).toISOString();
   // Typ bestimmt, welche Felder tragen: text (body, Zeilenumbrüche bleiben; md = Markdown-Ansicht je Notiz), list (items)
   const type=entryType(e.type);
-  const o={id, type, cat:line(e.cat,CAPS.cat), title:line(e.title,CAPS.title), body:'', items:[],
+  const o={id, type, cat:line(e.cat,CAPS.cat), title:line(e.title,CAPS.title), body:'', items:[], sk:SK_NONE,
            fav:e.fav===true, pinned:e.pinned===true, md:type==='text'&&e.md===true, hide:e.hide===true, created, updated, deleted};
   if(type==='text') o.body=str(e.body,CAPS.body).replace(/\r\n?/g,'\n');   // Zeilenumbrüche kanonisch (Audit run-1 #8: textarea liefert nie CR)
-  else o.items=sanitizeItems(e.items);
+  else if(type==='list') o.items=sanitizeItems(e.items);
+  else { const sk=sanitizeSketch(e.sk===undefined?SK_NONE:e.sk); if(!sk) return null; o.sk=sk.length?sk:SK_NONE; }   // fehlendes sk = leer (bodyJson lässt [] weg)
   return o;
 }
 // Kanonische Serialisierung ALLER Ebenen (Array-Replacer von JSON.stringify wäre nur eine Allowlist → items:[{}])
@@ -579,7 +667,19 @@ function winner(a,b){ const ta=ts(a.updated), tb=ts(b.updated); if(ta!==tb) retu
 function dedupeEntries(list){ const m=new Map(); for(const e of list){ const cur=m.get(e.id); m.set(e.id, cur?winner(cur,e):e); } return [...m.values()]; }
 // Cap gilt nur für LIVE-Einträge; Tombstones werden gepurgt/gekappt statt gezählt (sonst könnte eine
 // fremde Datei den Tresor mit unsichtbaren Löschmarken bis an den Cap füllen und der nächste eigene Eintrag brickt ihn).
-function sanitizeEntries(list, now){ if(!Array.isArray(list)) return []; if(list.length>MAX_ENTRIES*4) throw new Error('toomany'); const out=[]; for(const e of list){ const s=sanitizeEntry(e,now); if(s) out.push(s); } const d=purgeTombstones(wipeTrash(dedupeEntries(out), now), now); if(liveCount(d)>MAX_ENTRIES) throw new Error('toomany'); return d; }
+// Eintrag mit gültiger ID und Typ Skizze, den sanitizeEntry abwies: ungültige Skizze — die Datei wird abgewiesen, nichts still verworfen (v1.14)
+const badSketch=e=>!!e&&typeof e==='object'&&!Array.isArray(e)&&e.type==='sketch'&&typeof e.id==='string'&&ID_RE.test(e.id.toLowerCase());
+// Unbekannter Typ als Zeichenkette (gültige ID): stammt aus einer neueren Version — abweisen statt still zu Text zu machen (v1.14, run-12 a H-3: genau das
+// verlor in 1.13 die Skizzen). Fehlender Typ liest sich weiter als Text.
+const newerType=e=>!!e&&typeof e==='object'&&!Array.isArray(e)&&typeof e.type==='string'&&!ENTRY_TYPES.includes(e.type)&&typeof e.id==='string'&&ID_RE.test(e.id.toLowerCase());
+// Vorwärts-Wächter für FELDER (v1.14, Release-Audit run-12 a2 H-1): ein Eintrag mit gültiger ID, der ein Feld trägt, das diese Version nicht kennt (oder ein
+// Checklisten-Punkt mit unbekanntem Feld), stammt aus einer neueren Version — sanitizeEntry würde das Feld still verwerfen, und im Abgleich gewönne bei
+// gleichem updated die gekürzte Fassung (ein zusätzlicher Schlüssel macht canon() kleiner, winner nimmt den größeren). Darum 'newer' statt Kürzen. Rückwärtsverträglich: v0.1 schrieb 12, v1.1–1.13
+// 13 Felder, alles Teilmengen; Punkte seit v0.1 nur {text, done} (geprüft über alle Tags). Neue Felder kommen hier UND in sanitizeEntry dazu.
+const ENTRY_KEYS=Object.freeze(['id','type','cat','title','body','items','sk','fav','pinned','md','hide','created','updated','deleted']), ITEM_KEYS=Object.freeze(['text','done']);
+const newerKeys=e=>!!e&&typeof e==='object'&&!Array.isArray(e)&&typeof e.id==='string'&&ID_RE.test(e.id.toLowerCase())&&(Object.keys(e).some(k=>!ENTRY_KEYS.includes(k))
+  ||(Array.isArray(e.items)&&e.items.some(x=>!!x&&typeof x==='object'&&!Array.isArray(x)&&Object.keys(x).some(k=>!ITEM_KEYS.includes(k)))));
+function sanitizeEntries(list, now){ if(!Array.isArray(list)) return []; if(list.length>MAX_ENTRIES*4) throw new Error('toomany'); const out=[]; for(const e of list){ if(newerType(e)||newerKeys(e)) throw new Error('newer'); const s=sanitizeEntry(e,now); if(s) out.push(s); else if(badSketch(e)) throw new Error('sketch'); } const d=purgeTombstones(wipeTrash(dedupeEntries(out), now), now); if(liveCount(d)>MAX_ENTRIES) throw new Error('toomany'); return d; }
 function sanitizeSettings(s){ const o={}; for(const k in SETTINGS_DEFAULT){ const v=s&&typeof s==='object'?Number(s[k]):NaN; o[k]=SETTINGS_ALLOWED[k].includes(v)?v:SETTINGS_DEFAULT[k]; } return o; }
 function sanitizeVault(v, now){
   if(!v||typeof v!=='object') throw new Error('format');
@@ -635,12 +735,13 @@ function shapeIncoming(local, incoming){
   return out;
 }
 // Löschmarken-Gestalt zu einem Eintrag: inhaltsleer, Zeitstempel unverändert. Basis von tombstone(), isWiped() und wipeTrash().
-// MUSS dieselbe Feldmenge liefern wie sanitizeEntry() (13 Felder) — Test „tombFrom() ist sanitizer-stabil“.
-function tombFrom(e){ return {id:e.id, type:'text', cat:'', title:'', body:'', items:[], fav:false, pinned:false, md:false, hide:false, created:e.created, updated:e.updated, deleted:e.deleted}; }
+// MUSS dieselbe Feldmenge liefern wie sanitizeEntry() (14 Felder) — Test „tombFrom() ist sanitizer-stabil“.
+function tombFrom(e){ return {id:e.id, type:'text', cat:'', title:'', body:'', items:[], sk:SK_NONE, fav:false, pinned:false, md:false, hide:false, created:e.created, updated:e.updated, deleted:e.deleted}; }
 // Sofortige, endgültige Löschmarke: Inhalt weg UND updated=jetzt — schlägt damit jeden älteren Stand auf anderen Geräten.
 function tombstone(e, nowIso){ return tombFrom({id:e.id, created:e.created, updated:nowIso, deleted:nowIso}); }
 // Gelöscht UND inhaltsleer. Stützt sich darauf, dass tombFrom() sanitizer-stabil ist.
-function isWiped(e){ return !!e.deleted && canon(e)===canon(tombFrom(e)); }
+// Schnellweg vor dem canon-Vergleich (läuft bei jedem renderList über den Papierkorb): mit Inhalt oder anderem Typ ist der Vergleich ohnehin falsch.
+function isWiped(e){ if(!e.deleted||e.type!=='text'||e.title||e.body||e.cat||(e.items&&e.items.length)||(e.sk&&e.sk.length)) return false; return canon(e)===canon(tombFrom(e)); }
 // Papierkorb räumen: abgelaufene und überzählige Einträge auf die Löschmarke zurückschneiden — OHNE updated anzuheben.
 // Sonst gälte der Wipe als Änderung (gewänne überall, und renderBackupHint() mahnte ohne Nutzeraktion).
 // Der Merge braucht das nicht: winner() bevorzugt bei Gleichstand ohnehin die gewipte Gestalt.
@@ -742,7 +843,8 @@ function mdParse(text){
   flushP(); flushL(); return out;
 }
 // Klartext einer Notiz fürs Kopieren (SecureClip): Titel, dann Text bzw. Checkliste als „- [x] …“-Zeilen
-function noteText(e){ const first=e.type==='text'?(String(e.body||'').split('\n').map(l=>line(l,CAPS.title)).find(Boolean)||''):''; const head=e.title&&e.title!==first?e.title+'\n\n':''; if(e.type==='list') return head+(e.items||[]).map(x=>'- ['+(x.done?'x':' ')+'] '+x.text).join('\n'); return head+(e.body||''); }
+function noteText(e){ if(e.type==='sketch') return e.title||'';   // Skizze: nur der Titel (Kopieren/Als Datei sind dort ausgeblendet)
+  const first=e.type==='text'?(String(e.body||'').split('\n').map(l=>line(l,CAPS.title)).find(Boolean)||''):''; const head=e.title&&e.title!==first?e.title+'\n\n':''; if(e.type==='list') return head+(e.items||[]).map(x=>'- ['+(x.done?'x':' ')+'] '+x.text).join('\n'); return head+(e.body||''); }
 // Checkliste ↔ Text: Zeilen werden Einträge (Kästchen-Marker verstanden), Einträge werden „- [x] …“-Zeilen
 // [\s\S]* statt .*: „.“ passt nicht auf \r, \u2028, \u2029 — dann lief $ ins Leere und \s* verfolgte quadratisch zurück (40 000 Leerzeichen 0,5 s,
 // eine Million Minuten; v1.9 beim Einfügen gefunden, steckte seit v0.1 in linesToItems). So passt das Muster immer im ersten Anlauf.
@@ -946,7 +1048,7 @@ const App = (function(){
   let selMode=false, selIds=new Set(), shownIds=[];   // Mehrfachauswahl (v1.1 Punkt 8): nur im RAM, Sperre räumt ab; shownIds = zuletzt gezeigte Zeilen (für „Alle“)
   let flushSelAll=null;   // Desktop: meldet ein noch offenes Strg+A (keyup fehlt, weil per Maus ins andere Fenster gewechselt wurde) — Release-Audit v1.9 Runde 2 a2-5
   // Desktop: meldet die aktuelle Markierung sofort an die Hülle (gesetzt im Zwischenablage-Block, nur mit DESK) — für Strg+A in deskKey (a2-1, wie Alien Pass v1.21)
-  let reportSel=null;
+  let reportSel=null, selReset=null;
   let clipTimer=null, clipOwnedAt=0, clipCopied=false, clipGateSel=false, failCount=0, lockedUntil=0, pendingImport=null, kdfTouched=false;
   let pendingUnlock=null, pendingSecret=null, pendingOtpauth='';   // Aegis-Hürde: Schlüssel warten auf den Code / Einrichtung läuft
   let bioGen=0;             // Generation ALLER Pforten (Alien Pass v1.8): jede Sperre erhöht sie, laufende Pforten verwerfen ihr Ergebnis
@@ -980,12 +1082,12 @@ const App = (function(){
     b.textContent=opt.action?opt.action.label:''; b.classList.toggle('hidden',!opt.action); t.classList.remove('hidden'); clearTimeout(t._t); t._t=setTimeout(hideToast, opt.ms||2600); }
   function hideToast(){ const t=$('toast'); if(!t) return; clearTimeout(t._t); t.classList.add('hidden'); $('toast-msg').textContent=''; $('toast-btn').textContent=''; $('toast-btn').classList.add('hidden'); toastFn=null; }
   function toastAction(){ const fn=toastFn; hideToast(); if(typeof fn==='function'&&VAULT) fn(); }
-  /* ---------- Rückfrage als eigener DOM-Dialog (v1.1) statt confirm(): der Android-Systemdialog erbt FLAG_SECURE nicht — ein Screenshot bei
+  /* ---------- Rückfrage als eigener DOM-Dialog (v1.1) statt des System-Bestätigungsdialogs: der Android-Systemdialog erbt FLAG_SECURE nicht — ein Screenshot bei
      offener Löschnachfrage zeigte den Notiztitel (Gerätetest 25.09.2026). ask(msg,{ok,danger}) liefert ein Promise<boolean>; nur ein Dialog zur
      Zeit (eine zweite Frage gilt als abgelehnt); Escape/Hintergrund = Abbrechen; clearRendered() schließt ihn beim Sperren mit false, der wartende
      Aufrufer prüft danach VAULT/editing selbst nach. Text nur per textContent. ---------- */
   let dlgResolve=null, dlgPrev=null;
-  // opt.input={value,placeholder,max}: Dialog mit Eingabefeld (Ersatz für prompt()) — löst dann mit dem Text (über line(), max) oder null auf
+  // opt.input={value,placeholder,max}: Dialog mit Eingabefeld (Ersatz für den System-Eingabedialog) — löst dann mit dem Text (über line(), max) oder null auf
   // input.cats (v1.9, wie Alien Pass v1.20): das Feld wird zur Kategorie-Kombi wie #f-cat — ▾ rechts (nur wenn es Kategorien gibt) und die Liste aller
   // Kategorien gleich beim Öffnen offen; dialogClose() leert sie per closeMenus() (Kategorienamen sind entschlüsselte Nutzerdaten). Nur „Kategorie…“ der
   // Mehrfachauswahl; „Kategorie umbenennen“ bleibt ein freies Feld für den neuen Namen (Entscheidung Nutzer 09.10.2026).
@@ -1056,6 +1158,10 @@ const App = (function(){
     // Wipe/Purge rechnet der spätere Schreiber auf seinem Stand selbst.
     if(VAULT===vault&&vault.entries===list) vault.entries=entries;
   }
+  // Inhaltsfehler NACH richtigem Schlüssel (Datei entschlüsselt, Inhalt verletzt eine Grenze oder ist kaputt): kein Fehlversuch, kein Wegwerfen des
+  // Fingerabdruck-/PIN-Slots — bis 1.13 zählte doUnlock hier einen Fehlversuch, doBio löschte den Slot, doPin zählte eine falsche PIN (v1.14)
+  const contentErr=e=>!!e&&['toomany','format','sketch','body','newer'].includes(e.message);
+  const contentMsg=e=>tr({toomany:'err.tooMany',sketch:'err.fileSketch',body:'err.fileBody',newer:'err.fileNewer'}[e.message]||'err.fileContent');
   function fileErrMsg(e){ const c=e&&e.message; return tr(c==='newer'?'err.fileNewer':c==='kdfbounds'?'err.fileBounds':c==='toolarge'?'err.fileLarge':c==='toomany'?'err.tooMany':'err.fileFormat'); }
 
   /* ---------- boot / setup / unlock / lock ---------- */
@@ -1115,6 +1221,7 @@ const App = (function(){
     try{
       const kek=await deriveKek(passBytes($('lock-pass').value), f.kdf);
       const dek=await unwrapDek(f.wrap, kek, f.kdf, false);
+      { const bb=bioBlob(); if(bb&&!bb.k&&bioWrapOk(bb,f.wrap)) bioAddK(f.kdf, bb.w); }   // wrap-AAD hat den Kopf bestätigt, der Blob gehört zu genau diesem wrap
       const dekX=(bioNeedsRearm&&BIO&&bioMarker())?await unwrapDek(f.wrap, kek, f.kdf, true):null;   // nur zum Neu-Bewaffnen des Fingerabdruck-Slots nach Neustart
       const obj=await decryptBody(f.body, dek, f.kdf);
       const v=sanitizeVault(obj);                                     // auch lokal: Whitelist beim Unlock
@@ -1124,9 +1231,10 @@ const App = (function(){
       bioRearmDek=dekX;
     }catch(e){
       if(gen!==bioGen||DEK||pendingUnlock){ $('lock-pass').value=''; maskInputs('#screen-lock'); return; }   // verspäteter Fehlversuch darf keine offene Sitzung stören
+      if(contentErr(e)){ $('lock-pass').value=''; maskInputs('#screen-lock'); return err('lock-err',contentMsg(e)); }   // Schlüssel stimmte: kein Fehlversuch
       failCount++; if(failCount>=3) lockedUntil=Date.now()+Math.min(30,(failCount-2)*2)*1000; saveLockState();
       $('lock-pass').value=''; maskInputs('#screen-lock');                    // Fehlversuch: Eingabe nie stehen lassen (Audit run-2 #1)
-      return err('lock-err', e&&e.message==='toomany'?tr('err.tooMany'):tr('err.wrongPass'));
+      return err('lock-err',tr('err.wrongPass'));
     }finally{ release(); }
     afterGate();
   }
@@ -1196,6 +1304,10 @@ const App = (function(){
   function lock(keepClip){
     // Stehen bleibt nur eine echte KOPIE (clipCopied) — eine bloße Markierung (Maus, Tab, Taste) startet die Frist auch, wird beim Sperren aber gelöscht (Release-Audit v1.7 R2-N1)
     if(flushSelAll) flushSelAll();   // vor clearClip: eine gerade per Strg+A gemachte Markierung soll mitgelöscht werden
+    // Sperre bei gehaltener Maustaste (Strg+L, Zeitgeber, Minimieren bei „sofort“): die Markierung ist noch nicht gemeldet (das geschieht erst im mouseup) —
+    // jetzt melden, damit clearClip sie mitlöscht (v1.14, Release-Audit run-12 b2-2; den älteren Stand nach einem Nachrollen merkt die Hülle dazu)
+    if(DESK&&reportSel) reportSel();
+    if(selReset) selReset();
     clearIdle(); if(!(keepClip===true&&clipCopied&&clipOwnedAt&&clipTimer)) clearClip(); clearTimeout(autosaveTimer); autosaveTimer=null; applySecure(true);
     // editBase: canon-JSON der letzten Notiz — beim Sperren leeren (Release-Audit v1.9 Runde 2 a2-4)
     DEK=null; KDF=null; WRAP=null; VAULT=null; fileStale=false; editId=null; editBase=null; editing=false; pendingImport=null; search=''; catFilter=null; favFilter=false; openFilter=false; selMode=false; selIds=new Set(); shownIds=[];
@@ -1206,7 +1318,7 @@ const App = (function(){
   }
   // Nach dem Sperren darf nichts Entschlüsseltes im DOM oder in Formularfeldern bleiben
   function clearRendered(){
-    clearItemRows(); histClear();   // statt nur replaceChildren: setzt auch composing/enterAfterComp zurück, sonst hielten sie das losgelöste Feld fest (a2-2/a2-3); Verlauf weg (v1.10)
+    clearItemRows(); histClear(); skReset();   // Skizze (v1.14): Fläche, Puffer, Striche, Zeiger weg; statt nur replaceChildren: setzt auch composing/enterAfterComp zurück, sonst hielten sie das losgelöste Feld fest (a2-2/a2-3); Verlauf weg (v1.10)
     ['entry-list','backup-hint','cat-chips','cat-menu','dlg-cat-menu','trash-list','md-view','cp-meter','setup-meter','bio-alert-list','bio-alert'].forEach(id=>{ const n=$(id); if(n) n.replaceChildren(); });
     ['bk-msg','import-msg','sn-msg','about-line','trash-msg','trash-n','ed-count','ed-meta','add-title','totp-secret'].forEach(id=>{ const n=$(id); if(n) n.textContent=''; });
     ['f-title','f-cat','f-body','search','import-pass','cp-cur','cp1','cp2','lock-pass','lock-pin','pin-new','pin-rep','pin-pass','setup-pass1','setup-pass2','totp-code','totp-verify','bio-pass','vault-file','sn-file'].forEach(id=>{ const n=$(id); if(n) n.value=''; });
@@ -1316,7 +1428,7 @@ const App = (function(){
   function markSel(){ document.querySelectorAll('#entry-list .entry').forEach(r=>r.classList.toggle('sel',editing&&r.dataset.arg===editId)); }   // Desktop: bearbeitete Zeile markieren
 
   /* ===== KIT: Auswahlfeld (.combo) — das native <select> bleibt Wertspeicher ===== */
-  function closeMenus(){ document.querySelectorAll('.combo-menu').forEach(m=>{ m.classList.add('hidden'); m.replaceChildren(); }); }
+  function closeMenus(){ document.querySelectorAll('.combo-menu').forEach(m=>{ m.classList.add('hidden'); m.replaceChildren(); }); document.querySelectorAll('.sk-menu').forEach(m=>m.classList.add('hidden')); }   // .sk-menu: feste Knöpfe, nur zuklappen
   function comboOpt(label, action, arg, on, selId){ const b=el('button','combo-opt'+(on?' on':''),label); b.type='button'; b.dataset.action=action; b.dataset.arg=arg; if(selId) b.dataset.sel=selId; return b; }
   function syncCombo(id){ const sel=$(id), lab=$('cb-'+id); if(!sel||!lab) return; const o=sel.options[sel.selectedIndex]; lab.textContent=o?o.textContent:''; }
   function syncCombos(){ document.querySelectorAll('.combo-native').forEach(sel=>syncCombo(sel.id)); }
@@ -1416,6 +1528,7 @@ const App = (function(){
   // Vorschauzeile: erste Textzeile, die nicht der Titel ist (Titel kann aus der ersten Zeile stammen); Checkliste: Fortschritt + erster offener Eintrag
   function preview(e){
     if(e.hide) return tr('list.hidden');   // „Keine Vorschau“ (v1.1 Punkt 6): nur der Titel steht in der Liste — gegen Mitleser
+    if(e.type==='sketch') return e.sk.length?tr(e.sk.length===1?'list.sketch1':'list.sketch',{n:e.sk.length}):tr('list.sketchEmpty');   // v1.14: Symbol + Strichzahl, keine Miniatur (E9)
     if(e.type==='list'){ const n=e.items.length; if(!n) return tr('list.itemsEmpty'); const open=e.items.find(x=>!x.done); return tr('list.progress',{d:n-e.items.filter(x=>!x.done).length,n})+(open?' · '+open.text:''); }
     const lines=e.body.split('\n').map(l=>line(l,120)).filter(Boolean); if(lines.length&&lines[0]===e.title) lines.shift(); return (lines[0]||'').replace(/^#{1,3}\s+|^(?:[-*+]|\d{1,9}[.)])\s+(?:\[[ xX]\]\s+)?/,''); }   // Markdown-Marker der Vorschau abstreifen
   function renderList(){
@@ -1432,14 +1545,14 @@ const App = (function(){
     for(const e of items){
       const row=el('div',(editing&&e.id===editId)?'entry sel':'entry'); row.dataset.action=selMode?'toggleSel':'openEditor'; row.dataset.arg=e.id;
       if(selMode){ const cb=el('label','chk selbox'); const i=el('input'); i.type='checkbox'; i.checked=selIds.has(e.id); i.tabIndex=-1; cb.appendChild(i); row.appendChild(cb); if(selIds.has(e.id)) row.classList.add('picked'); }
-      row.appendChild(el('div','av'+(e.type==='list'?' list':''),e.type==='list'?'☑':((e.title||preview(e)).trim()[0]||'·').toUpperCase()));
+      row.appendChild(el('div','av'+(e.type==='text'?'':' '+e.type),e.type==='list'?'☑':e.type==='sketch'?'✎':((e.title||preview(e)).trim()[0]||'·').toUpperCase()));
       const main=el('div','main'); main.appendChild(el('div','t',titleOf(e)));
       main.appendChild(el('div','u',preview(e)));
       // Datum und Pills in EINER Zeile unter der Vorschau — rechts neben dem Titel kürzten sie ihn auf 360 px auf wenige Zeichen
       const meta=el('div','meta'); meta.appendChild(el('span','d',fmtDate(e.updated)));
       if(e.pinned) meta.appendChild(el('span','pill pin',tr('pill.pin')));
       if(e.fav) meta.appendChild(el('span','pill fav','★'));
-      if(e.type==='list') meta.appendChild(el('span','pill type',tr('pill.list')));
+      if(e.type!=='text') meta.appendChild(el('span','pill type',tr(e.type==='list'?'pill.list':'pill.sketch')));
       if(e.cat&&catFilter===null) meta.appendChild(el('span','pill cat',e.cat));
       main.appendChild(meta); row.appendChild(main); list.appendChild(row);
     }
@@ -1459,14 +1572,26 @@ const App = (function(){
      Verlassen (Fertig, Tab, Zurück, Hintergrund, Sperre) speichert; beim Tippen zusätzlich nach AUTOSAVE_MS Ruhe.
      Schreiben folgt dem Persist-Muster von Alien Pass: Snapshot, VAULT ändern, persist(), bei Fehler Rollback (nie bei .locked). */
   const AUTOSAVE_MS=1500; let autosaveTimer=null, itemSeq=0, editBase=null;   // editBase: Signatur des Formularstands direkt nach dem Öffnen (Audit run-1 #3/#8)
-  function setEntryType(t){ formType=entryType(t); closeMenus(); ENTRY_TYPES.forEach(x=>$('ft-'+x).classList.toggle('on',x===formType)); $('grp-text').classList.toggle('hidden',formType!=='text'); $('grp-list').classList.toggle('hidden',formType!=='list'); $('f-md-wrap').classList.toggle('hidden',formType!=='text'); hide('md-cheat'); renderAddTitle(); }
-  function renderAddTitle(){ $('add-title').textContent=tr(editId?(formType==='list'?'add.titleEditList':'add.titleEdit'):(formType==='list'?'add.titleNewList':'add.titleNew')); }
+  function setEntryType(t){ formType=entryType(t); closeMenus(); ENTRY_TYPES.forEach(x=>$('ft-'+x).classList.toggle('on',x===formType)); $('grp-text').classList.toggle('hidden',formType!=='text'); $('grp-list').classList.toggle('hidden',formType!=='list'); $('f-md-wrap').classList.toggle('hidden',formType!=='text'); hide('md-cheat'); renderAddTitle();
+    // Skizze (v1.14): Zeichenfläche statt Text; Kopieren/Als Datei gibt es dort nicht (E2), die Markdown-Leiste auch nicht
+    const sk=formType==='sketch'; $('grp-sketch').classList.toggle('hidden',!sk); $('ed-copy').classList.toggle('hidden',sk); $('ed-file').classList.toggle('hidden',sk); if(sk){ $('md-seg').classList.add('hidden'); skRenderBar(); skQueue(); } }
+  function renderAddTitle(){ const suf=formType==='list'?'List':formType==='sketch'?'Sketch':''; $('add-title').textContent=tr((editId?'add.titleEdit':'add.titleNew')+suf); }
   // Typwechsel per Segment: Inhalt wird umgewandelt (Zeilen ↔ Einträge), nach Rückfrage — nichts geht still verloren
-  async function changeEntryType(t){ t=entryType(t); if(t===formType||!editing) return;
-    if(t==='list'){ const body=$('f-body').value; if(body.trim()&&!(await ask(tr('confirm.toList',{n:ITEMS_MAX,c:CAPS.item}),{ok:'dlg.convert'}))) return;
+  // Typwechsel mit ausdrücklichen Paaren (v1.14): Text ↔ Liste wandelt um; von und zur Skizze wird nichts übernommen — mit Rückfrage, wenn etwas verloren
+  // ginge; der Titel bleibt, ↶ holt den alten Stand zurück. Nach dem await: noch dieselbe offene Notiz im selben Typ?
+  async function changeEntryType(t){ t=entryType(t); if(t===formType||!editing) return; const from=formType;
+    if(t==='sketch'||from==='sketch'){
+      const has=from==='sketch'?skStrokes.length>0:from==='text'?!!$('f-body').value.trim():readItemRows().some(x=>line(x.text,CAPS.item));
+      if(has&&!(await ask(tr(from==='sketch'?'confirm.fromSketch':'confirm.toSketch'),{ok:'dlg.convert'}))) return;
+      if(!editing||formType!==from) return;
+      histPoint();
+      if(from==='sketch'){ skStrokes=SK_NONE; skLive=null; skErase=null; }   // laufenden Strich/Radierzug beenden (run-12 b2 H-1: sonst hing ihn skCommit an)
+      else { const a=document.activeElement; if(a&&a!==document.body&&a.blur) a.blur(); $('f-body').value=''; clearItemRows(); $('f-md').checked=false; $('md-seg').classList.add('hidden'); setMdMode('edit'); }
+      if(t==='list') pushItemRow('',false); }
+    else if(t==='list'){ const body=$('f-body').value; if(body.trim()&&!(await ask(tr('confirm.toList',{n:ITEMS_MAX,c:CAPS.item}),{ok:'dlg.convert'}))) return;
       if(!editing||formType!=='text') return;                    // während der Rückfrage gesperrt oder verlassen
       histPoint(); setItemRows(linesToItems($('f-body').value)); if(!itemRows().length) pushItemRow('',false); $('f-body').value=''; $('f-md').checked=false; $('md-seg').classList.add('hidden'); setMdMode('edit'); }
-    else { const items=readItemRows(); const body=itemsToBody(items); if(body.length>CAPS.body) return toast(tr('toast.bodyFull',{n:CAPS.body}));   // sonst kappte sanitizeEntry still (Audit run-1 #6)
+    else { const items=readItemRows(); const body=itemsToBody(items); if(body.length>CAPS.body) return toast(tr('toast.bodyFull',{n:CAPS.body}));   // Liste → Text; sonst kappte sanitizeEntry still (Audit run-1 #6)
       if(items.length&&!(await ask(tr('confirm.toText'),{ok:'dlg.convert'}))) return;
       if(!editing||formType!=='list') return;
       histStep(); $('f-body').value=itemsToBody(readItemRows()); clearItemRows(); }
@@ -1497,7 +1622,8 @@ const App = (function(){
     }
     if(!box.childNodes.length) box.appendChild(el('p','muted','')); }
   // Checkliste: leere (auch nur unsichtbare) Zeilen speichert sanitizeItems nicht — nicht mitzählen (Release-Audit v1.9, Hinweis + R2c-5)
-  function renderCounter(){ if(formType==='list'){ const it=readItemRows().filter(x=>line(x.text,CAPS.item)); $('ed-count').textContent=it.length?tr('ed.items',{d:it.filter(x=>x.done).length,n:it.length}):''; return; }
+  function renderCounter(){ if(formType==='sketch'){ const n=skStrokes.length; $('ed-count').textContent=n?tr(n===1?'ed.strokes1':'ed.strokes',{n}):''; return; }
+    if(formType==='list'){ const it=readItemRows().filter(x=>line(x.text,CAPS.item)); $('ed-count').textContent=it.length?tr('ed.items',{d:it.filter(x=>x.done).length,n:it.length}):''; return; }
     const s=$('f-body').value; $('ed-count').textContent=s?tr('ed.count',{c:s.length,w:s.trim()?s.trim().split(/\s+/).length:0}):''; }
   // Checklisten-Zeilen im Formular: Kästchen (Kit) + Textfeld + Entfernen. Seit v1.9 (Wunsch Nutzer 09.10.2026) mehrzeilig: <textarea rows=1>, die Höhe
   // wächst mit dem Text (CSS field-sizing:content, sonst fitItem über scrollHeight). Ein Punkt bleibt EINE Zeile im Datenformat (sanitizeItems → line()):
@@ -1590,7 +1716,9 @@ const App = (function(){
   // Beim Öffnen frische Felder (Klone ohne Wert): alte Rückgängig-Schritte zeigen dann ins Leere — sonst holte Strg+Z/Strg+Umschalt+Z Getipptes aus Notiz A
   // in Notiz B, und der Autosave speicherte es (Release-Audit v1.9 R3c-2, seit v0.1). Seit v1.10 nimmt kein Editorfeld mehr Chromiums Stapel — die Klone
   // bleiben als zweite Sicherung. Alle Zugriffe laufen über die ID, die Delegation über data-*. Der Verlauf der vorigen Notiz fällt hier weg.
-  function resetForm(){ histClear(); ['f-title','f-cat','f-body'].forEach(id=>{ const o=$(id), n=o.cloneNode(false); n.value=''; o.replaceWith(n); }); ['f-fav','f-pinned','f-md','f-hide'].forEach(id=>$(id).checked=false); clearItemRows(); $('md-seg').classList.add('hidden'); hide('md-cheat'); setMdMode('edit'); closeMenus(); err('add-err'); setEntryType('text'); $('ed-count').textContent=''; $('ed-meta').textContent=''; $('ed-del').classList.add('hidden'); }
+  // Klone: der deutsche Original-Platzhalter wandert mit (sonst blieb nach EN → Editor → DE der englische stehen, v1.14 Querfund Tresor run-11 a-1),
+  // und das abgehängte Original wird vorher geleert (hielt sonst den Notiztext bis zur Speicherbereinigung, Tresor run-11 a-10)
+  function resetForm(){ histClear(); skReset(); ['f-title','f-cat','f-body'].forEach(id=>{ const o=$(id), n=o.cloneNode(false); n.value=''; const c=_i18nCache.get(o); if(c) _i18nCache.set(n,c); o.value=''; o.replaceWith(n); }); ['f-fav','f-pinned','f-md','f-hide'].forEach(id=>$(id).checked=false); clearItemRows(); $('md-seg').classList.add('hidden'); hide('md-cheat'); setMdMode('edit'); closeMenus(); err('add-err'); setEntryType('text'); $('ed-count').textContent=''; $('ed-meta').textContent=''; $('ed-del').classList.add('hidden'); }
   function newEntry(t){ if(editing) closeEditor(); editId=null; editBase=null; editing=true; resetForm(); if(t==='list') setEntryType('list'); if(catFilter) $('f-cat').value=catFilter; tab('add'); setTimeout(()=>$(formType==='list'?'f-title':'f-body').focus(),80); if(formType==='list') addItemRow(); histOpen(); }
   // Desktop: Klick auf die Zeile der gerade offenen Notiz lässt sie offen — Neuöffnen löschte ihren Verlauf (Release-Audit v1.10, Beobachtung a)
   function openEditor(id){ const e=byId(id); if(!e) return toast(tr('toast.noEntry')); if(editing&&editId===e.id){ tab('add'); markSel(); return; } if(editing) closeEditor(); editId=e.id; editing=true; resetForm(); setEntryType(e.type);
@@ -1598,22 +1726,25 @@ const App = (function(){
     if(e.type==='text'){ $('f-body').value=e.body; $('f-md').checked=e.md; $('md-seg').classList.toggle('hidden',!e.md); setMdMode(e.md?'view':'edit'); }
     // Checkliste ohne Punkte (leere Punkte werden nie gespeichert): gleich einen leeren ersten Punkt zeigen wie bei einer neuen — sonst landete Getipptes
     // im Kategoriefeld, Enter tat dort nichts (Gerätetest Desktop 09.10.2026). editBase unten sieht ihn nicht (sanitizeEntry verwirft leere Punkte).
-    else { setItemRows(e.items); if(!itemRows().length) pushItemRow('',false); }
+    else if(e.type==='list'){ setItemRows(e.items); if(!itemRows().length) pushItemRow('',false); }
+    else { skStrokes=e.sk; skQueue(); }   // Skizze (v1.14)
     $('ed-meta').textContent=tr('ed.meta',{c:fmtDate(e.created),u:fmtDate(e.updated)}); $('ed-del').classList.remove('hidden'); renderCounter(); tab('add'); markSel();
     // Fixpunkt merken: was das Formular unverändert liefert (textarea normalisiert CRLF, Titel aus erster Zeile) — nur echte Änderungen werden geschrieben
     const base=sanitizeEntry(Object.assign({},e,readDraft())); editBase=base?sig(base):null; histOpen(); }
   // Entwurf aus dem Formular; leerer Titel → erste Zeile des Textes (Konzept: Easy-Notes-Bedienung)
   function readDraft(){ const t=formType, body=t==='text'?$('f-body').value:'', items=t==='list'?readItemRows():[];
     let title=line($('f-title').value,CAPS.title); if(!title&&t==='text'){ const first=body.split('\n').map(l=>line(l,CAPS.title)).find(Boolean); title=first||''; }
-    return {type:t, title, body, items, cat:$('f-cat').value, fav:$('f-fav').checked, pinned:$('f-pinned').checked, md:t==='text'&&$('f-md').checked, hide:$('f-hide').checked}; }
-  const sig=e=>canon({type:e.type,title:e.title,body:e.body,items:e.items,cat:e.cat,fav:e.fav,pinned:e.pinned,md:e.md,hide:e.hide});
-  const isBlank=e=>!e.title&&!e.body.trim()&&!e.items.length;
+    return {type:t, title, body, items, sk:t==='sketch'?skStrokes:SK_NONE, cat:$('f-cat').value, fav:$('f-fav').checked, pinned:$('f-pinned').checked, md:t==='text'&&$('f-md').checked, hide:$('f-hide').checked}; }
+  const sig=e=>canon({type:e.type,title:e.title,body:e.body,items:e.items,sk:e.sk||SK_NONE,cat:e.cat,fav:e.fav,pinned:e.pinned,md:e.md,hide:e.hide});
+  const isBlank=e=>!e.title&&!e.body.trim()&&!e.items.length&&!(e.sk&&e.sk.length);
   function editorChanged(){ if(!editing) return; clearTimeout(autosaveTimer); autosaveTimer=setTimeout(()=>commitEditor(true),AUTOSAVE_MS); renderCounter(); }
   // Schreiben: dirty-Prüfung gegen den gespeicherten Stand, dann Snapshot → VAULT → persist; Rollback bei Fehler (Editor bleibt offen, Toast)
   function commitEditor(stay){
     clearTimeout(autosaveTimer); autosaveTimer=null;
     if(!editing||!VAULT) return Promise.resolve(false);
     const draft=readDraft(); const now=nowIso();
+    // Skizze: der Schreiber legt nur ab, was der Sanitizer beim Lesen annimmt, und bleibt unter SK_BYTES (v1.14) — sonst Hinweis, nichts geschrieben
+    if(draft.type==='sketch'){ const sk=sanitizeSketch(draft.sk); if(!sk||JSON.stringify(sk).length>SK_BYTES){ toast(tr('sk.invalid')); return Promise.resolve(false); } }
     const idx=editId?VAULT.entries.findIndex(e=>e.id===editId&&!e.deleted):-1, before=idx>=0?VAULT.entries[idx]:null;
     const entry=sanitizeEntry(Object.assign({id:editId||cryptoId(), created:before?before.created:now, updated:now, deleted:null},draft));
     if(!entry) return Promise.resolve(false);
@@ -1647,18 +1778,22 @@ const App = (function(){
      Chromiums eigener Stapel bleibt für Editorfelder gesperrt (itemBeforeInput). Wiederhergestellt wird mit Cursor an der geänderten Stelle, NIE mit
      Markierung (X11: eine Markierung läge in PRIMARY), und nur, wenn der Fokus schon im Editor lag. */
   const HIST_MAX=50, HIST_CHARS=2000000, HIST_PAUSE_MS=1000;
-  const HIST_KEYS=['type','title','cat','body','md','fav','pinned','hide'], HIST_OWN=['insertFromPaste','insertFromPasteAsQuotation','insertFromDrop','insertFromYank','insertReplacementText','deleteByCut'];
+  // sk (v1.14): Striche der Skizze — unveränderliche Arrays, Vergleich per ===; Text und Liste tragen immer dasselbe SK_NONE
+  const HIST_KEYS=['type','title','cat','body','md','fav','pinned','hide','sk'], HIST_OWN=['insertFromPaste','insertFromPasteAsQuotation','insertFromDrop','insertFromYank','insertReplacementText','deleteByCut'];
   // hist={stack,i,dirty}: stack[i] = zuletzt festgehaltener Stand, dirty = seither getippt. histAt = Feld und Cursor nach der letzten Eingabe.
   // histOwn: die laufende Eingabe (Einfügen …) wird gleich danach ein eigener Schritt. histDrag: ein deleteByDrag wartet auf sein insertFromDrop (Verschieben).
   let hist=null, histTimer=null, histAt=null, histOwn=false, histDrag=false;
   const isEdField=n=>!!n&&(n===$('f-title')||n===$('f-cat')||n===$('f-body')||isItemField(n));
   const helpClosed=()=>{ const h=$('help-overlay'); return !h||h.classList.contains('hidden'); };
-  function formState(){ return {type:formType, title:$('f-title').value, cat:$('f-cat').value, body:$('f-body').value, items:readItemRows(),
+  function formState(){ return {type:formType, title:$('f-title').value, cat:$('f-cat').value, body:$('f-body').value, items:readItemRows(), sk:formType==='sketch'?skStrokes:SK_NONE,
     md:$('f-md').checked, fav:$('f-fav').checked, pinned:$('f-pinned').checked, hide:$('f-hide').checked}; }
   const stateEq=(a,b)=>HIST_KEYS.every(k=>a[k]===b[k])&&a.items.length===b.items.length&&a.items.every((x,i)=>x.text===b.items[i].text&&x.done===b.items[i].done);
   // Zeichen des Verlaufs; ein Text oder Punkt (gleiche Stelle), der dem vorigen Stand gleicht, ist derselbe String (histPoint) und zählt einmal (c-9/B-5)
-  const histSize=st=>st.reduce((n,s,i)=>{ const p=i?st[i-1]:null; return n+s.title.length+s.cat.length+(p&&s.body===p.body?0:s.body.length)
-    +s.items.reduce((m,x,k)=>m+(p&&p.items[k]&&p.items[k].text===x.text?0:x.text.length),0); },0);
+  // Striche: nur die gegenüber dem vorigen Stand neuen zählen (geteilt wie gleiche Texte), je Koordinate etwa vier Zeichen
+  const histSize=st=>st.reduce((n,s,i)=>{ const p=i?st[i-1]:null; let m=s.title.length+s.cat.length+(p&&s.body===p.body?0:s.body.length)
+    +s.items.reduce((a,x,k)=>a+(p&&p.items[k]&&p.items[k].text===x.text?0:x.text.length),0);
+    if(s.sk.length&&!(p&&s.sk===p.sk)){ const old=new Set(p?p.sk:SK_NONE); for(const x of s.sk) if(!old.has(x)) m+=x.length*4; }
+    return n+m; },0);
   function histClear(){ clearTimeout(histTimer); histTimer=null; hist=null; histAt=null; histOwn=false; histDrag=false; renderHist(); }
   function histOpen(){ histClear(); if(!editing) return; hist={stack:[formState()], i:0, dirty:false}; renderHist(); }
   // Stand festhalten, wenn er vom letzten abweicht: die ↷-Seite fällt weg, über den Deckeln die ältesten Stände
@@ -1735,6 +1870,7 @@ const App = (function(){
         if(ta.value!==x.text){ if(composing===ta){ composing=null; enterAfterComp=null; } ta.value=x.text; } $(r.dataset.c).checked=x.done; r.classList.toggle('done',x.done); });
       rows.slice(s.items.length).forEach(r=>r.remove()); if(composing&&!composing.isConnected){ composing=null; enterAfterComp=null; } syncItemAdd(); fitItems(); }
     else clearItemRows();
+    skApply(s);   // Skizze (v1.14): Striche des Stands, sonst leer
     const mdOn=s.type==='text'&&s.md; $('md-seg').classList.toggle('hidden',!mdOn);
     // Markdown wieder an: in die Ansicht — außer der Fokus liegt im Text (sonst fiele er auf body und Getipptes ginge ins Leere; Runde 2 a2-4)
     // … ebenso, wenn der Fokus in einem Punkt lag, den der Rückweg zum Text entfernt hat (Runde 3 a3-2)
@@ -1796,7 +1932,119 @@ const App = (function(){
     const set=(b,off)=>{ if(off&&b===document.activeElement){ b.disabled=false; b.setAttribute('aria-disabled','true'); } else { b.disabled=off; b.removeAttribute('aria-disabled'); } };
     set(u,!(h&&(h.i>0||h.dirty))); set(r,!(h&&!h.dirty&&h.i<h.stack.length-1));
     u.title=tr('ed.undo'); u.setAttribute('aria-label',tr('ed.undo')); r.title=tr('ed.redo'); r.setAttribute('aria-label',tr('ed.redo')); }
-  function copyCurrent(){ if(!editing) return; copyText(noteText(readDraft()),'what.note'); }
+  /* ---------- Skizze (v1.14): Zeichenfläche ----------
+     Stand = skStrokes (unveränderlich: jede Änderung erzeugt ein neues Array, die Striche werden geteilt — der Verlauf vergleicht per ===). Gezeichnet wird
+     NUR über die Canvas-API (kein innerHTML, kein createElementNS). Eingabe per Pointer Events, Maus, Finger und Stift gleich: ein Finger zeichnet, ein zweiter
+     bricht den laufenden Strich ab (Rest gesperrt, bis alle oben sind), Finger während Stiftbenutzung zählen nicht (keine Größen-Erkennung, siehe skPointerDown).
+     pointerdown nimmt dem Textfeld den Fokus (Strg+Z geht an histKey, am Handy klappt die Tastatur zu) und verhindert per preventDefault, dass ein Ziehen
+     eine Textmarkierung beginnt (am Desktop läge sie in PRIMARY) — nur bei der Haupttaste, der Mittelklick bleibt unberührt. Grenzen der Bedienung = Grenzen
+     des Sanitizers: der Schreiber erzeugt nie, was sanitizeSketch abweist. Sperren/Schließen: skReset leert Fläche, Puffer (width 0), Live-Strich,
+     Radier- und Zeiger-Zustand, gibt die Zeiger frei und bricht einen ausstehenden Zeichen-Rahmen ab. */
+  const SK_ERASE_TOL=12, SK_GRID_KEY='ai-notes-grid';
+  let skStrokes=SK_NONE, skTool=0, skW=1, skDashOn=0, skCol=0, skErasing=false, skLive=null, skErase=null, skBlocked=false, skPen=false, skRaf=0, skGen=0;
+  const skDown=new Set();
+  let skGrid=(()=>{ try{ const v=Number(localStorage.getItem(SK_GRID_KEY)); return [0,1,2].includes(v)?v:0; }catch(_){ return 0; } })();   // 0 aus, 1 Gitter, 2 Gitter + Einrasten
+  const skCv=()=>$('sk-canvas');
+  const skTotal=a=>a.reduce((n,s)=>n+(s.length-4)/2,0);
+  const skReady=()=>!!(VAULT&&DEK&&editing&&formType==='sketch'&&!dlgResolve);
+  function skColors(){ const cs=getComputedStyle(document.documentElement), v=n=>(cs.getPropertyValue(n)||'').trim(); return [v('--neon')||'#00ffcc', v('--yellow')||'#ffcc44', v('--red')||'#ff4466', '#ffffff']; }
+  // Puffer an die angezeigte Größe anpassen (devicePixelRatio) — nur bei offener Skizze in einer entsperrten Sitzung, sonst bleibt er leer (width 0)
+  function skFit(){ const c=skCv(); if(!c||!VAULT||!editing||formType!=='sketch') return false; const r=c.getBoundingClientRect(); if(!r.width||!r.height) return false;
+    const dpr=Math.min(3,window.devicePixelRatio||1), w=Math.round(r.width*dpr), h=Math.round(r.height*dpr); if(c.width!==w||c.height!==h){ c.width=w; c.height=h; } return true; }
+  // Ein Strich: f = Pixel je logischer Einheit. Freihand geglättet (Mittelpunkt-Kurven), ein Punkt = Tupfer; Pfeilspitze durchgezogen, proportional zur Stärke
+  function skStroke(ctx,s,f,cols){ const k=s[0], lw=SK_WIDTH[s[1]]*f, P=i=>s[i]*f;
+    ctx.strokeStyle=ctx.fillStyle=cols[s[3]]; ctx.lineWidth=lw; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.setLineDash(s[2]?[lw*2.5,lw*2.2]:[]); ctx.beginPath();
+    if(k===0){ const n=(s.length-4)/2; if(n===1){ ctx.setLineDash([]); ctx.arc(P(4),P(5),lw/2,0,2*Math.PI); ctx.fill(); return; }
+      ctx.moveTo(P(4),P(5)); for(let i=1;i<n-1;i++){ const x=P(4+2*i), y=P(5+2*i); ctx.quadraticCurveTo(x,y,(x+P(6+2*i))/2,(y+P(7+2*i))/2); } ctx.lineTo(P(s.length-2),P(s.length-1)); ctx.stroke(); return; }
+    if(k===4){ const l=Math.min(s[4],s[6]), r=Math.max(s[4],s[6]), t=Math.min(s[5],s[7]), b=Math.max(s[5],s[7]);
+      ctx.ellipse((l+r)/2*f,(t+b)/2*f,Math.max(.5,(r-l)/2*f),Math.max(.5,(b-t)/2*f),0,0,2*Math.PI); ctx.stroke(); return; }
+    skShape(k,s[4],s[5],s[6],s[7]).forEach((p,i)=>i?ctx.lineTo(p[0]*f,p[1]*f):ctx.moveTo(p[0]*f,p[1]*f)); if(k>=3) ctx.closePath(); ctx.stroke();
+    if(k===2){ const a=Math.atan2(s[7]-s[5],s[6]-s[4]), L=(14+SK_WIDTH[s[1]]*2.2)*f; ctx.setLineDash([]); ctx.beginPath();
+      ctx.moveTo(P(6)-L*Math.cos(a-0.45),P(7)-L*Math.sin(a-0.45)); ctx.lineTo(P(6),P(7)); ctx.lineTo(P(6)-L*Math.cos(a+0.45),P(7)-L*Math.sin(a+0.45)); ctx.stroke(); } }
+  // Laufender Strich als Strich-Array (Formen mit Einrasten, wenn eingeschaltet) — dieselbe Gestalt, die skCommit anhängt
+  function skLiveStroke(L){ if(L.k===0) return [0,L.w,L.d,L.c].concat(L.pts.map(Math.round));
+    let a=[Math.round(L.x0),Math.round(L.y0),Math.round(L.x1),Math.round(L.y1)]; if(skGrid===2) a=[skSnap(a[0],SK_W),skSnap(a[1],SK_H),skSnap(a[2],SK_W),skSnap(a[3],SK_H)];
+    return [L.k,L.w,L.d,L.c].concat(a); }
+  function skDraw(){ skRaf=0; const c=skCv(); if(!c||!skFit()) return; const ctx=c.getContext('2d'), f=c.width/SK_W, cols=skColors(); ctx.clearRect(0,0,c.width,c.height);
+    for(const s of skStrokes) skStroke(ctx,s,f,cols); if(skLive) skStroke(ctx,skLiveStroke(skLive),f,cols); }
+  const skQueue=()=>{ if(!skRaf) skRaf=requestAnimationFrame(skDraw); };
+  function skXY(ev){ const r=skCv().getBoundingClientRect(); return [Math.max(0,Math.min(SK_W,(ev.clientX-r.left)/r.width*SK_W)), Math.max(0,Math.min(SK_H,(ev.clientY-r.top)/r.height*SK_H))]; }
+  const skMenuOpen=()=>[...document.querySelectorAll('.sk-menu')].some(m=>!m.classList.contains('hidden'));
+  function skEraseAt(x,y){ const tol=SK_ERASE_TOL+(skErase&&skErase.touch?10:0), keep=skStrokes.filter(s=>!skHit(s,x,y,tol));
+    if(keep.length!==skStrokes.length){ skStrokes=keep.length?Object.freeze(keep):SK_NONE; skQueue(); } }
+  function skAbort(){ if(skErase){ skStrokes=skErase.before; skErase=null; } skLive=null; skQueue(); }
+  function skPointerDown(ev){
+    if(!skReady()) return;
+    if(ev.pointerType==='pen') skPen=true;
+    if(ev.pointerType==='touch'&&skPen) return;                                              // Finger und Handballen zählen nicht, solange ein Stift benutzt wird
+    if(ev.button!==0) return;                                                               // nur die Haupttaste (Mittelklick bleibt unberührt)
+    try{ skCv().setPointerCapture(ev.pointerId); }catch(_){}                                 // sofort: auch ein Loslassen außerhalb kommt an (run-12 b H-2)
+    skDown.add(ev.pointerId);
+    // Jede weitere Berührung bricht den laufenden Strich ab, egal wie groß. Gemessen auf GrapheneOS 16.10.2026: zweite Finger melden 53–80 px Breite, ein fester
+    // Daumen 56×50, Handballen 53–60 — über die Kontaktfläche nicht zu trennen, darum keine Größen-Erkennung (Entscheidung Nutzer 16.10.2026)
+    if(skDown.size>1){ skAbort(); skBlocked=true; return; }
+    if(skBlocked) return;
+    ev.preventDefault(); const a=document.activeElement; if(a&&a!==document.body&&a.blur) a.blur();
+    if(skMenuOpen()){ closeMenus(); skBlocked=true; return; }                                // Tipp bei offenem Menü schließt nur das Menü
+    activity();
+    const [x,y]=skXY(ev);
+    if(skErasing){ histPoint(); skErase={id:ev.pointerId, before:skStrokes, touch:ev.pointerType==='touch'}; skEraseAt(x,y); return; }
+    if(skStrokes.length>=SK_STROKES||skTotal(skStrokes)>=SK_TOTAL){ toast(tr('sk.full')); skBlocked=true; return; }
+    histPoint(); skLive={id:ev.pointerId, k:skTool, w:skW, d:skDashOn, c:skCol, pts:[x,y], x0:x, y0:y, x1:x, y1:y}; skQueue(); }
+  function skPointerMove(ev){
+    if(skErase&&ev.pointerId===skErase.id){ if(!skReady()) return skAbort(); const [x,y]=skXY(ev); skEraseAt(x,y); return; }
+    if(!skLive||ev.pointerId!==skLive.id) return;                                            // kein passendes pointerdown (histTapGuard kann eins schlucken)
+    if(!skReady()) return skAbort();
+    const evs=(ev.getCoalescedEvents&&ev.getCoalescedEvents())||[]; const used=skTotal(skStrokes);
+    for(const e of (evs.length?evs:[ev])){ const [x,y]=skXY(e);
+      if(skLive.k!==0){ skLive.x1=x; skLive.y1=y; continue; }
+      const n=skLive.pts.length; if(Math.hypot(x-skLive.pts[n-2],y-skLive.pts[n-1])<2) continue;
+      if(n/2>=SK_PTS||used+n/2>=SK_TOTAL){ const full=used+n/2>=SK_TOTAL; skCommit(); skBlocked=true; if(full) toast(tr('sk.full')); return; }   // Strich endet an der Grenze
+      skLive.pts.push(x,y); }
+    skQueue(); }
+  function skPointerUp(ev){ skDown.delete(ev.pointerId); if(!skDown.size) skBlocked=false;
+    if(skErase&&ev.pointerId===skErase.id){ skErase=null; histPoint(); editorChanged(); renderCounter(); return; }
+    if(skLive&&ev.pointerId===skLive.id) skCommit(); }
+  function skPointerCancel(ev){ skDown.delete(ev.pointerId); if(!skDown.size) skBlocked=false; if((skLive&&skLive.id===ev.pointerId)||(skErase&&skErase.id===ev.pointerId)) skAbort(); }
+  // Laufenden Strich anhängen: Freihand vereinfacht, Formen eingerastet; Größe null (nur getippt) zählt bei Formen nicht. Neuer Stand nur, wenn der
+  // Sanitizer ihn annähme — sonst kein Strich und ein Hinweis (Sicherheitsnetz, die Bedienung hält die Grenzen schon vorher ein)
+  function skCommit(){ const L=skLive; skLive=null; if(!L){ skQueue(); return; }
+    let s=skLiveStroke(L);
+    if(L.k===0){ const q=skSimplify(L.pts); if(q.length<2){ skQueue(); return; } s=[0,L.w,L.d,L.c].concat(q); }
+    else if(s[4]===s[6]&&s[5]===s[7]){ skQueue(); return; }
+    const next=Object.freeze(skStrokes.concat([Object.freeze(s)]));
+    if(!sanitizeSketch(next)){ toast(tr('sk.full')); skQueue(); return; }
+    skStrokes=next; skQueue(); histPoint(); editorChanged(); renderCounter(); }
+  // Undo/Redo beendet einen laufenden Strich bzw. Radierzug (run-12 b H-1: sonst hängte skCommit ihn nach einem Wechsel zu Text an, oder ein Abbruch stellte
+  // den Stand von vor dem Undo wieder her)
+  function skApply(st){ skLive=null; skErase=null; if(st.type==='sketch'){ if(skStrokes!==st.sk){ skStrokes=st.sk; } } else skStrokes=SK_NONE; skQueue(); }
+  function skReset(){ skGen++; if(skRaf){ cancelAnimationFrame(skRaf); skRaf=0; } const c=skCv();
+    if(c){ for(const id of skDown){ try{ c.releasePointerCapture(id); }catch(_){} } try{ c.getContext('2d').clearRect(0,0,c.width,c.height); }catch(_){} c.width=0; c.height=0; }
+    skStrokes=SK_NONE; skLive=null; skErase=null; skDown.clear(); skBlocked=false; skPen=false; skErasing=false; skRenderBar(); }
+  // Werkzeugleiste: Zustand an den Knöpfen (on/aria-pressed), Symbol des Werkzeugs, Strich-Muster, Gitter-Zustand
+  function skRenderBar(){ const wrap=$('sk-wrap'); if(!wrap) return;
+    for(let i=0;i<SK_KINDS;i++) $('sk-t'+i).classList.toggle('on',!skErasing&&skTool===i);
+    for(let i=0;i<SK_SIZES;i++) $('sk-w'+i).classList.toggle('on',skW===i);
+    for(let i=0;i<2;i++) $('sk-d'+i).classList.toggle('on',skDashOn===i);
+    for(let i=0;i<SK_COLORS;i++) $('sk-c'+i).classList.toggle('on',skCol===i);
+    const ic=$('sk-tool-ic'), src=$('sk-t'+skTool).querySelector('svg'); if(ic&&src) ic.replaceChildren(src.cloneNode(true));
+    const sw=$('sk-sw'); sw.className='sk-line w'+skW+(skDashOn?' dash':''); sw.style.color=['var(--neon)','var(--yellow)','var(--red)','#fff'][skCol];
+    const er=$('sk-erase'); er.classList.toggle('on',skErasing); er.setAttribute('aria-pressed',skErasing?'true':'false'); wrap.classList.toggle('erase',skErasing);
+    wrap.classList.toggle('grid',skGrid>0); $('sk-snap').classList.toggle('hidden',skGrid!==2);
+    const g=$('sk-grid'), gt=tr('sk.grid'+skGrid); g.title=gt; g.setAttribute('aria-label',gt); g.classList.toggle('on',skGrid>0); }
+  function skMenu(id){ const m=$(id); if(!m||!editing) return; const was=!m.classList.contains('hidden'); closeMenus(); if(!was) m.classList.remove('hidden'); }
+  function skToolPick(a){ a=Number(a); if(Number.isInteger(a)&&a>=0&&a<SK_KINDS) skTool=a; skErasing=false; closeMenus(); skRenderBar(); }
+  function skSizePick(a){ a=Number(a); if(Number.isInteger(a)&&a>=0&&a<SK_SIZES) skW=a; skErasing=false; skRenderBar(); }
+  function skDashPick(a){ skDashOn=Number(a)===1?1:0; skErasing=false; skRenderBar(); }
+  function skColorPick(a){ a=Number(a); if(Number.isInteger(a)&&a>=0&&a<SK_COLORS) skCol=a; skErasing=false; skRenderBar(); }
+  function skEraser(){ skErasing=!skErasing; closeMenus(); skRenderBar(); }
+  function skGridStep(){ skGrid=(skGrid+1)%3; try{ localStorage.setItem(SK_GRID_KEY,String(skGrid)); }catch(_){} closeMenus(); skRenderBar(); }
+  // „Alles löschen“ nur mit Rückfrage (eigener Dialog, nie der System-Bestätigungsdialog); danach prüfen, ob noch dieselbe Skizze offen und entsperrt ist. Ein Schritt, ↶ holt zurück.
+  async function skClear(){ closeMenus(); if(!editing||formType!=='sketch'||!skStrokes.length) return; const gen=skGen;
+    if(!(await ask(tr(skStrokes.length===1?'sk.clearAsk1':'sk.clearAsk',{n:skStrokes.length}),{ok:'sk.clearOk',danger:true}))) return;
+    if(!VAULT||!editing||formType!=='sketch'||skGen!==gen) return;
+    histPoint(); skStrokes=SK_NONE; skQueue(); histPoint(); editorChanged(); renderCounter(); }
+  function copyCurrent(){ if(!editing||formType==='sketch') return; copyText(noteText(readDraft()),'what.note'); }
   // „Als Datei“ (v1.12): die offene Notiz als Markdown — KLARTEXT. Inhalt = derselbe Text wie „Kopieren“ (noteText) plus Zeilenende, nur nach Rückfrage.
   // Name neutral (notiz-JJJJ-MM-TT-HHMMSS.md), nie der Titel: der stünde sonst im Dateiverlauf (KDE „Zuletzt verwendet“, Android), in Mail-Betreffs usw.
   // Android: Datei in den App-Cache, je Export ein frischer Zufallsordner unter EXPORT_DIR (gleiche URI = gleiche Freigabe, Audit run-10 a-2), Teilen
@@ -1814,7 +2062,7 @@ const App = (function(){
   // Leer = kein Titel, kein Text, kein Punkt mit Text (Leerzeichen zählen nicht) — sonst fragte die App bei einer frischen Checkliste „unverschlüsselt?“ (run-10 c-1)
   // Wie „Fertig“/sanitizeEntry: Titel und Punkte über line() (unsichtbare Zeichen wie U+200B zählen nicht, run-10 e2-5), Text über trim() wie isBlank
   const exportEmpty=d=>!line(d.title,CAPS.title)&&!String(d.body||'').trim()&&!(d.items||[]).some(x=>line(x.text,CAPS.item));
-  async function saveCurrent(){
+  async function saveCurrent(){ if(formType==='sketch') return;   // Skizzen: „Als Datei“ vorerst nicht (v1.14, Entscheidung E2), Knopf ausgeblendet
     if(!editing||!DEK||saveCurrent._busy) return; const session=VAULT, alive=()=>!!DEK&&VAULT===session;
     if(exportEmpty(readDraft())) return toast(tr('exp.empty'));
     if(!(await ask(tr(isNative?'exp.askNative':'exp.ask'),{ok:isNative?'exp.okNative':'exp.ok'}))) return;
@@ -1877,10 +2125,10 @@ const App = (function(){
     if(!items.length){ list.appendChild(el('div','empty',tr('trash.empty'))); return; }
     for(const e of items){
       const row=el('div','entry static');
-      row.appendChild(el('div','av'+(e.type==='list'?' list':''),e.type==='list'?'☑':((e.title.trim()[0])||'·').toUpperCase()));
+      row.appendChild(el('div','av'+(e.type==='text'?'':' '+e.type),e.type==='list'?'☑':e.type==='sketch'?'✎':((e.title.trim()[0])||'·').toUpperCase()));
       const main=el('div','main'); main.appendChild(el('div','t',titleOf(e)));
       main.appendChild(el('div','u',tr('trash.deletedOn',{d:fmtDate(e.deleted)}))); row.appendChild(main);
-      const badges=el('div','badges'); if(e.type==='list') badges.appendChild(el('span','pill type',tr('pill.list'))); row.appendChild(badges);
+      const badges=el('div','badges'); if(e.type!=='text') badges.appendChild(el('span','pill type',tr(e.type==='list'?'pill.list':'pill.sketch'))); row.appendChild(badges);
       list.appendChild(row);
       const acts=el('div','row'); acts.style.margin='0 0 12px';
       const r=el('button','btn sm',tr('trash.restore')); r.dataset.action='restoreEntry'; r.dataset.arg=e.id;
@@ -1952,7 +2200,10 @@ const App = (function(){
       return g.getRangeAt(0).collapsed?'':String(g); };
     // Android: String(getSelection()) folgt CSS text-transform (Markdown-Überschrift „KOPF“ statt „Kopf“) — für die Dauer des Lesens abschalten, wie Chromiums
     // eigene Kopie (Release-Audit v1.13 a-2). Am Desktop unverändert: dort hängt die PRIMARY-Meldung am selben Text, ändern nur mit Messung in der Hülle.
-    const plainSel=f=>{ if(DESK) return f(); const h=document.documentElement; h.classList.add('copy-plain'); try{ return f(); } finally{ h.classList.remove('copy-plain'); } };
+    // Klasse nur am gemeinsamen Elternelement der Markierung, nicht an <html>: sonst Stil-Neuberechnung der ganzen Seite bei jeder Kopie (v1.14, Alien Pass
+    // v1.22 run-12 a-5). text-transform erbt — none am Elternelement gilt für alles darunter, auch wenn die Großschrift weiter oben gesetzt ist.
+    const plainSel=f=>{ if(DESK) return f(); const g=window.getSelection(), c=g&&g.rangeCount?g.getRangeAt(0).commonAncestorContainer:null;
+      const h=(c&&(c.nodeType===1?c:c.parentElement))||document.documentElement; h.classList.add('copy-plain'); try{ return f(); } finally{ h.classList.remove('copy-plain'); } };
     // Strg+C auf Markiertem: nicht Chromium kopieren lassen (ohne KDE-Hinweis, ohne Löschen → Klipper-Verlauf), sondern über die Brücke bzw. SecureClip
     document.addEventListener('copy',ev=>{ if(fbCopy) return; const t=plainSel(()=>selText()||outSel()); selFrom=null; if(!t) return; ev.preventDefault(); copyText(t,'what.sel'); });
     // Strg+X / Shift+Entf ebenso (Audit run-7 #1); danach die Markierung im Feld entfernen: execCommand('delete') hält Rückgängig intakt
@@ -1972,15 +2223,48 @@ const App = (function(){
     // das clear() der Sperre kommt in der Hülle (eine Kette) nach dieser Meldung an. Scheitert die Meldung, löscht der Zeitgeber nur eigene Hashes (harmlos).
     // Nach der Antwort ZUSÄTZLICH nachschärfen: lief gerade ein Löschen (clipOwnedAt noch gesetzt, sync nichts zu tun), setzt dessen ok() die Frist
     // danach auf 0 — die neue Markierung läge sonst ohne Frist in PRIMARY (Querfund Alien Pass Release-Audit v1.19 B-1).
-    const report=(t,from)=>{ if(!t) return;
+    const report=(t,from,peek)=>{ if(!t) return;
       clipGateSel=!!(from&&GATE_IDS.includes(from.id));
       if(!clipOwnedAt) armClip();
-      let p=null; try{ p=DESK.clip.selected(t); }catch(_){ p=null; }
+      let p=null; try{ p=DESK.clip.selected(t,peek===true); }catch(_){ p=null; }
       if(p&&p.then) p.then(()=>{ if(!clipOwnedAt) armClip(); },()=>{}); };
     // selFrom nach jeder Meldung loslassen: sonst hielt es nach Schließen/Sperren ein losgelöstes Editorfeld samt Text (Release-Audit v1.10 a-2)
-    const onSel=()=>{ const t=selText(); report(t,selFrom); selFrom=null; };
+    // peek (v1.14, Release-Audit run-12 b3-1/b3-2): die Hülle liest PRIMARY nur bei EIGENEM Ziehen (Maustaste gehalten oder Loslassen nach einem Ziehen) —
+    // dann hat Chromium es gerade selbst geschrieben, das Lesen ist lokal. Las sie bei jeder Meldung, hing sie an einem eingefrorenen fremden Besitzer (eine von
+    // Klipper gespiegelte Kopie blieb nach Frist, Sperre und Beenden stehen) und merkte eine fremde Auswahl, die zufällig Anfang/Ende der Markierung war.
+    let selHeld=false;
+    // Und nur, wenn diese Mausbedienung die Markierung tatsächlich geändert hat (run-12 r4-1): ein Klick mit Zittern, ein dragstart oder ein fehlendes mouseup nach
+    // Ziehen-und-Ablegen lasen PRIMARY sonst, ohne dass Chromium es gerade geschrieben hatte.
+    const onSel=pk=>{ const t=selText(); report(t,selFrom,pk===true||(selHeld&&selMoved())); selFrom=null; };
     reportSel=onSel;
-    document.addEventListener('mouseup',onSel);
+    // Markieren bis an den Rand (v1.14, run-12 b-1 MITTEL, in der Hülle gemessen): rollt Chromium beim Ziehen nach, während die Maus ruht, wächst die Markierung
+    // ohne Eingabeereignis — PRIMARY behält den Stand der letzten Mausbewegung, die Meldung trägt den Endstand, die Hashes passten nie, und PRIMARY wurde weder
+    // nach der Frist noch beim Sperren gelöscht. Darum im mouseup (noch im Eingabeereignis) die Markierung einmal neu setzen: Chromium schreibt PRIMARY dann
+    // mit dem Endstand. Feld: Cursor kurz zusammen, dann wieder aufziehen, Rollstand zurück; Seite: collapse auf den Anker, extend zum Fokus.
+    const reselect=()=>{ try{ const a=document.activeElement;
+        if(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA')&&typeof a.selectionStart==='number'){ const s0=a.selectionStart, e0=a.selectionEnd, d0=a.selectionDirection; if(s0===e0) return;
+          const st=a.scrollTop, sl=a.scrollLeft; a.setSelectionRange(s0,s0); a.setSelectionRange(s0,e0,d0); a.scrollTop=st; a.scrollLeft=sl; return; }
+        const g=window.getSelection(); if(!g||!g.rangeCount||g.isCollapsed||!g.anchorNode||!g.focusNode) return;
+        const an=g.anchorNode, ao=g.anchorOffset, fn=g.focusNode, fo=g.focusOffset; g.collapse(an,ao); g.extend(fn,fo); }catch(_){} };
+    // Nur nach einem ZIEHEN neu setzen (run-12 b2-1, Rückschritt aus b-1): im mouseup läuft reselect vor Chromiums eigener Behandlung des Loslassens — bei
+    // einem Klick ohne Bewegung (in eine Markierung, Doppelklick, Umschalt+Klick) klappte Chromium die Markierung danach nicht mehr zusammen, Weitertippen
+    // überschrieb den markierten Text. Ohne Mausbewegung gibt es kein Nachrollen, dort bleibt alles bei Chromium.
+    // Und nur, wenn sich die Markierung seit dem Drücken geändert hat (run-12 b3 H-1): ein Klick mit Zittern oder ein Ziehen über einen Knopf schrieb eine
+    // stehende, nach der Frist schon gelöschte Markierung sonst neu nach PRIMARY.
+    let selDrag=false, selAtDown=[];
+    const selKey=()=>{ try{ const a=document.activeElement; if(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA')&&typeof a.selectionStart==='number') return [a,a.selectionStart,a.selectionEnd];
+        const g=window.getSelection(); return g&&g.rangeCount?[g.anchorNode,g.anchorOffset,g.focusNode,g.focusOffset]:[]; }catch(_){ return []; } };
+    const selSame=(x,y)=>x.length===y.length&&x.every((v,i)=>v===y[i]), selMoved=()=>!selSame(selAtDown,selKey());
+    // selAtDown nach jedem Loslassen, Ziehen-und-Ablegen und beim Sperren leeren (run-12 r4-2): es hielt sonst nach der Sperre einen losgelösten Textknoten der
+    // Markdown-Ansicht samt Notiztext bis zum nächsten Drücken fest (Klasse selFrom, v1.10 a-2).
+    selReset=()=>{ selAtDown=[]; selHeld=false; selDrag=false; };
+    document.addEventListener('mousedown',ev=>{ if(ev.button===0){ selDrag=false; selHeld=true; selAtDown=selKey(); } },true);
+    document.addEventListener('mousemove',ev=>{ if(ev.buttons&1) selDrag=true; else selHeld=false; },true);
+    document.addEventListener('mouseup',ev=>{ const pk=ev.button===0&&selDrag&&selMoved(); if(pk) reselect(); if(ev.button===0){ selDrag=false; selHeld=false; } onSel(pk); if(ev.button===0) selAtDown=[]; });
+    // Ziehen-und-Ablegen einer Markierung schluckt das mouseup: drückt man auf den TOTP-Schlüssel (.secret-box, user-select:all markiert schon beim Drücken
+    // alles) und bewegt die Maus, startet Chromium ein Ziehen — der Schlüssel lag ungemeldet in PRIMARY, auch nach Frist und Sperre (v1.14, Querfund
+    // Alien Pass v1.22 run-12 c-2, in der Hülle gemessen: verify-desktop „Ziehen aus dem TOTP-Schlüssel“)
+    document.addEventListener('dragstart',()=>{ const m=selHeld&&selMoved(); selHeld=false; selDrag=false; onSel(m); selAtDown=[]; });
     // Strg+A: Wer Strg VOR dem A loslässt, schickt ein keyup von „a“ ohne ctrlKey — die ganze Markierung blieb ungemeldet und ohne Frist in PRIMARY,
     // auch über die Sperre (Release-Audit v1.9 Runde 1, Befund a-1; v1.9 lässt Strg+A zudem im Dialog durch). Deshalb merkt sich das Capture-keydown
     // ein Strg+A, und das nächste keyup (egal welcher Taste) meldet.
@@ -2072,7 +2356,7 @@ const App = (function(){
     try{
       let incoming;
       try{ const kek=await deriveKek(passBytes($('import-pass').value), f.kdf); const dek=await unwrapDek(f.wrap,kek,f.kdf,false); const obj=await decryptBody(f.body,dek,f.kdf); if(!VAULT||!DEK||pendingImport!==f) return; incoming=sanitizeVault(obj).entries; }
-      catch(e){ if(pendingImport!==f) return; $('import-pass').value=''; if(VAULT) $('import-msg').textContent=e&&e.message==='toomany'?tr('err.tooMany'):tr('bk.mergeFail'); return; }
+      catch(e){ if(pendingImport!==f) return; $('import-pass').value=''; if(VAULT) $('import-msg').textContent=contentErr(e)?contentMsg(e):tr('bk.mergeFail'); return; }
       if(!VAULT||!DEK||pendingImport!==f) return;                // während des Argon2-Laufs gesperrt (auch: gesperrt und neu entsperrt, lock() nullt pendingImport) → sauber abbrechen (Alien Pass v1.15)
       if(editing) doneEditor();                                  // offener Editor (Nutzer war während Argon2 unterwegs) würde nach dem Merge den alten Stand zurückschreiben (Audit run-1 #3)
       incoming=shapeIncoming(VAULT.entries, incoming);          // Papierkorb-Inhalt bleibt gerätelokal, fremde Marken verdrängen keine eigenen (Audit run-5)
@@ -2166,6 +2450,10 @@ const App = (function(){
   // ersten await und verwirft ihr Ergebnis, wenn sie sich geändert hat. bioKeep ist NUR Anzeige: die Wahrheit steht im Slot des Plugins.
   let bioArmed=false, bioNeedsRearm=false, bioRearmDek=null, bioAuto=true, bioKeep=false;
   function bioBlob(){ try{ return parseBioBlob(localStorage.getItem(BIO_KEY)); }catch(_){ return null; } }
+  // KDF-Kopf in einen alten Blob (bis 1.13, ohne k) nachtragen, sobald ein Auspacken den Kopf bestätigt hat (v1.14, Release-Audit run-12 a3-1): sonst bekam ein
+  // keep-Slot k nie und ein normaler erst beim Neu-Bewaffnen nach einem Neustart — bis dahin löschte ein veränderter Kopf den Slot wie vor a2-1. Nur Kopfdaten.
+  function bioAddK(kdf, w){ try{ const raw=localStorage.getItem(BIO_KEY), o=JSON.parse(raw); if(!o||o.k!=null||o.w!==w||!parseBioBlob(raw)) return;
+      o.k=dec.decode(aad(kdf,'wrap')); const t=JSON.stringify(o); if(parseBioBlob(t)) localStorage.setItem(BIO_KEY,t); }catch(_){} }
   function bioMarker(){ try{ return localStorage.getItem(BIO_REARM_KEY)==='1'; }catch(_){ return false; } }
   function setBioMarker(on){ try{ if(on) localStorage.setItem(BIO_REARM_KEY,'1'); else localStorage.removeItem(BIO_REARM_KEY); }catch(_){} }
   // Riegel: „Jetzt sperren“ = bewusst gesperrt → beim nächsten Start nur die Passphrase (kein Knopf, kein Prompt); Schlüsselmaterial bleibt.
@@ -2209,7 +2497,7 @@ const App = (function(){
   async function bioArm(dekX, kdf, wrap, rearm, keep){
     const gen=bioGen, secret=rand(32), wantKeep=!!keep&&!rearm;
     try{
-      const key=await bioKey(secret); const blob=await wrapDek(dekX, key, kdf, 'bio'); const ser=serializeBioBlob(blob, wrap.ct, wrap.iv);
+      const key=await bioKey(secret); const blob=await wrapDek(dekX, key, kdf, 'bio'); const ser=serializeBioBlob(blob, wrap.ct, wrap.iv, kdf);
       // rearm:true → das Plugin richtet nur mit gültigem Kanarien-Schlüssel neu ein (sonst 'invalidated' bzw. 'nocanary')
       await BIO.enroll({secret:bufToB64(secret), rearm:!!rearm, keep:wantKeep, title:tr('bio.promptTitle'), subtitle:tr(rearm?'bio.promptRearm':'bio.promptEnroll'), negative:tr('btn.cancel')});
       if(gen!==bioGen||!VAULT){ try{ BIO.disable().catch(()=>{}); }catch(_){} setBioMarker(false); toast(tr('bio.aborted')); return false; }   // zwischendurch gesperrt / Passphrase gewechselt: nichts hinterlassen, auch keinen Marker
@@ -2228,13 +2516,14 @@ const App = (function(){
     let raw; try{ raw=await vaultGet(); }catch(_){ release(); return err('lock-err',tr('err.storeRead')); } if(!raw){ release(); return boot(); }
     let f; try{ f=parseFile(raw); }catch(e){ release(); return err('lock-err',fileErrMsg(e)); }
     const blob=bioBlob(); if(!blob){ release(); bioDrop(true); return; }
-    if(!bioWrapOk(blob,f.wrap)){ bioArmed=false; release(); return bioMsg(tr('bio.wrapMismatch')); }   // fremder/veränderter Passphrase-Slot (ct ODER iv): nie übernehmen, Blob behalten (Backup-Restore heilt)
+    if(!bioWrapOk(blob,f.wrap,f.kdf)){ bioArmed=false; release(); return bioMsg(tr('bio.wrapMismatch')); }   // fremder/veränderter Passphrase-Slot (ct ODER iv): nie übernehmen, Blob behalten (Backup-Restore heilt)
     const gen=bioGen; let secret=null;
     try{
       const r=await BIO.unlock({title:tr('bio.promptTitle'), subtitle:tr('bio.promptUnlock'), negative:tr('bio.usePass')});
       secret=b64Bytes(r&&r.secret); if(!secret||secret.length!==32) throw new Error('invalid');
       const key=await bioKey(secret); secret.fill(0);
       const dek=await unwrapDek(blob, key, f.kdf, false, 'bio');
+      if(!blob.k) bioAddK(f.kdf, blob.w);   // bio-AAD hat den Kopf bestätigt
       const obj=await decryptBody(f.body, dek, f.kdf); const v=sanitizeVault(obj);
       if(gen!==bioGen||DEK||pendingUnlock) return;                        // zwischendurch gesperrt oder anders entsperrt
       if(v.totp){ pendingUnlock={dek, kdf:f.kdf, wrap:f.wrap, vault:v}; }
@@ -2242,6 +2531,7 @@ const App = (function(){
     }catch(e){
       const c=e&&e.message; if(gen!==bioGen) return;
       if(c==='cancel') return; if(c==='lockout') return err('lock-err',tr('bio.lockout'));
+      if(contentErr(e)) return err('lock-err',contentMsg(e));             // Schlüssel stimmte, der Inhalt nicht: Slot bleibt (v1.14)
       if(c==='reboot'){ bioDrop(false); setBioMarker(true); bioNeedsRearm=true; return bioMsg(tr('bio.afterReboot')); }   // Slot hat unlock() selbst gelöscht, Kanarie bleibt
       if(c==='error'){ err('lock-err',tr('bio.naNow')); return; }          // Timeout/Sensor nicht bereit: Slot bleibt nativ stehen → hier auch nichts löschen (N1)
       if(c==='tampered'){ bioDrop(false); setBioAlert(true); return bioMsg(tr('bio.tampered')); }   // GCM-Tag der Slot-Datei falsch: nie „vorübergehend“, kein automatisches Wipe
@@ -2308,6 +2598,7 @@ const App = (function(){
       if(gen!==bioGen||DEK||pendingUnlock){ $('lock-pin').value=''; maskInputs('#screen-lock'); return; }
       $('lock-pin').value=''; maskInputs('#screen-lock');
       if(PIN!==slot) return;
+      if(contentErr(e)) return err('lock-err',contentMsg(e));             // Schlüssel stimmte, der Inhalt nicht: kein PIN-Fehlversuch (v1.14)
       PIN.tries++;   // PIN-Fehlversuche zählen NICHT in die Passphrase-Bremse — sie sagen nichts über die Passphrase aus
       if(PIN.tries>=PIN_TRIES){ pinDrop(); return err('lock-err',tr('pin.dropped')); }
       return pinMsg(tr('pin.wrong',{n:PIN_TRIES-PIN.tries}));
@@ -2397,7 +2688,7 @@ const App = (function(){
   function setSecure(_, elx){ if(!VAULT||!elx) return; const on=!!elx.checked; const p=setSetting('secure', on?1:0); if(p&&p.then) p.then(okk=>{ if(okk&&VAULT) applySecure(on); }); }
   function fontSize(v){ v=FONT_SIZES.includes(v)?v:'m'; try{ if(v==='m'){ document.documentElement.removeAttribute('data-font'); localStorage.removeItem(FONT_KEY); } else { document.documentElement.setAttribute('data-font',v); localStorage.setItem(FONT_KEY,v); } }catch(_){} renderFontSeg(); }
   function renderFontSeg(){ const cur=document.documentElement.getAttribute('data-font')||'m'; FONT_SIZES.forEach(k=>{ const b=$('fs-'+k); if(b) b.classList.toggle('on',k===cur); }); }
-  function theme(t){ try{ if(t==='soft'){ document.documentElement.setAttribute('data-theme','soft'); localStorage.setItem('alien-theme','soft'); } else { document.documentElement.removeAttribute('data-theme'); localStorage.setItem('alien-theme','dark'); } }catch(_){} if(VAULT) renderSettings(); else { const soft=t==='soft'; $('th-dark').classList.toggle('on',!soft); $('th-soft').classList.toggle('on',soft); } }
+  function theme(t){ try{ if(t==='soft'){ document.documentElement.setAttribute('data-theme','soft'); localStorage.setItem('alien-theme','soft'); } else { document.documentElement.removeAttribute('data-theme'); localStorage.setItem('alien-theme','dark'); } }catch(_){} if(VAULT&&editing&&formType==='sketch') skQueue(); if(VAULT) renderSettings(); else { const soft=t==='soft'; $('th-dark').classList.toggle('on',!soft); $('th-soft').classList.toggle('on',soft); } }
   async function changePass(){
     if(changePass._busy||!VAULT) return; err('cp-err');
     if(bioEnable._busy) return err('cp-err',tr('bio.busy'));                 // nicht parallel zum Fingerabdruck-Aktivieren (Audit run-3 #5)
@@ -2432,7 +2723,7 @@ const App = (function(){
   function openHelp(){ show('help-overlay'); $('help-overlay').scrollTop=0; }
   function closeHelp(){ hide('help-overlay'); }
   function toggleLang(){ setLang(LANG==='de'?'en':'de'); }
-  function relabel(){ if(!VAULT){ if(!pendingUnlock){ err('lock-err'); pinMsg(''); bioMsg(''); } return; } renderAddTitle(); relabelItemRows(); renderHist(); renderCounter(); if(editing&&editId){ const e=byId(editId); if(e) $('ed-meta').textContent=tr('ed.meta',{c:fmtDate(e.created),u:fmtDate(e.updated)}); } renderList(); renderTrash(); renderSettings(); renderBackupMsg(); }
+  function relabel(){ skRenderBar(); if(!VAULT){ if(!pendingUnlock){ err('lock-err'); pinMsg(''); bioMsg(''); } return; } renderAddTitle(); relabelItemRows(); renderHist(); renderCounter(); if(editing&&editId){ const e=byId(editId); if(e) $('ed-meta').textContent=tr('ed.meta',{c:fmtDate(e.created),u:fmtDate(e.updated)}); } renderList(); renderTrash(); renderSettings(); renderBackupMsg(); }
   function renderAll(){ renderList(); renderSettings(); renderBackupMsg(); }
   function kdfChanged(){ kdfTouched=true; }
 
@@ -2446,7 +2737,8 @@ const App = (function(){
     exportVault,importVault,importSn,doImportVault,cancelImport,pickFile,
     setAutolock,setBgLock,setClipClear,setSecure,theme,fontSize,changePass,wipeLocal,
     totpStart,totpConfirm,totpCancel,totpDisable,copySecret,copyOtpauth,doBio,bioEnable,bioDisable,bioAlertOk,doPin,pinEnable,pinDisable,deskKey,
-    openHelp,closeHelp,toggleLang,relabel,togglePass,maskInputs,eyeWrap,enhancePassFields};
+    openHelp,closeHelp,toggleLang,relabel,togglePass,maskInputs,eyeWrap,enhancePassFields,
+    skMenu,skTool:skToolPick,skSize:skSizePick,skDash:skDashPick,skColor:skColorPick,skEraser,skGridStep,skClear,skPointerDown,skPointerMove,skPointerUp,skPointerCancel,skRedraw:()=>skQueue()};
 })();
 
 /* ===== KIT: Event-Delegation (die Funktion muss im App-Export stehen) ===== */
@@ -2495,7 +2787,16 @@ window.addEventListener('DOMContentLoaded',()=>{
   const ok=window.crypto&&crypto.subtle&&typeof WebAssembly!=='undefined'&&window.hashwasm&&typeof hashwasm.argon2id==='function';
   if(!ok){ const c=document.querySelector('.container'); c.replaceChildren(); const d=document.createElement('div'); d.className='card warn'; d.textContent=tr('nocrypto'); c.appendChild(d); return; }
   const k=document.getElementById('setup-kdf'); if(k) k.addEventListener('change',App.kdfChanged);
-  const dg=document.getElementById('dlg'); if(dg) dg.addEventListener('click',ev=>{ if(ev.target===dg) App.dialogCancel(); });   // Tippen auf den Hintergrund = Abbrechen
+  // Skizze (v1.14): Zeiger auf der Fläche (Freigabe der Erfassung = Abbruch, falls noch ein Strich läuft); langes Drücken öffnet kein Kontextmenü, die Fläche
+  // lässt sich nicht ziehen; Größenänderung zeichnet neu (skFit zeichnet nur bei offener Skizze in einer entsperrten Sitzung)
+  const skc=document.getElementById('sk-canvas'); if(skc){ skc.addEventListener('pointerdown',App.skPointerDown); skc.addEventListener('pointermove',App.skPointerMove);
+    skc.addEventListener('pointerup',App.skPointerUp); skc.addEventListener('pointercancel',App.skPointerCancel); skc.addEventListener('lostpointercapture',App.skPointerCancel);
+    skc.addEventListener('contextmenu',ev=>ev.preventDefault()); skc.addEventListener('dragstart',ev=>ev.preventDefault());
+    if(window.ResizeObserver) new ResizeObserver(()=>App.skRedraw()).observe(document.getElementById('sk-wrap')); }
+  // Tippen auf den Hintergrund = Abbrechen — aber nur, wenn auch das Drücken dort begann: sonst brach ein im Dialog begonnenes und über dem Hintergrund
+  // beendetes Ziehen (Text markieren, Knopf verfehlt) die Rückfrage ab, der click landet am gemeinsamen Vorfahren #dlg (v1.14, Kit H-4 / Alien Pass v1.22)
+  const dg=document.getElementById('dlg'); if(dg){ let dgDown=null; dg.addEventListener('pointerdown',ev=>{ dgDown=ev.target; });
+    dg.addEventListener('click',ev=>{ const d=dgDown; dgDown=null; if(ev.target===dg&&d===dg) App.dialogCancel(); }); }
   if(window.AlienDesktop){   // Zweispaltig im breiten Fenster (CSS html.desk): der Editor wird rechte Spalte der Liste statt eigener Ansicht
     document.documentElement.classList.add('desk'); const a=document.getElementById('tab-add'), de=document.getElementById('detail-empty');
     if(a&&de) de.parentNode.insertBefore(a,de); }

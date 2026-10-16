@@ -27,6 +27,26 @@ if(!js.includes("window.EFF_WORDS="+JSON.stringify(words)+";")){console.error("F
 # Eigener Code: kein Netz, kein eval, kein innerHTML mit Nutzerdaten (nur die i18n-Übersetzung statischer Texte darf innerHTML nutzen)
 if grep -nE 'fetch\(|XMLHttpRequest|WebSocket|importScripts|new Function\(|\beval\(' app.js; then echo >&2 "FEHLER: app.js enthält Netz-/Eval-Aufrufe — Build abgebrochen!"; exit 1; fi
 if grep -nE '\.(innerHTML|outerHTML)\s*=|insertAdjacentHTML|document\.write|DOMParser|createContextualFragment|setTimeout\(\s*["'\'']|setInterval\(\s*["'\'']' app.js; then echo >&2 "FEHLER: HTML-Senke in app.js (nur applyI18n darf über el[prop] statische Übersetzungen setzen) — Build abgebrochen!"; exit 1; fi
+# Kein Systemdialog (alert/confirm/prompt, auch über window./globalThis./self.): er erbt FLAG_SECURE nicht (Gerätetest 25.09.2026, Screenshot zeigte den
+# Notiztitel) — Rückfragen nur über den eigenen Dialog ask(). Schlichter grep über ALLES, auch Kommentare (seit v1.14 nennen keine Kommentare die Aufrufe): der
+# awk-Versuch, Kommentare auszunehmen, wurde von „//“ in Zeichenketten und „/*“ in Zeichenketten blind (run-12 c Hinweis 1).
+if grep -nE '(^|[^A-Za-z0-9_$])(alert|confirm|prompt)[[:space:]]*\(' app.js; then echo >&2 "FEHLER: Systemdialog (alert/confirm/prompt) in app.js — eigener Dialog ask() — Build abgebrochen!"; exit 1; fi
+# Platzhalter in den ausgelieferten Texten (v1.14, Release-Audit run-12 c2-2): Textentwürfe markieren unbelegte Teile mit [eckigen Klammern] („nur, wenn der
+# Gerätetest sie belegt“) — die Sperre galt bisher nur dem CHANGELOG, ein stehengebliebener Teil im Handbuch ginge ungeprüft in APK und Bundle. Dieselbe Regel
+# wie make-release.sh/roundtrip-test.mjs über den sichtbaren Text von index.html (ohne Kommentare/Skripte/Tags, dazu title/aria-label/placeholder/content/alt)
+# und alle Zeichenketten der Tabellen I18N und T in app.js. Findet sie eine Tabelle nicht, bricht der Build ab (nie still ungeprüft).
+node -e '
+const fs=require("fs"); const RX=/\[(?![ xX]\])[^\]]{1,300}\](?!\()|\b(TODO|TBD|FIXME|XXX)\b/;
+const raw=fs.readFileSync("index.html","utf8").replace(/<!--[\s\S]*?-->/g," ").replace(/<(script|style)[\s\S]*?<\/\1>/g," ");
+const attrs=[...raw.matchAll(/\b(?:title|aria-label|placeholder|content|alt)="([^"]*)"/g)].map(m=>m[1]).join("\n");
+const html=raw.replace(/<[^>]+>/g," ").replace(/&nbsp;/g," ").replace(/&amp;/g,"&")+"\n"+attrs;
+const js=fs.readFileSync("app.js","utf8").split("\n");
+const block=(start)=>{ const i=js.findIndex(l=>l.startsWith(start)); if(i<0){ console.error("FEHLER: Tabelle "+start+" in app.js nicht gefunden (Platzhalter-Prüfung)"); process.exit(1); }
+  const out=[]; for(let k=i;k<js.length;k++){ out.push(js[k]); if(k>i&&/^};/.test(js[k])) return out.join("\n"); } console.error("FEHLER: Ende von "+start+" nicht gefunden"); process.exit(1); };
+const strs=(src)=>[...src.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map(m=>m[1]).filter(s=>!/^[a-z]+(\.[A-Za-z0-9]+)+$/.test(s)).join("\n").replace(/<[^>]+>/g," ");
+for(const [name,text] of [["index.html",html],["app.js I18N",strs(block("const I18N = {"))],["app.js T",strs(block("const T = {"))]]){
+  const m=RX.exec(text); if(m){ console.error("FEHLER: Platzhalter in "+name+": "+JSON.stringify(m[0].slice(0,120))+" — erst auflösen (Gerätetest/Faktencheck)"); process.exit(1); } }
+' || { echo >&2 "FEHLER: Platzhalter-Prüfung der App-Texte — Build abgebrochen!"; exit 1; }
 echo "Vendor-Integrität OK."
 
 rm -rf www && mkdir -p www/vendor

@@ -594,32 +594,76 @@ for (const [file, src, label] of [[MAIN, MAIN_SRC, 'MainActivity (FLAG_SECURE + 
   if (cur !== src) { writeFileSync(file, src); changed = true; console.log(label + ': geschrieben.'); }
 }
 if (!changed) console.log('MainActivity + SecureClipPlugin + BiometricPlugin + SecureScreenPlugin + VaultStorePlugin + NoLearnWebView + Layout bereits aktuell.');
-const jm = readFileSync(MAIN, 'utf8'), jb = readFileSync(BIO, 'utf8');
-const js = readFileSync(SEC, 'utf8'), jv = readFileSync(VS, 'utf8');
+// v1.14 (Sachwert-Tresor v3.11, Release-Audit run-11 b-1/e-1): erwarteter onCreate-Rumpf der MainActivity, WÖRTLICH und unabhängig von MAIN_SRC oben —
+// eine Änderung an MAIN_SRC (auskommentiertes addFlags, if/return davor, zusätzlicher Aufruf) fällt so gegen diese zweite Kopie auf
+const ONCREATE_SRC = "    @Override\n    public void onCreate(Bundle savedInstanceState) {\n        dropAutofillRestore(getIntent());\n        registerPlugin(SecureClipPlugin.class);\n        registerPlugin(BiometricPlugin.class);\n        registerPlugin(SecureScreenPlugin.class);\n        registerPlugin(VaultStorePlugin.class);\n        super.onCreate(savedInstanceState);\n        // Kein Screenshot/Screen-Recording, keine Vorschau im App-Switcher (Recents) — ab Werk und auf dem Sperrbildschirm IMMER;\n        // eine entsperrte Sitzung darf die Flagge über SecureScreenPlugin.set(false) aufheben (Einstellung, Entscheidung 24.09.2026)\n        getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);\n        // Kein Android-Autofill (API 26+): Die WebView meldet sonst jedes Passwortfeld an den systemweiten Autofill-Dienst — eine\n        // fremde App, die den Inhalt zum Speichern anbieten könnte. autocomplete=\"off\" im HTML hält das nicht auf. Die App hat\n        // bewusst keinen eigenen Autofill-Dienst, darum braucht sie das Framework auch nicht.\n        if (Build.VERSION.SDK_INT >= 26) {\n            View webView = getBridge().getWebView();\n            webView.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS);\n        }\n    }\n";
+// v1.14 (run-12 c-1): Laufzeit-Schalter und Absturz-Hebel ebenfalls WÖRTLICH als zweite, unabhängige Kopie — vertauschte Zweige, eine vergessene Negation
+// oder ein Blockkommentar im SecureScreenPlugin schalteten FLAG_SECURE nach dem ersten Entsperren dauerhaft ab; eine umgedrehte Null-Prüfung in
+// dropAutofillRestore öffnete den Absturz-Hebel aus v1.5. Dazu: in beiden Dateien kein Blockkommentar außer dem bekannten Klassenkommentar, keine \u-Escapes.
+const SET_SRC = "    @PluginMethod\n    public void set(PluginCall call) {\n        final boolean on = !Boolean.FALSE.equals(call.getBoolean(\"on\", true));   // im Zweifel AN\n        final FragmentActivity act = getActivity();\n        if (act == null) { call.reject(\"error\"); return; }\n        act.runOnUiThread(() -> {\n            try {\n                if (on) act.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);\n                else act.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);\n                call.resolve();\n            } catch (Exception e) { call.reject(\"error\"); }\n        });\n    }\n";
+const DROP_SRC = "    private static void dropAutofillRestore(Intent i) {\n        if (i == null) return;\n        i.removeExtra(\"android.view.autofill.extra.RESTORE_SESSION_TOKEN\");\n        i.removeExtra(\"android.view.autofill.extra.RESTORE_CROSS_ACTIVITY\");\n    }\n";
+const SEC_DOC = "/** FLAG_SECURE (kein Screenshot, keine Vorschau im App-Umschalter) zur Laufzeit: set({on:true|false}).\n *  Keine Berechtigung, liest nichts. Der Sperrbildschirm ist immer geschützt — das JS ruft set(true) vor jeder Sperre. */";
+// v1.14 (Release-Audit run-12 c2-1): Fingerabdruck-Schlüssel, Abfrage-Dialog und SecureClip ebenfalls WÖRTLICH als zweite Kopie — bis dahin genügte das
+// bloße Wort, ein auskommentiertes setUserAuthenticationRequired(true) (Schlüssel ohne Nutzer-Bestätigung: ein neu registrierter fremder Finger öffnete die
+// Notizen) oder eine gelöschte EXTRA_IS_SENSITIVE-Zeile (das Wort steht auch im Klassenkommentar) blieb grün. Die übrigen Wort-Prüfungen laufen auf dem Text
+// OHNE Kommentare (jbc/jcc); Unicode-Escapes (auch \\uu…, JLS 3.3) sind in keiner Plugin-Datei erlaubt.
+const CREATEKEY_SRC = "    private void createKey(String alias) throws Exception {\n        KeyGenerator kg = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, \"AndroidKeyStore\");\n        boolean strongBox = Build.VERSION.SDK_INT >= 28 && getContext().getPackageManager().hasSystemFeature(\"android.hardware.strongbox_keystore\");\n        for (int attempt = 0; attempt < 2; attempt++) {\n            KeyGenParameterSpec.Builder b = new KeyGenParameterSpec.Builder(alias, KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)\n                .setBlockModes(KeyProperties.BLOCK_MODE_GCM).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE).setKeySize(256)\n                .setRandomizedEncryptionRequired(true).setUserAuthenticationRequired(true);\n            if (Build.VERSION.SDK_INT >= 24) b.setInvalidatedByBiometricEnrollment(true);\n            if (Build.VERSION.SDK_INT >= 28 && strongBox && attempt == 0) b.setIsStrongBoxBacked(true);\n            if (Build.VERSION.SDK_INT >= 30) b.setUserAuthenticationParameters(0, KeyProperties.AUTH_BIOMETRIC_STRONG);\n            try { kg.init(b.build()); kg.generateKey(); return; }\n            catch (Exception e) { if (attempt == 0 && strongBox) continue; throw e; }   // StrongBox nicht nutzbar → TEE-Schlüssel\n        }\n    }\n";
+const PROMPT_SRC = "                BiometricPrompt.PromptInfo.Builder pb = new BiometricPrompt.PromptInfo.Builder()\n                    .setTitle(call.getString(\"title\", \"Alien Notes\")).setNegativeButtonText(call.getString(\"negative\", \"Cancel\"))\n                    .setAllowedAuthenticators(AUTH).setConfirmationRequired(true);   // passive Biometrie (Gesicht) braucht einen bewussten Tipp; Fingerabdruck unberührt (Audit run-3 #2)\n";
+const CLIPWRITE_SRC = "    @PluginMethod\n    public void write(PluginCall call) {\n        String text = call.getString(\"text\", \"\");\n        try {\n            ClipData clip = ClipData.newPlainText(\"\", text);\n            if (Build.VERSION.SDK_INT >= 33) {\n                PersistableBundle extras = new PersistableBundle();\n                extras.putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true);\n                clip.getDescription().setExtras(extras);\n            }\n            cm().setPrimaryClip(clip);\n            call.resolve();\n        } catch (Exception e) { call.reject(\"clip\"); }\n    }\n";
+const jm = readFileSync(MAIN, 'utf8'), jb = readFileSync(BIO, 'utf8'), jc = readFileSync(CLIP, 'utf8');
+const CLEAR_SRC = "    @PluginMethod\n    public void clear(PluginCall call) {\n        try {\n            if (Build.VERSION.SDK_INT >= 28) cm().clearPrimaryClip();\n            else cm().setPrimaryClip(ClipData.newPlainText(\"\", \" \"));\n            call.resolve();\n        } catch (Exception e) { call.reject(\"clip\"); }\n    }\n";
+// Kommentare in EINEM Durchlauf von links nach rechts wie javac (run-12 c3-3): erst Blockkommentare, dann Zeilenkommentare zu entfernen las `//*…*/ code`
+// falsch (javac: alles Kommentar; vorher blieb `/ code` stehen) und `"…//…"` als Kommentarbeginn. Zeichenketten und Zeichen bleiben stehen.
+const noComments = (t) => t.replace(/"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (m) => (m[0] === '/' ? '' : m));
+const jbc = noComments(jb), jcc = noComments(jc);
+const js = readFileSync(SEC, 'utf8'), jv = readFileSync(VS, 'utf8'), jwr = readFileSync(WV, 'utf8'), jvc = noComments(jv);
 if (!jm.includes('getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE)') || !jm.includes('setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS)') || !jm.includes('if ("autofill".equals(name)) return null;') || !jm.includes('return super.getSystemService(name);') || /\/\/[^\n]*if \("autofill"\.equals/.test(jm) || /\/\/[^\n]*dropAutofillRestore\(|\/\*/.test(jm)
   || !jm.includes('dropAutofillRestore(getIntent());') || !jm.includes('dropAutofillRestore(intent);') || !jm.includes('i.removeExtra("android.view.autofill.extra.RESTORE_SESSION_TOKEN");') || !jm.includes('i.removeExtra("android.view.autofill.extra.RESTORE_CROSS_ACTIVITY");') || !jm.includes('registerPlugin(SecureClipPlugin.class)') || !jm.includes('registerPlugin(BiometricPlugin.class)') || !jm.includes('registerPlugin(SecureScreenPlugin.class)') || !jm.includes('registerPlugin(VaultStorePlugin.class)')
+  // v1.14 (Tresor run-11 b-1/e-1): FLAG_SECURE und die vier Plugin-Registrierungen wörtlich und an ihrer Stelle — bis 1.13 genügte das bloße Wort, und
+  // ein auskommentiertes `// registerPlugin(…)` oder `// getWindow().addFlags(…)` blieb grün; kein clearFlags/setFlags in der MainActivity (der Laufzeit-Schalter
+  // liegt allein im SecureScreenPlugin), nichts davon hinter //, genau vier registerPlugin, der ganze onCreate-Rumpf wie ONCREATE_SRC und genau einmal
+  || !jm.includes('\n        getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);\n') || /clearFlags|setFlags|setAttributes/.test(jm)
+  || /\/\/[^\n]*(FLAG_SECURE|registerPlugin\(|addFlags|setImportantForAutofill)/.test(jm) || (jm.match(/registerPlugin\(/g) || []).length !== 4
+  || !jm.includes(ONCREATE_SRC) || (jm.match(/public void onCreate\(/g) || []).length !== 1
+  // v1.14 (run-12 c-1): set() und dropAutofillRestore wörtlich und je genau einmal; kein /* (außer dem Klassenkommentar des Plugins), keine \\u-Escapes
+  || !js.includes(SET_SRC) || (js.match(/public void set\(/g) || []).length !== 1 || !jm.includes(DROP_SRC) || (jm.match(/void dropAutofillRestore\(/g) || []).length !== 1
+  || /\/\*|\*\//.test(js.replace(SEC_DOC, '')) || /\/\*|\*\//.test(jm) || /\\u+[0-9a-fA-F]{4}/.test(js) || /\\u+[0-9a-fA-F]{4}/.test(jm)
   // VaultStore: atomar (fsync + rename), Groesse geprueft, privater App-Ordner, genau drei Methoden
-  || !jv.includes('getFD().sync()') || !jv.includes('renameTo(f)') || !jv.includes('f.length() != b.length') || !jv.includes('getFilesDir()') || (jv.match(/@PluginMethod/g) || []).length !== 3
+  || !jvc.includes('getFD().sync()') || !jvc.includes('renameTo(f)') || !jvc.includes('f.length() != b.length') || !jvc.includes('getFilesDir()') || (jvc.match(/@PluginMethod/g) || []).length !== 3
   // SecureScreen: beide Richtungen vorhanden, Default AN, kein anderer Weg als set()
   || !js.includes('addFlags(WindowManager.LayoutParams.FLAG_SECURE)') || !js.includes('clearFlags(WindowManager.LayoutParams.FLAG_SECURE)') || !js.includes('call.getBoolean("on", true)') || (js.match(/@PluginMethod/g) || []).length !== 1
-  || !readFileSync(CLIP, 'utf8').includes('EXTRA_IS_SENSITIVE')
-  || !jb.includes('setUserAuthenticationRequired(true)') || !jb.includes('setInvalidatedByBiometricEnrollment(true)') || !jb.includes('BIOMETRIC_STRONG') || !jb.includes('sameBoot(')
-  || !jb.includes('setConfirmationRequired(true)') || !jb.includes('FEATURE_FINGERPRINT')
+  || !jcc.includes('extras.putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true);') || !jcc.includes('clip.getDescription().setExtras(extras);')
+  || !jc.includes(CLIPWRITE_SRC) || (jc.match(/public void write\(/g) || []).length !== 1
+  // Zählungen auf dem Rohtext UND ohne Kommentare je genau 1 (run-12 r4-3): sonst bestand eine wörtliche Kopie in /* … */ über einer geänderten Methode
+  || !jb.includes(CREATEKEY_SRC) || [jb, jbc].some((t) => (t.match(/KeyGenParameterSpec\.Builder\s*\(/g) || []).length !== 1 || (t.match(/void\s+createKey\s*\(\s*String\s/g) || []).length !== 1)
+  // v1.14 (run-12 c3-1/c3-2): auch clear() wörtlich (Auto-Leeren der Zwischenablage), und der Abfrage-Dialog setzt Bestätigung und Authenticator genau
+  // einmal — ein zweiter Setter NACH der wörtlichen Kopie (pb.setConfirmationRequired(false)) hob sie sonst auf
+  || !jc.includes(CLEAR_SRC) || [jc, jcc].some((t) => (t.match(/public\s+void\s+clear\s*\(/g) || []).length !== 1)
+  || [jb, jbc].some((t) => (t.match(/setConfirmationRequired\s*\(/g) || []).length !== 1 || (t.match(/setAllowedAuthenticators\s*\(/g) || []).length !== 1)
+  || !jb.includes(PROMPT_SRC) || (jb.match(/PromptInfo\.Builder\(\)/g) || []).length !== 1
+  || !jbc.includes('b.setUserAuthenticationParameters(0, KeyProperties.AUTH_BIOMETRIC_STRONG);')
+  || [jm, js, jb, jc, jv, jwr].some((t) => /\\u+[0-9a-fA-F]{4}/.test(t) || t.includes('"""'))   // keine Unicode-Escapes, keine Textblöcke (noComments kennt sie nicht)
+  // v1.14 (run-12 c2 Hinweis 2): FLAG_SECURE auch nicht über die LayoutParams (lp.flags &= ~FLAG_SECURE; updateViewLayout) — kein clearFlags nötig
+  || [jm, js, jb, jc, jv, jwr].some((t) => /updateViewLayout|\.flags\b|getAttributes\s*\(|onWindowAttributesChanged|LayoutParams\s*\(/.test(noComments(t)))
+  || [jm, jb, jc, jv, jwr].some((t) => /clearFlags|setFlags|setAttributes/.test(noComments(t)))   // der Laufzeit-Schalter liegt allein im SecureScreenPlugin
+  || (noComments(js).match(/clearFlags/g) || []).length !== 1 || (noComments(js).match(/addFlags/g) || []).length !== 1 || /setFlags|setAttributes/.test(noComments(js))
+  || !jbc.includes('setUserAuthenticationRequired(true)') || !jbc.includes('setInvalidatedByBiometricEnrollment(true)') || !jbc.includes('BIOMETRIC_STRONG') || !jbc.includes('sameBoot(')
+  || !jbc.includes('setConfirmationRequired(true)') || !jbc.includes('FEATURE_FINGERPRINT')
   // AAD wirklich ANGEWENDET (der private Helfer allein genügt nicht — Audit run-8 #5): beide Aufrufe in enroll() und unlock() zählen
-  || (jb.match(/aad\(cipher, ad\);/g) || []).length !== 2 || !jb.includes('c.updateAAD(boot.getBytes(') || !jb.includes('Settings.Global.BOOT_COUNT')
-  || !jb.includes('canaryState()') || !/if \("invalidated"\.equals\(canaryState\(\)\)\) \{ wipeAll\(\); o\.put/.test(jb) || (jb.match(/"invalidated"\.equals\(canaryState\(\)\)/g) || []).length !== 2
-  || !jb.includes('call.getBoolean("rearm", false)') || !jb.includes('"nocanary"')
+  || (jbc.match(/aad\(cipher, ad\);/g) || []).length !== 2 || !jbc.includes('c.updateAAD(boot.getBytes(') || !jbc.includes('Settings.Global.BOOT_COUNT')
+  || !jbc.includes('canaryState()') || !/if \("invalidated"\.equals\(canaryState\(\)\)\) \{ wipeAll\(\); o\.put/.test(jbc) || (jbc.match(/"invalidated"\.equals\(canaryState\(\)\)/g) || []).length !== 2
+  || !jbc.includes('call.getBoolean("rearm", false)') || !jbc.includes('"nocanary"')
   // v1.8 „Fingerabdruck auch nach Neustart“: die Wahl kommt vom JS, steht im Slot und hängt in der AAD; der Neustart-Zweig gilt nur
   // ohne keep — und zwar in status() UND unlock(), darum beide Vorkommen zählen; Default false und der Rearm-Riegel sind gepinnt (run-8 #5)
-  || !jb.includes('call.getBoolean("keep", false)) && !rearm') || (jb.match(/boot \+ "\|keep"/g) || []).length !== 2 || !jb.includes('st.put("keep", true)')
-  || (jb.match(/optBoolean\("keep", false\)/g) || []).length !== 2
-  || (jb.match(/!keep && !sameBoot\(/g) || []).length !== 2 || !jb.includes('AEADBadTagException e) { call.reject("tampered")')
+  || !jbc.includes('call.getBoolean("keep", false)) && !rearm') || (jbc.match(/boot \+ "\|keep"/g) || []).length !== 2 || !jbc.includes('st.put("keep", true)')
+  || (jbc.match(/optBoolean\("keep", false\)/g) || []).length !== 2
+  || (jbc.match(/!keep && !sameBoot\(/g) || []).length !== 2 || !jbc.includes('AEADBadTagException e) { call.reject("tampered")')
   // sameBoot: nur wenn BEIDE Kennungen die Zeit-Form haben, gilt die Toleranz — fiele die Zeile auf die alte id:-Form zurück, liefe b:5 gegen b:6
   // per parseLong in die ±120-s-Toleranz und die Neustart-Regel wäre still aus (Tresor-Diff-Review v3.2 N1)
-  || !jb.includes('if (!stored.startsWith("t:") || !now.startsWith("t:")) return stored.equals(now);')
+  || !jbc.includes('if (!stored.startsWith("t:") || !now.startsWith("t:")) return stored.equals(now);')
   // Kanarie VOR dem keep-/Boot-Zweig, in status() UND unlock(): bei einem keep-Slot hängt die Warnung „neuer Finger“ allein daran (Tresor-Diff-Review v3.2 H1)
-  || !(() => { const before = (from) => { const c = jb.indexOf('"invalidated".equals(canaryState())', from), k = jb.indexOf('!keep && !sameBoot(', from); return c > 0 && k > 0 && c < k; };
-       return before(jb.indexOf('public void status(')) && before(jb.indexOf('public void unlock(')); })()
+  || !(() => { const before = (from) => { const c = jbc.indexOf('"invalidated".equals(canaryState())', from), k = jbc.indexOf('!keep && !sameBoot(', from); return c > 0 && k > 0 && c < k; };
+       return before(jbc.indexOf('public void status(')) && before(jbc.indexOf('public void unlock(')); })()
   || !/USE_FINGERPRINT"\s+android:maxSdkVersion="27"\s+tools:node="replace"/.test(readFileSync(MANIFEST, 'utf8'))) {   // cap sync bricht die Zeile um
   console.error('FEHLER: Java-Härtung unvollständig — Build abgebrochen!'); process.exit(1);
 }
@@ -656,7 +700,7 @@ if (!jm.includes('getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE)')
     if (!cfg || (cfg.android && 'captureInput' in cfg.android) || 'captureInput' in cfg || existsSync('capacitor.config.ts') || existsSync('capacitor.config.js')) bad.push('captureInput/Konfiguration'); }
   // Java ohne Kommentare und ohne Unicode-Escapes (javac löst \uXXXX VOR dem Parsen auf — ein \u000a beendete sonst einen Kommentar), genau eine Klasse
   { const code = jw.replace(/\/\/[^\n]*/g, '');
-    if (/\\u[0-9a-fA-F]{4}/.test(jw) || (code.match(/\bclass\b/g) || []).length !== 1 || !code.includes('public class NoLearnWebView extends CapacitorWebView {')
+    if (/\\u+[0-9a-fA-F]{4}/.test(jw) || (code.match(/\bclass\b/g) || []).length !== 1 || !code.includes('public class NoLearnWebView extends CapacitorWebView {')
         || !code.includes('outAttrs.imeOptions |= EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING;') || /\bEditorInfo\s+[A-Za-z_]\w*\s*[=;]|\bint\s+EditorInfo\b/.test(code)) bad.push('Java-Form'); }
   if (bad.length) { console.error('FEHLER: Tastatur-Bitte unvollständig (' + bad.join(', ') + ') — Build abgebrochen!'); process.exit(1); }
   console.log('Tastatur-Bitte (NoLearnWebView + Layout) geprüft.');

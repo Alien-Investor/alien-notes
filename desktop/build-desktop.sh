@@ -4,8 +4,8 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-EL_VER="44.7.0"
-EL_SHA="3ae7d5bdad61c664486c6ab61361dd084d064c8c08af8d13a687096e18ce555a"   # electron-v44.7.0-linux-x64.zip (SHASUMS256.txt des Release, gegengeprüft mit checksums.json aus npm electron@44.7.0; gleiche Engine wie Alien Pass v1.20)
+EL_VER="44.7.2"
+EL_SHA="777b26a64aee3d185acb9f93c04782bb51eae7c2c61c793963ef24374e5a1539"   # electron-v44.7.2-linux-x64.zip (SHASUMS256.txt des Release, gegengeprüft mit checksums.json aus npm electron@44.7.2; v1.14, gleiche Engine wie Alien Pass v1.22 und Sachwert-Tresor v3.11, dort am 15.10.2026 geprüft)
 APP_ID="org.alieninvestor.notes"
 CACHE="$HOME/.cache/alien-notes-desktop"
 ZIP="$CACHE/electron-v$EL_VER-linux-x64.zip"
@@ -21,6 +21,13 @@ echo "Electron $EL_VER: Hash OK."
 [ -d node_modules/@electron/asar ] && [ -d node_modules/@electron/fuses ] || { echo "FEHLER: erst 'npm ci' in desktop/"; exit 1; }
 
 # Eigener Befehl, nicht links von && — sonst greift set -e nicht und ein Vendor-Fehler würde still übergangen (Audit run-6 #6)
+# Prüfsummen der Quellen, aus denen das Bundle entsteht, VOR dem Bau (v1.14, run-12 c-2): make-release.sh vergleicht sie mit dem Tag — ein veraltetes oder
+# aus einem anderen Stand gebautes Bundle geht so nicht neben der richtigen APK raus. Pfade relativ zum Projekt; ändert sich etwas während des Baus: Abbruch.
+DESK_SRC="index.html app.js app-theme.css icon.svg VERSION build-www.sh assets/icon-only.png desktop/main.js desktop/preload.js desktop/atomic.js desktop/pack.mjs
+  desktop/build-desktop.sh desktop/package.json desktop/package-lock.json desktop/flatpak/org.alieninvestor.notes.yml desktop/flatpak/org.alieninvestor.notes.desktop
+  desktop/flatpak/alien-notes.sh vendor/eff/eff-wordlist.js vendor/hash-wasm/argon2.umd.min.js vendor/hash-wasm/LICENSE vendor/fonts/fonts.css vendor/fonts/Orbitron-700.woff2
+  vendor/fonts/Orbitron-900.woff2 vendor/fonts/ShareTechMono-400.woff2"
+DESK_SUMS0="$(cd .. && sha256sum $DESK_SRC)"
 (cd .. && ./build-www.sh) || { echo "FEHLER: build-www.sh fehlgeschlagen — Build abgebrochen!" >&2; exit 1; }
 echo "www/ gebaut."
 VNAME=$(grep '^VERSION_NAME=' ../VERSION | cut -d= -f2 | tr -d '[:space:]')
@@ -35,6 +42,14 @@ rm -f build/electron/chrome-sandbox build/electron/resources/default_app.asar   
 cp main.js preload.js atomic.js build/app/
 cp ../assets/icon-only.png build/app/icon.png   # Fenster-Icon (_NET_WM_ICON) für Taskleiste/Alt+Tab — Electron rendert kein SVG
 cp -r ../www build/app/www
+# Inhalt = Quellen (v1.14, Release-Audit run-12 c2 Hinweis 5): DESK_SUMS0 belegt die Quellen vor und nach dem Bau, nicht das kopierte www/ — ein paralleler
+# build-www.sh (zweite Session, Vorfall 26.09.2026) könnte sonst ein halbes www/ ins Bundle bringen. Genau diese elf Dateien, jede gleich ihrer Quelle
+# (app.js mit gesetzter APP_VERSION, wie build-www.sh sie setzt).
+WWW_FILES="app-theme.css icon.svg index.html vendor/eff/eff-wordlist.js vendor/fonts/fonts.css vendor/fonts/Orbitron-700.woff2 vendor/fonts/Orbitron-900.woff2
+  vendor/fonts/ShareTechMono-400.woff2 vendor/hash-wasm/argon2.umd.min.js vendor/hash-wasm/LICENSE"
+[ "$(cd build/app/www && find . -type f | sed 's#^\./##' | sort)" = "$(printf '%s\n' app.js $WWW_FILES | sort)" ] || { echo "FEHLER: www/ im Bundle hat andere Dateien als erwartet — neu bauen!" >&2; exit 1; }
+for f in $WWW_FILES; do cmp -s "../$f" "build/app/www/$f" || { echo "FEHLER: $f im Bundle ≠ Quelle — neu bauen!" >&2; exit 1; }; done
+cmp -s <(sed -E "s|^const APP_VERSION = '[^']*';|const APP_VERSION = '$VNAME';|" ../app.js) build/app/www/app.js || { echo "FEHLER: app.js im Bundle ≠ Quelle — neu bauen!" >&2; exit 1; }
 printf '{"name":"alien-notes","productName":"Alien Notes","version":"%s","main":"main.js","private":true}\n' "$VNAME" > build/app/package.json
 node pack.mjs build/app build/electron
 
@@ -64,5 +79,8 @@ mkdir -p build/release
 BUNDLE="alien-notes-$TAG-linux-x86_64.flatpak"
 flatpak build-bundle --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo build/repo "build/release/$BUNDLE" "$APP_ID"
 (cd build/release && sha256sum "$BUNDLE" > SHA256SUMS)
+[ "$(cd .. && sha256sum $DESK_SRC)" = "$DESK_SUMS0" ] || { echo "FEHLER: Quellen haben sich während des Baus geändert — neu bauen!" >&2; exit 1; }
+# Prüfdatei (wird NICHT hochgeladen): 1. Zeile Bundle-Hash, 2. Zeile Electron-Pin, danach die Quellen (make-release.sh gleicht sie mit dem Tag ab)
+{ sha256sum "build/release/$BUNDLE" | cut -d' ' -f1; echo "electron $EL_VER $EL_SHA"; echo "$DESK_SUMS0"; } > build/release/bundle.ok
 echo "Bundle: desktop/build/release/$BUNDLE"; cat build/release/SHA256SUMS
 echo "Signieren (Nutzer): gpg --local-user 100F9E25BFAEA807DBC357D750C0D78583BFCB81 --armor --detach-sign desktop/build/release/SHA256SUMS"

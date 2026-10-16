@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Alien Notes — Offline-Notizen</title>
-<meta name="description" content="Alien Notes: lokale, verschlüsselte Notizen und Checklisten. Läuft komplett offline auf deinem Gerät — keine Cloud, kein Server, keine Telemetrie.">
+<meta name="description" content="Alien Notes: lokale, verschlüsselte Notizen, Checklisten und Skizzen. Läuft komplett offline auf deinem Gerät — keine Cloud, kein Server, keine Telemetrie.">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#000000">
 <!-- CSP wie Alien Pass: blockiert jede Netz-Verbindung (connect-src 'none'), fremde Quellen UND Inline-Script (kein 'unsafe-inline'
@@ -77,6 +77,28 @@ html.desk .no-desk{display:none;}
    rollt die eigene Spalte #tab-add (dort, nicht an der Seite: die Seite rollte sonst beim Klick in den Titel nach, Markieren per Maus brach ab) */
 html:has(#tab-add:not(.hidden)){scroll-padding-top:3.25rem;}
 .ed-hist{display:inline-flex;gap:8px;flex:none;}
+/* Skizze (v1.14): feste Fläche 3:4, passt ganz in den Bildschirm (kein Rollen auf der Fläche), touch-action:none — ein Finger zeichnet. Gitter als CSS-Hintergrund
+   (24 × 32 Felder = SK_GRID 50 in 1200 × 1600), kein zweiter Puffer. Die Hülle enthält keinen Text — user-select:none dort verdeckt nichts Markierbares. */
+.sk-bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:12px;}
+.sk-pop{position:relative;}
+.sk-menu{position:absolute;left:0;top:100%;margin-top:4px;z-index:60;background:var(--card-bg);border:1px solid var(--neon-mid);border-radius:3px;padding:6px;display:flex;flex-direction:column;gap:6px;box-shadow:0 0 14px rgba(0,255,204,.2);}
+.sk-menu.right{left:auto;right:0;}
+#sk-tools{flex-direction:row;flex-wrap:wrap;width:max-content;max-width:min(80vw,330px);}
+.sk-row{display:flex;gap:6px;}
+.sk-bar .btn.icon,.sk-menu .btn.icon{min-width:38px;height:34px;justify-content:center;}
+.sk-bar .btn.on,.sk-menu .btn.on{background:var(--neon-mid);border-color:var(--neon);}
+.sk-caret{font-size:.6rem;margin-left:2px;}
+.sk-ic{display:inline-flex;}
+.sk-line{display:inline-block;width:22px;height:0;border-top:2px solid currentColor;vertical-align:middle;}
+.sk-line.w0{border-top-width:1px;} .sk-line.w1{border-top-width:3px;} .sk-line.w2{border-top-width:6px;} .sk-line.dash{border-top-style:dashed;}
+.sk-dot{display:inline-block;width:16px;height:16px;border-radius:50%;border:1px solid var(--border);}
+.sk-dot.c0{background:var(--neon);} .sk-dot.c1{background:var(--yellow);} .sk-dot.c2{background:var(--red);} .sk-dot.c3{background:#fff;}
+.sk-snap{font-size:.7rem;margin-left:2px;}
+#sk-wrap{position:relative;width:min(100%,calc(64vh * 3 / 4));aspect-ratio:3/4;margin:10px auto 0;border:1px solid var(--border);border-radius:3px;background-color:rgba(0,0,0,.25);
+  touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overflow:hidden;}
+#sk-wrap.grid{background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:calc(100% / 24) calc(100% / 32);}
+#sk-canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair;}
+#sk-wrap.erase #sk-canvas{cursor:cell;}
 .hist-btn{width:38px;height:32px;padding:0;color:var(--neon);}
 .hist-btn::before{content:'';width:18px;height:18px;background:currentColor;-webkit-mask:var(--ico) center/contain no-repeat;mask:var(--ico) center/contain no-repeat;}
 .hist-btn.undo{--ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 14L4 9l5-5'/%3E%3Cpath d='M4 9h10.5a5.5 5.5 0 0 1 0 11H11'/%3E%3C/svg%3E");}
@@ -95,7 +117,7 @@ html:has(#tab-add:not(.hidden)){scroll-padding-top:3.25rem;}
 /* Markdown-Ansicht: nur createElement/textContent, Links bleiben Text */
 .md{background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:3px;padding:12px 14px;min-height:42vh;color:var(--neon);font-size:.95rem;line-height:1.6;overflow-wrap:anywhere;}
 .md h2,.md h3,.md h4{font-family:'Orbitron',sans-serif;color:var(--neon);letter-spacing:1px;margin:14px 0 6px;font-weight:700;}
-html.copy-plain *{text-transform:none!important;}   /* nur während des Lesens einer Markierung zum Kopieren (Android, v1.13 a-2) */
+.copy-plain,.copy-plain *{text-transform:none!important;}   /* nur während des Lesens einer Markierung zum Kopieren (Android, v1.13 a-2; seit v1.14 am gemeinsamen Elternelement) */
 .md h2{font-size:1.05rem;text-transform:uppercase;}.md h3{font-size:.95rem;}.md h4{font-size:.85rem;color:var(--text-mid);}
 .md h2:first-child,.md h3:first-child,.md h4:first-child,.md p:first-child{margin-top:0;}
 .md p{margin:6px 0;white-space:pre-wrap;}
@@ -134,7 +156,7 @@ html.copy-plain *{text-transform:none!important;}   /* nur während des Lesens e
 <div class="container">
   <div class="app-head">
     <div class="header-glow"></div>
-    <button class="help-btn" data-action="openHelp" title="Handbuch" aria-label="Hilfe / Handbuch">?</button>
+    <button class="help-btn" data-action="openHelp" title="Handbuch" data-i18n-title="help.title" aria-label="Hilfe / Handbuch" data-i18n-aria="aria.help">?</button>
     <button class="lang-btn" id="lang-btn" data-action="toggleLang" title="Sprache / Language">DE</button>
     <div class="logo">Alien Notes</div>
     <div class="tagline" data-i18n="tagline">Notizen · lokal &amp; verschlüsselt · offline</div>
@@ -218,7 +240,7 @@ html.copy-plain *{text-transform:none!important;}   /* nur während des Lesens e
         <div class="search-row">
           <input id="search" type="search" placeholder="Notizen durchsuchen …" data-i18n-ph="list.search" data-input="renderList" autocomplete="off" autocapitalize="none" spellcheck="false">
           <button class="btn sm" data-action="newEntry" title="Neue Notiz" data-i18n-title="list.newTitle">+</button>
-          <button id="sel-btn" class="btn sm icon ghost" data-action="selStart" title="Mehrere Notizen auswählen" data-i18n-title="list.selTitle" aria-label="Mehrere Notizen auswählen">☑</button>
+          <button id="sel-btn" class="btn sm icon ghost" data-action="selStart" title="Mehrere Notizen auswählen" data-i18n-title="list.selTitle" aria-label="Mehrere Notizen auswählen" data-i18n-aria="list.selTitle">☑</button>
           <button id="trash-btn" class="btn sm icon ghost" data-action="openTrash" title="Papierkorb" aria-label="Papierkorb"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M9.5 7V5.5A1.5 1.5 0 0 1 11 4h2a1.5 1.5 0 0 1 1.5 1.5V7"/><path d="M6.6 7l.8 12a2 2 0 0 0 2 1.9h5.2a2 2 0 0 0 2-1.9L17.4 7"/><path d="M10 11v6"/><path d="M14 11v6"/></svg><span id="trash-n"></span></button>
         </div>
         <div id="cat-chips" class="chips"></div>
@@ -257,6 +279,7 @@ html.copy-plain *{text-transform:none!important;}   /* nur während des Lesens e
         <div class="seg" id="f-type-seg">
           <button id="ft-text" class="on" type="button" data-action="changeEntryType" data-arg="text" data-i18n="type.text">Notiz</button>
           <button id="ft-list" type="button" data-action="changeEntryType" data-arg="list" data-i18n="type.list">Checkliste</button>
+          <button id="ft-sketch" type="button" data-action="changeEntryType" data-arg="sketch" data-i18n="type.sketch">Skizze</button>
         </div>
         <label data-i18n="f.title">Titel</label>
         <input id="f-title" type="text" maxlength="200" autocomplete="off" autocapitalize="sentences" spellcheck="false" placeholder="Titel (leer = erste Zeile des Textes)" data-i18n-ph="f.titlePh" data-input="editorChanged">
@@ -264,7 +287,7 @@ html.copy-plain *{text-transform:none!important;}   /* nur während des Lesens e
         <div class="combo">
           <div class="combo-row">
             <input id="f-cat" type="text" maxlength="40" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="z.B. Privat, Arbeit, Ideen — leer = keine" data-i18n-ph="f.catPh" data-input="catInput" data-action="openCatMenu">
-            <button class="btn sm ghost icon" type="button" data-action="toggleCatMenu" aria-label="Kategorie wählen">▾</button>
+            <button class="btn sm ghost icon" type="button" data-action="toggleCatMenu" aria-label="Kategorie wählen" data-i18n-aria="aria.catPick">▾</button>
           </div>
           <div id="cat-menu" class="combo-menu hidden"></div>
         </div>
@@ -289,13 +312,27 @@ html.copy-plain *{text-transform:none!important;}   /* nur während des Lesens e
             <button id="f-reset" class="btn sm ghost" type="button" data-action="resetDone" data-i18n="f.resetDone">Haken zurücksetzen</button>
           </div>
         </div>
+        <!-- Skizze (v1.14): Striche als Vektoren (sk), gezeichnet nur über die Canvas-API; Werkzeuge in Menüs (.sk-menu in .combo: closeMenus und Klick außerhalb schließen sie) -->
+        <div id="grp-sketch" class="hidden">
+          <div class="sk-bar">
+            <div class="sk-pop combo"><button id="sk-tool-btn" class="btn sm ghost icon" type="button" data-action="skMenu" data-arg="sk-tools" title="Werkzeug" aria-label="Werkzeug" data-i18n-title="sk.tool" data-i18n-aria="sk.tool"><span id="sk-tool-ic" class="sk-ic"></span><span class="sk-caret">▾</span></button>
+              <div id="sk-tools" class="sk-menu hidden"><button id="sk-t0" class="btn sm ghost icon" type="button" data-action="skTool" data-arg="0" title="Freihand" aria-label="Freihand" data-i18n-title="sk.t0" data-i18n-aria="sk.t0"><svg class="ic" viewBox="0 0 24 24"><path d="M4 17c2-5 4-8 7-6s3 5 9-4"/></svg></button><button id="sk-t1" class="btn sm ghost icon" type="button" data-action="skTool" data-arg="1" title="Linie" aria-label="Linie" data-i18n-title="sk.t1" data-i18n-aria="sk.t1"><svg class="ic" viewBox="0 0 24 24"><path d="M5 19L19 5"/></svg></button><button id="sk-t2" class="btn sm ghost icon" type="button" data-action="skTool" data-arg="2" title="Pfeil" aria-label="Pfeil" data-i18n-title="sk.t2" data-i18n-aria="sk.t2"><svg class="ic" viewBox="0 0 24 24"><path d="M5 19L19 5M11 5h8v8"/></svg></button><button id="sk-t3" class="btn sm ghost icon" type="button" data-action="skTool" data-arg="3" title="Rechteck" aria-label="Rechteck" data-i18n-title="sk.t3" data-i18n-aria="sk.t3"><svg class="ic" viewBox="0 0 24 24"><path d="M4 6h16v12H4z"/></svg></button><button id="sk-t4" class="btn sm ghost icon" type="button" data-action="skTool" data-arg="4" title="Ellipse" aria-label="Ellipse" data-i18n-title="sk.t4" data-i18n-aria="sk.t4"><svg class="ic" viewBox="0 0 24 24"><path d="M12 6c4.4 0 8 2.7 8 6s-3.6 6-8 6-8-2.7-8-6 3.6-6 8-6z"/></svg></button><button id="sk-t5" class="btn sm ghost icon" type="button" data-action="skTool" data-arg="5" title="Dreieck" aria-label="Dreieck" data-i18n-title="sk.t5" data-i18n-aria="sk.t5"><svg class="ic" viewBox="0 0 24 24"><path d="M12 4.5l8.5 15h-17z"/></svg></button><button id="sk-t6" class="btn sm ghost icon" type="button" data-action="skTool" data-arg="6" title="Sechseck" aria-label="Sechseck" data-i18n-title="sk.t6" data-i18n-aria="sk.t6"><svg class="ic" viewBox="0 0 24 24"><path d="M7.5 4.2h9l4.5 7.8-4.5 7.8h-9L3 12z"/></svg></button></div></div>
+            <div class="sk-pop combo"><button id="sk-stroke-btn" class="btn sm ghost icon" type="button" data-action="skMenu" data-arg="sk-stroke" title="Strich" aria-label="Strich" data-i18n-title="sk.stroke" data-i18n-aria="sk.stroke"><span id="sk-sw" class="sk-line w1"></span><span class="sk-caret">▾</span></button>
+              <div id="sk-stroke" class="sk-menu hidden"><div class="sk-row"><button id="sk-w0" class="btn sm ghost icon" type="button" data-action="skSize" data-arg="0" title="Dünn" aria-label="Dünn" data-i18n-title="sk.w0" data-i18n-aria="sk.w0"><span class="sk-line w0"></span></button><button id="sk-w1" class="btn sm ghost icon" type="button" data-action="skSize" data-arg="1" title="Mittel" aria-label="Mittel" data-i18n-title="sk.w1" data-i18n-aria="sk.w1"><span class="sk-line w1"></span></button><button id="sk-w2" class="btn sm ghost icon" type="button" data-action="skSize" data-arg="2" title="Dick" aria-label="Dick" data-i18n-title="sk.w2" data-i18n-aria="sk.w2"><span class="sk-line w2"></span></button></div><div class="sk-row"><button id="sk-d0" class="btn sm ghost icon" type="button" data-action="skDash" data-arg="0" title="Durchgezogen" aria-label="Durchgezogen" data-i18n-title="sk.solid" data-i18n-aria="sk.solid"><span class="sk-line w1"></span></button><button id="sk-d1" class="btn sm ghost icon" type="button" data-action="skDash" data-arg="1" title="Gestrichelt" aria-label="Gestrichelt" data-i18n-title="sk.dashed" data-i18n-aria="sk.dashed"><span class="sk-line w1 dash"></span></button></div><div class="sk-row"><button id="sk-c0" class="btn sm ghost icon" type="button" data-action="skColor" data-arg="0" title="Cyan" aria-label="Cyan" data-i18n-title="sk.c0" data-i18n-aria="sk.c0"><span class="sk-dot c0"></span></button><button id="sk-c1" class="btn sm ghost icon" type="button" data-action="skColor" data-arg="1" title="Gelb" aria-label="Gelb" data-i18n-title="sk.c1" data-i18n-aria="sk.c1"><span class="sk-dot c1"></span></button><button id="sk-c2" class="btn sm ghost icon" type="button" data-action="skColor" data-arg="2" title="Rot" aria-label="Rot" data-i18n-title="sk.c2" data-i18n-aria="sk.c2"><span class="sk-dot c2"></span></button><button id="sk-c3" class="btn sm ghost icon" type="button" data-action="skColor" data-arg="3" title="Weiß" aria-label="Weiß" data-i18n-title="sk.c3" data-i18n-aria="sk.c3"><span class="sk-dot c3"></span></button></div></div></div>
+            <button id="sk-erase" class="btn sm ghost icon" type="button" data-action="skEraser" title="Radierer" aria-label="Radierer" data-i18n-title="sk.eraser" data-i18n-aria="sk.eraser" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24"><path d="M14.5 4.5l5 5L10 19H5.5l-2-2a1.4 1.4 0 0 1 0-2zM9 10l5 5M12 19h8"/></svg></button>
+            <button id="sk-grid" class="btn sm ghost icon" type="button" data-action="skGridStep" title="Gitter" aria-label="Gitter"><svg class="ic" viewBox="0 0 24 24"><path d="M4 4h16v16H4zM9.3 4v16M14.7 4v16M4 9.3h16M4 14.7h16"/></svg><span id="sk-snap" class="sk-snap hidden">⌖</span></button>
+            <div class="sk-pop combo"><button id="sk-more-btn" class="btn sm ghost icon" type="button" data-action="skMenu" data-arg="sk-more" title="Mehr" aria-label="Mehr" data-i18n-title="sk.more" data-i18n-aria="sk.more">⋯</button>
+              <div id="sk-more" class="sk-menu right hidden"><button id="sk-clear" class="btn sm danger" type="button" data-action="skClear" data-i18n="sk.clear">Alles löschen</button></div></div>
+          </div>
+          <div id="sk-wrap"><canvas id="sk-canvas" aria-label="Zeichenfläche" data-i18n-aria="sk.canvas"></canvas></div>
+        </div>
         <div class="ed-foot"><span id="ed-count"></span><span id="ed-meta"></span></div>
         <div class="ed-opts">
           <label class="chk"><input type="checkbox" id="f-pinned" data-change="optChanged"> <span data-i18n="f.pinned">Oben anheften</span></label>
           <label class="chk"><input type="checkbox" id="f-fav" data-change="optChanged"> <span data-i18n="f.fav">Favorit</span></label>
-          <label class="chk" title="Die Liste zeigt nur den Titel"><input type="checkbox" id="f-hide" data-change="optChanged"> <span data-i18n="f.hide">Keine Vorschau</span></label>
+          <label class="chk" title="Die Liste zeigt nur den Titel" data-i18n-title="f.hideTitle"><input type="checkbox" id="f-hide" data-change="optChanged"> <span data-i18n="f.hide">Keine Vorschau</span></label>
           <span id="f-md-wrap" class="cheat-wrap"><label class="chk"><input type="checkbox" id="f-md" data-change="mdToggle"> <span data-i18n="f.md">Markdown-Ansicht</span></label>
-            <button id="md-cheat-btn" class="btn sm ghost icon cheat-btn" type="button" data-action="mdCheat" aria-label="Markdown-Spickzettel" title="Markdown-Spickzettel">?</button></span>
+            <button id="md-cheat-btn" class="btn sm ghost icon cheat-btn" type="button" data-action="mdCheat" aria-label="Markdown-Spickzettel" data-i18n-aria="md.cheatTitle" title="Markdown-Spickzettel" data-i18n-title="md.cheatTitle">?</button></span>
         </div>
         <!-- Markdown-Spickzettel: nur statischer Text (data-i18n → textContent), keine Auszeichnung aus Daten -->
         <div id="md-cheat" class="cheat hidden">
@@ -316,8 +353,8 @@ html.copy-plain *{text-transform:none!important;}   /* nur während des Lesens e
         <div id="add-err" class="warn hidden" style="margin-top:10px"></div>
         <div class="ed-actions">
           <button class="btn" type="button" data-action="doneEditor" data-i18n="ed.done">Fertig</button>
-          <button class="btn ghost" type="button" data-action="copyCurrent" data-i18n="ed.copy">Kopieren</button>
-          <button class="btn ghost" type="button" data-action="saveCurrent" data-i18n="ed.file">Als Datei</button>
+          <button id="ed-copy" class="btn ghost" type="button" data-action="copyCurrent" data-i18n="ed.copy">Kopieren</button>
+          <button id="ed-file" class="btn ghost" type="button" data-action="saveCurrent" data-i18n="ed.file">Als Datei</button>
           <button id="ed-del" class="btn danger hidden" type="button" data-action="deleteCurrent" data-i18n="ed.delete">Löschen</button>
         </div>
       </div>
@@ -509,7 +546,7 @@ html.copy-plain *{text-transform:none!important;}   /* nur während des Lesens e
       <button class="btn ghost sm" data-action="closeHelp" data-i18n="help.closeX">Schließen ✕</button>
     </div>
     <h2 data-i18n="help.h1">Was ist Alien Notes?</h2>
-    <p data-i18n-html="help.p1">Eine <strong>lokale, verschlüsselte Notizen-App</strong> für Notizen und Checklisten. Läuft komplett <strong>offline</strong> — keine Cloud, kein Server, keine Telemetrie, kein Konto. Die Android-App hat nicht einmal eine Internet-Berechtigung. Die App selbst schickt nie etwas weg und gibt Klartext nur heraus, wenn du es auslöst — etwa beim Kopieren, beim Markieren (am Linux-Desktop landet Markiertes in der Mittelklick-Auswahl) oder mit „Als Datei“.</p>
+    <p data-i18n-html="help.p1">Eine <strong>lokale, verschlüsselte Notizen-App</strong> für Notizen, Checklisten und Skizzen. Läuft komplett <strong>offline</strong> — keine Cloud, kein Server, keine Telemetrie, kein Konto. Die Android-App hat nicht einmal eine Internet-Berechtigung. Die App selbst schickt nie etwas weg und gibt Klartext nur heraus, wenn du es auslöst — etwa beim Kopieren, beim Markieren (am Linux-Desktop landet Markiertes in der Mittelklick-Auswahl) oder mit „Als Datei“.</p>
     <p class="warn" data-i18n="help.warn">⚠ Es gibt kein Reset und kein Backdoor. Vergisst du die Passphrase, sind die Notizen unwiederbringlich weg. Mach regelmäßig Backups und bewahre die Passphrase sicher auf.</p>
     <h2 class="only-desk" data-i18n="help.hDesk">Desktop-Fassung (Linux)</h2>
     <ul class="only-desk" data-i18n-html="help.lDesk">
@@ -526,11 +563,12 @@ html.copy-plain *{text-transform:none!important;}   /* nur während des Lesens e
       <li><strong>Passphrase wählen</strong> — mindestens 12 Zeichen, besser sechs Würfelwörter (der Vorschlag-Knopf baut sie aus der EFF-Liste). Aufschreiben und sicher verwahren.</li>
       <li><strong>+</strong> legt eine Notiz an. Der Titel darf leer bleiben — dann dient die erste Zeile des Textes als Titel. Einen Speichern-Knopf gibt es nicht: Die App speichert beim Tippen und beim Verlassen der Notiz.</li>
       <li><strong>Checklisten:</strong> Schalte eine Notiz auf „Checkliste“ — jede Zeile wird ein Eintrag mit Kästchen; „Erledigte nach unten“ sortiert abgehakte Einträge ans Ende. Zurückschalten macht aus den Einträgen „- [ ] …“- bzw. „- [x] …“-Zeilen. Lange Einträge brechen um. Enter beginnt einen neuen Eintrag (mitten im Text teilt es ihn), eingefügter Text mit mehreren Zeilen wird zu mehreren Einträgen.</li>
-      <li><strong>Rückgängig ↶ / Wiederholen ↷:</strong> Die Knöpfe oben im Editor nehmen die letzten Änderungen der offenen Notiz zurück und holen sie wieder. Getipptes zählt bis zu einer kurzen Pause als ein Schritt, jede andere Änderung einzeln, auch ein mit ✕ entfernter Eintrag, ein Haken, Sortieren oder der Wechsel zwischen Notiz und Checkliste. Bis zu 50 Schritte (bei sehr langen Notizen weniger), nur solange die Notiz offen ist: Schließen und Sperren löschen den Verlauf. Mit Tastatur: Strg+Z und Strg+Umschalt+Z (oder Strg+Y).</li>
+      <li><strong>Skizzen:</strong> Schalte eine Notiz auf „Skizze“ und zeichne mit dem Finger (am Desktop mit der Maus) auf die Fläche im Hochformat. Werkzeuge: Freihand, Linie, Pfeil, Rechteck, Ellipse, Dreieck und Sechseck (Formen ziehst du vom Start- bis zum Endpunkt auf), drei Stärken, durchgezogen oder gestrichelt, vier Farben. Der Radierer entfernt ganze Striche. Das Gitter blendet Hilfslinien ein, ein zweiter Tipp darauf lässt Formen und Linien einrasten. Ein zweiter Finger bricht den laufenden Strich ab; zeichnest du mit einem Stift, zählen Finger und Handballen nicht. „Alles löschen“ (unter ⋯) fragt nach. Gespeichert werden Linien, keine Bilder; eine Skizze fasst bis zu 1000 Striche. Kopieren und „Als Datei“ gibt es für Skizzen nicht.</li>
+      <li><strong>Rückgängig ↶ / Wiederholen ↷:</strong> Die Knöpfe oben im Editor nehmen die letzten Änderungen der offenen Notiz zurück und holen sie wieder. Getipptes zählt bis zu einer kurzen Pause als ein Schritt, jede andere Änderung einzeln, auch ein mit ✕ entfernter Eintrag, ein Haken, Sortieren oder der Wechsel zwischen Notiz, Checkliste und Skizze; in einer Skizze jeder Strich, jeder Radierzug und „Alles löschen“. Bis zu 50 Schritte (bei sehr langen Notizen weniger), nur solange die Notiz offen ist: Schließen und Sperren löschen den Verlauf. Mit Tastatur: Strg+Z und Strg+Umschalt+Z (oder Strg+Y).</li>
       <li><strong>Kategorien</strong> wirken wie Ordner: frei eintippen (Vorschläge aus vorhandenen). Die Liste filtert über die Chips oben; der ★-Chip zeigt nur Favoriten, der ☐-Chip nur Checklisten mit offenen Einträgen (beide lassen sich mit einer Kategorie kombinieren). Angeheftete Notizen stehen immer ganz oben. <strong>Keine Vorschau:</strong> das Kästchen im Editor lässt die Liste nur den Titel zeigen — gegen Mitleser über die Schulter. <strong>Umbenennen:</strong> Kategorie-Chip antippen, dann den Stift ✎ daneben — alle Notizen dieser Kategorie ziehen um (auch im Papierkorb); leerer Name heißt „ohne Kategorie“.</li>
       <li><strong>Mehrere auf einmal:</strong> der ☑-Knopf neben dem Papierkorb blendet Kästchen ein; Zeilen antippen wählt sie (Suche und Chips wirken weiter, „Alle“ nimmt jede gezeigte Zeile; bereits gewählte bleiben gewählt, auch wenn ein Filter sie ausblendet). Die Leiste unten legt die gewählten Notizen in den Papierkorb (ein „Rückgängig“ für alle, höchstens 200 auf einmal — so viele fasst der Papierkorb), setzt eine Kategorie (vorhandene stehen gleich zur Auswahl, eine neue einfach eintippen) oder den Favoriten-Stern.</li>
       <li><strong>Darstellung:</strong> Unter Einstellungen → Darstellung gibt es Schwarz/Soft und drei Schriftgrößen. Beides gilt für dieses Gerät — steht nicht in der Datei, nicht im Backup.</li>
-      <li>Die Suche findet Titel, Text, Checklisten-Einträge und Kategorie.</li>
+      <li>Die Suche findet Titel, Text, Checklisten-Einträge und Kategorie (bei Skizzen Titel und Kategorie).</li>
     </ul>
     <h2 data-i18n="help.h3">Markdown-Ansicht</h2>
     <p data-i18n-html="help.p3">Jede Textnotiz (nicht Checklisten) hat einen Schalter „Markdown-Ansicht“. Bearbeitet wird immer im reinen Textfeld; die Ansicht stellt eine kleine Untermenge dar: Überschriften (<code>#</code> bis <code>###</code>), <strong>fett</strong> (<code>**…**</code>), <em>kursiv</em> (<code>*…*</code>), Listen (<code>-</code>, <code>1.</code> — nummerierte beginnen immer bei 1), Kästchen (<code>- [ ]</code>, <code>- [x]</code>), Code (<code>`…`</code>, ```-Blöcke oder 4 Leerzeichen Einrückung — deshalb keine eingerückten Unterpunkte), Trennlinien (<code>---</code>). Links werden bewusst nur als Text gezeigt, nie anklickbar — die App hat ohnehin kein Netz.</p>
@@ -570,7 +608,8 @@ html.copy-plain *{text-transform:none!important;}   /* nur während des Lesens e
       <li><strong>Verschlüsselung:</strong> AES-256-GCM (WebCrypto). Ein zufälliger Datenschlüssel verschlüsselt die Notizen; die Passphrase verpackt nur diesen Schlüssel. Auch der Dateikopf ist authentisiert — Manipulation fällt auf.</li>
       <li><strong>Gerät:</strong> Die Android-App fordert genau zwei normale Berechtigungen an, beide für den Fingerabdrucksensor: USE_BIOMETRIC und USE_FINGERPRINT (letztere nur bis Android 8.1, mitgebracht von der AndroidX-Biometrie-Bibliothek). Kein Internet, kein Speicher, keine Kontakte. Daneben trägt die APK nur die von AndroidX erzeugte Signatur-Permission DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION, die nichts freigibt. Sie verbietet Screenshots und App-Umschalter-Vorschau (FLAG_SECURE, abschaltbar), nimmt sich aus Cloud-, adb- und Gerät-zu-Gerät-Backups heraus und nimmt ihre Felder vom Android-Autofill-Framework aus (seit 1.4): Ein Passwort-Manager, der als Autofill-Dienst eingerichtet ist, sieht die Passphrase-Felder nicht mehr und kann nicht anbieten, sie zu speichern.</li>
       <li><strong>Fremdcode:</strong> nur die Argon2-Bibliothek hash-wasm (MIT) und die EFF-Wortliste, beide gebündelt und beim Bauen per Hash geprüft. Kein CDN, kein Tracker.</li>
-      <li><strong>Grenzen:</strong> keine Bilder oder Anhänge, keine Passwörter je Notiz. Eine Passphrase lässt sich nicht wiederherstellen. Die Tastatur-App am Handy sieht alles, was du tippst. Die Android-App bittet sie, daraus nichts zu lernen (Gboard zeigt dann sein Inkognito-Symbol). Das ist nur eine Bitte: Nicht jede Tastatur hält sich daran, und mitlesen kann sie trotzdem. Wer sichergehen will, nutzt eine Tastatur ohne personalisiertes Lernen oder schaltet es dort ab.</li>
+      <li><strong>Dateiversion:</strong> Seit 1.14 trägt die Notizen-Datei die Version 2. Ältere App-Versionen öffnen sie nicht mehr und melden „neuere App-Version“, statt Skizzen beim Abgleich still zu verlieren — Handy und Desktop deshalb gemeinsam aktualisieren. Ältere Backups lassen sich weiter einspielen.</li>
+      <li><strong>Grenzen:</strong> keine Fotos, Bilddateien oder Anhänge (Skizzen speichert die App als Linien, also Vektordaten, in der verschlüsselten Datei), keine Passwörter je Notiz. Eine Passphrase lässt sich nicht wiederherstellen. Die Tastatur-App am Handy sieht alles, was du tippst. Die Android-App bittet sie, daraus nichts zu lernen (Gboard zeigt dann sein Inkognito-Symbol). Das ist nur eine Bitte: Nicht jede Tastatur hält sich daran, und mitlesen kann sie trotzdem. Wer sichergehen will, nutzt eine Tastatur ohne personalisiertes Lernen oder schaltet es dort ab.</li>
     </ul>
   </div>
 </div>
@@ -582,7 +621,7 @@ html.copy-plain *{text-transform:none!important;}   /* nur während des Lesens e
     <div class="combo hidden" id="dlg-combo">
       <div class="combo-row">
         <input id="dlg-input" class="hidden" type="text" autocomplete="off" autocapitalize="sentences" spellcheck="false" maxlength="200" data-enter="dialogOk" data-action="openCatMenu" data-arg="dlg-input" data-input="catInput">
-        <button id="dlg-cat-btn" class="btn sm ghost icon hidden" type="button" data-action="toggleCatMenu" data-arg="dlg-input" aria-label="Kategorien">▾</button>
+        <button id="dlg-cat-btn" class="btn sm ghost icon hidden" type="button" data-action="toggleCatMenu" data-arg="dlg-input" aria-label="Kategorien" data-i18n-aria="aria.cats">▾</button>
       </div>
       <div id="dlg-cat-menu" class="combo-menu hidden"></div>
     </div>

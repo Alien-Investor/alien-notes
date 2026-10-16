@@ -85,7 +85,7 @@ else {
   let ownedSel=[];
   // Jeder einzelne Zugriff auf die Zwischenablage hat eine eigene Frist (Alien Pass Release-Audit v1.19 A-1/R2-1): ein hängender X11-Besitzer (eingefrorenes
   // fremdes Programm) blockiert sonst die Kette — und eine Frist für das ganze Glied verwarf die schon übernommenen Hashes, PRIMARY blieb ungeprüft.
-  const LINK_MS=2000, LATE=Symbol('spät');
+  const LINK_MS=2000, LATE=Symbol('spät'), SEL_PEEK_MS=300;
   // Ablehnung zählt wie Hängen (Pass N-5): sonst galt ein abgelehntes readText als „kein Text“, ein abgelehntes clear als Erfolg — Hashes weg.
   const within=(f,ms)=>Promise.race([Promise.resolve().then(f).catch(()=>LATE),new Promise(r=>setTimeout(()=>r(LATE),ms))]);
   // Alle Hashes, deren Löschen noch nicht BESTÄTIGT ist — liegengeblieben oder gerade in Arbeit. Einfüge-Reihenfolge = Alter: die Kappung wirft die
@@ -142,14 +142,22 @@ else {
       throw new Error('timeout');
     });
   });
-  ipcMain.handle('clip:selected',async(e,text)=>{   // App meldet markierten Text; gemerkt wird nur der Hash
+  ipcMain.handle('clip:selected',async(e,text,peek)=>{   // App meldet markierten Text; gemerkt wird nur der Hash
     if(!fromApp(e)) throw new Error('denied');
     if(typeof text!=='string'||text.length>SEL_MAX) throw new Error('bad');
     if(!text) return true;   // leere Meldung verdrängt nichts
     // Angeglichen hashen (a2-1). Bleibt danach nichts übrig (der markierte Text bestand selbst nur aus U+FFFC — die App meldet Knöpfe/Felder nicht als
     // U+FFFC), ist nichts Lesbares zu schützen — nichts merken; sha('') im Ring löschte sonst jede fremde Auswahl, die nur aus solchen Zeichen besteht (Pass run-11 a-3)
     const n=nsel(text); if(!n) return true;
-    const h=sha(n); return run(()=>{ ownedSel=ownedSel.filter(x=>x!==h); ownedSel.push(h); if(ownedSel.length>SEL_RING) ownedSel.shift(); return true; });
+    const keepSel=x=>{ ownedSel=ownedSel.filter(y=>y!==x); ownedSel.push(x); if(ownedSel.length>SEL_RING) ownedSel.shift(); };
+    // PRIMARY kann einen ÄLTEREN Stand derselben Markierung halten (v1.14, Release-Audit run-12 b-1/b2-2): Chromium rollt beim Markieren nach, ohne PRIMARY neu zu
+    // schreiben, oder die App sperrt bei gehaltener Maustaste und meldet den Endstand. Ist der angeglichene PRIMARY-Text Anfang oder Ende der Meldung, auch
+    // seinen Hash merken (nur den Hash, wie sonst). NUR bei eigenem Ziehen (peek, run-12 b3-1/b3-2): dann hat Chromium PRIMARY gerade selbst geschrieben, das
+    // Lesen ist lokal — bei jeder Meldung hing es an einem eingefrorenen fremden Besitzer und merkte eine fremde Auswahl, die Anfang/Ende der Meldung war.
+    const h=sha(n); if(peek!==true) return run(()=>{ keepSel(h); return true; });
+    return run(async()=>{ keepSel(h);
+      const cur=await within(()=>clipboard.selection.readText(),SEL_PEEK_MS); if(cur!==LATE&&cur){ const c=nsel(cur); if(c&&c!==n&&(n.startsWith(c)||n.endsWith(c))) keepSel(sha(c)); }
+      return true; });
   });
   ipcMain.handle('clip:clear',async e=>{ if(!fromApp(e)) throw new Error('denied'); await run(()=>clearOwned()); return true; });
 

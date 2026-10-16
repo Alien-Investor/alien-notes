@@ -18,10 +18,10 @@ match: '.*\.apk$'
 pubkey: npub1cnlymdm5jz8eayycwynhze4s2zh9n0y04atce8ahxl5qfkptplls0s40hp
 
 name: Alien Notes
-summary: Offline notes & checklists — Argon2id + AES-256-GCM, no internet permission, no cloud, Markdown preview, encrypted backup & merge.
+summary: Offline notes, checklists & sketches — Argon2id + AES-256-GCM, no internet permission, no cloud, Markdown preview, encrypted backup & merge.
 
 description: |
-  Alien Notes is a local, encrypted notes and checklist app. It runs fully offline — no cloud,
+  Alien Notes is a local, encrypted app for notes, checklists and sketches. It runs fully offline — no cloud,
   no server, no account, no telemetry. The app requests no INTERNET permission — only the two
   normal permissions for the fingerprint sensor (USE_BIOMETRIC, USE_FINGERPRINT up to Android 8.1).
   The app itself never sends anything and only hands out plaintext when you trigger it, for example by copying or by saving a note as a file.
@@ -31,6 +31,10 @@ description: |
   - Notes (free text, up to 100,000 characters) and checklists (up to 200 entries with boxes, "done to the bottom",
     "clear ticks"; since 1.9 long entries wrap, Enter splits an entry at the cursor and pasted text with several lines becomes several entries);
     switch a note between the two — lines become entries and back, with a warning whenever something would be shortened
+  - Sketches (since 1.14): draw with a finger (with the mouse on the Linux desktop) on a portrait canvas — freehand, line, arrow, rectangle,
+    ellipse, triangle and hexagon; three stroke widths, solid or dashed, four colours (cyan, yellow, red, white); a stroke eraser, ↶/↷ per
+    stroke, "clear all" with a confirmation, an optional grid with snapping. A second finger cancels the current stroke. Stored as lines
+    (numbers, vector data) in the same encrypted file, not as images; up to 1000 strokes per sketch. Copy and "As file" are not available for sketches
   - No save button: the app saves as you type (after 1.5 s) and when you leave the note — encrypted, the whole file every time;
     the title may stay empty, the first line then serves as the title
   - Undo and redo while editing (since 1.10): ↶ and ↷ at the top of the editor take back up to 50 steps of the open note (fewer for
@@ -61,7 +65,9 @@ description: |
     With "immediately" the Android app also locks while the file picker is open — unlock within five minutes and the import continues with the chosen file (since 1.2)
   - Trash: deleted notes stay restorable for 30 days, up to 200 at a time; shows only title, type and date, never the content;
     device-local — a deletion travels to your other devices when merging, the content does not
-  - Encrypted .notes backup and merge between devices (newer change wins, deletions carried for a year), also between phone and Linux desktop
+  - Encrypted .notes backup and merge between devices (newer change wins, deletions carried for a year), also between phone and Linux desktop.
+    Since 1.14 the file carries format version 2: older app versions reject it with "newer app version" instead of silently dropping sketches
+    when merging — update phone and desktop together; older backups still import
   - Optional Aegis hurdle: an extra TOTP code on unlock (key or otpauth link to copy, no QR; honestly documented as a hurdle, not a second factor)
   - Optional fingerprint unlock (Android keystore, passphrase required after every restart unless "also after a restart" is ticked, off by
     default) and optional quick unlock by PIN on the Linux desktop — both taken over from Alien Pass and documented there
@@ -99,5 +105,6 @@ images:
   - ./screenshots/1-list.png
   - ./screenshots/2-editor.png
   - ./screenshots/3-markdown.png
+  - ./screenshots/4-sketch.png
 
 release_notes: ./CHANGELOG.md
