@@ -51,9 +51,9 @@ async function createVault(pass, vault, kdfP){
   const body=await V.encryptBody(vault,dek,kdf);
   return {raw:V.serializeFile(kdf,wrap,body), kdf, wrap, dek};
 }
-async function open(raw, pass){
+async function open(raw, pass, now){
   const f=V.parseFile(raw); const kek=await V.deriveKek(V.passBytes(pass), f.kdf);
-  const dek=await V.unwrapDek(f.wrap,kek,f.kdf,false); const obj=await V.decryptBody(f.body,dek,f.kdf); return {f,dek,vault:V.sanitizeVault(obj)};
+  const dek=await V.unwrapDek(f.wrap,kek,f.kdf,false); const obj=await V.decryptBody(f.body,dek,f.kdf); return {f,dek,vault:V.sanitizeVault(obj,now)};
 }
 const E=(o)=>Object.assign({id:V.cryptoId(),type:'text',title:'T',body:'',items:[],cat:'',fav:false,pinned:false,md:false,created:'2026-01-01T00:00:00.000Z',updated:'2026-01-02T00:00:00.000Z',deleted:null},o);
 
@@ -950,14 +950,19 @@ console.log('\n[21] v1.14: Skizze — sanitizeSketch (Whitelist, Grenzen vor jed
 console.log('\n[22] v1.14: echte Datei von 1.13 (test-data/v113-vault.json, einmalig mit dem Code von v1.13 erzeugt, Spieldaten) — lesen, abgleichen, als ver 2 schreiben');
 { const raw=readFileSync('test-data/v113-vault.json','utf8'), PPF='fixture-v113-spieldaten-passphrase';
   const f=V.parseFile(raw); ok(JSON.parse(raw).ver===1&&f.body.ver===1,'Fixture ist eine ver-1-Datei');
-  const o=await open(raw,PPF), live=o.vault.entries.filter(e=>!e.deleted), byT=t=>o.vault.entries.find(e=>e.title===t);
+  /* Feste Uhr (v1.15): der Papierkorb-Eintrag der Fixture wurde im Oktober 2026 gelöscht — mit der echten Uhr räumt sanitizeVault ihn nach
+     TRASH_DAYS zur Löschmarke ab, der Abschnitt wurde ab 09.11.2026 rot, ohne dass sich Code geändert hatte. FIX_NOW = Tag nach dem Erzeugen. */
+  const FIX_NOW=Date.parse('2026-10-17T00:00:00.000Z'), SPAET=Date.parse('2026-12-01T00:00:00.000Z');
+  const o=await open(raw,PPF,FIX_NOW), live=o.vault.entries.filter(e=>!e.deleted), byT=t=>o.vault.entries.find(e=>e.title===t);
   ok(live.length===3&&byT('Einkauf 1.13').body==='Milch\nBrot\nÄpfel'&&byT('Einkauf 1.13').pinned&&byT('Packliste 1.13').items.length===2&&byT('Markdown 1.13').md,'1.14 liest Text, Checkliste und Markdown-Notiz von 1.13');
   ok(byT('Im Papierkorb 1.13')&&byT('Im Papierkorb 1.13').deleted&&o.vault.entries.some(e=>e.id==='e113e113e113e113'&&V.isWiped(e)),'Papierkorb-Eintrag und Löschmarke von 1.13 kommen mit');
+  { const tid=byT('Im Papierkorb 1.13').id, sp=V.sanitizeVault(await V.decryptBody(o.f.body,o.dek,o.f.kdf),SPAET);
+    ok(sp.entries.length===o.vault.entries.length&&sp.entries.some(e=>e.id===tid&&V.isWiped(e))&&!sp.entries.some(e=>e.title==='Im Papierkorb 1.13'),'nach TRASH_DAYS wird derselbe Papierkorb-Eintrag zur Löschmarke (Uhr 01.12.2026)'); }
   ok(o.vault.entries.every(e=>Object.keys(e).length===FIELDS&&e.sk===V.SK_NONE),'alle Einträge mit 14 Feldern, sk leer');
   // Abgleich mit einer 1.14-Datei, die eine Skizze trägt, dann als ver 2 schreiben
   const mine=[V.sanitizeEntry({id:'f114f114f114f114',type:'sketch',title:'Skizze 1.14',sk:[[0,1,0,0,10,10,20,20]],created:'2026-10-15T00:00:00.000Z',updated:'2026-10-15T00:00:00.000Z',deleted:null})];
   const m=V.mergeEntries(mine,V.shapeIncoming(mine,o.vault.entries)); ok(m.entries.length===6&&m.entries.filter(e=>!e.deleted).length===4&&m.entries.some(e=>e.type==='sketch'),'Abgleich 1.13 → 1.14: alles kommt dazu (fremder Papierkorb als Löschmarke), die Skizze bleibt ('+JSON.stringify({n:m.entries.length,a:m.added,d:m.deleted})+')');
-  const v2=Object.assign({},o.vault,{entries:m.entries}); const raw2=V.serializeFile(o.f.kdf,o.f.wrap,await V.encryptBody(v2,o.dek,o.f.kdf)); const o2=await open(raw2,PPF);
+  const v2=Object.assign({},o.vault,{entries:m.entries}); const raw2=V.serializeFile(o.f.kdf,o.f.wrap,await V.encryptBody(v2,o.dek,o.f.kdf)); const o2=await open(raw2,PPF,FIX_NOW);
   ok(JSON.parse(raw2).ver===2&&o2.vault.entries.length===6&&V.canon(o2.vault.entries.find(e=>e.type==='sketch').sk)==='[[0,1,0,0,10,10,20,20]]','mit derselben Passphrase als ver 2 geschrieben und wieder gelesen');
   // Fingerabdruck- und PIN-Slot ECHT unter v1.13 erzeugt (test-data/v113-slots.json, run-12 a H-1: vorher baute [2] die Slots mit dem Code von 1.14 nach)
   const sl=JSON.parse(readFileSync('test-data/v113-slots.json','utf8')), f2=V.parseFile(raw2);
