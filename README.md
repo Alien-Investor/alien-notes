@@ -284,9 +284,3 @@ Die Desktop-Hülle liegt vollständig in `desktop/` (Hauptprozess, Brücke, Buil
 ## Lizenz
 
 MIT — siehe [LICENSE](LICENSE).
-
-Das Alien im App-Symbol basiert auf dem Emoji „Alien“ (U+1F47D) aus [Twemoji](https://github.com/twitter/twemoji),
-Copyright 2019 Twitter, Inc and other contributors, lizenziert unter [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.de).
-Übernommen sind die Umrisse von Kopf und Augen. Ergänzt sind Antennen, Farbverlauf, Kontur und Leuchteffekt, geändert sind die
-Farben, der Mund des Originals ist ersetzt oder entfällt. Die Urheber übernehmen keine Gewährleistung (Abschnitt 5 der Lizenz).
-Alle Lizenzangaben: https://alien-investor.org/lizenzen.html
