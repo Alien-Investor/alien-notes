@@ -44,17 +44,25 @@ if grep -nE '(^|[^A-Za-z0-9_$])(alert|confirm|prompt)[[:space:]]*\(' app.js; the
 # werden vor der Prüfung dekodiert (im Text, in den Attributen und in den I18N/T-Werten), Attribute auch mit Leerzeichen um „=“, ohne Anführungszeichen und groß
 # geschrieben (TITLE=…) — „&#91;Datum&#93;“, „title=TODO“ und „title = "[…]"“ gingen sonst durch. Gemessen: Arbeitsbaum, HEAD und alle 15 Tags ohne Fehlalarm,
 # 9 Mutanten rot, „&amp;#91;“ (zeigt den Text „&#91;“) bleibt grün.
+# Runde 2 (Prüfer b B5): JS-Escapes in den I18N/T-Werten (\uXXXX, \u{…}, \xXX) werden von links nach rechts aufgelöst (ein doppelter Backslash bleibt
+# Text); die Kommentarformen <!-->, <!---> und --!> (der Browser schließt sie anders als die Prüfung, Text dahinter wäre sichtbar, aber ungeprüft) brechen ab;
+# value und label stehen in der Attributliste. Gemessen: Arbeitsbaum, HEAD und alle 15 Tags ohne Fehlalarm, 9 Mutanten rot, ein Wert mit echtem Backslash vor
+# „u005B“ bleibt grün.
 node -e '
 const fs=require("fs"); const RX=/\[(?![ xX]\])[^\]]{1,300}\](?!\()|\?\?\?|\bX{2,}\b|\bvX\.Y\b|\b(?:TODO|TBD|FIXME)\b/i;
-const raw=fs.readFileSync("index.html","utf8").replace(/<!--[\s\S]*?-->/g," ").replace(/<(script|style)[\s\S]*?<\/\1>/g," ");
+const roh=fs.readFileSync("index.html","utf8");
+if(/<!--->|<!-->|--!>/.test(roh)){ console.error("FEHLER: index.html enthält <!-->, <!---> oder --!> (Kommentarformen, die der Browser anders schließt als diese Prüfung) — umschreiben"); process.exit(1); }
+const raw=roh.replace(/<!--[\s\S]*?-->/g," ").replace(/<(script|style)[\s\S]*?<\/\1>/g," ");
 const ent=(t)=>t.replace(/&#(?:x([0-9a-f]+)|([0-9]+));?/gi,(m,h,d)=>{ const n=h?parseInt(h,16):+d; return n>0&&n<=0x10ffff?String.fromCodePoint(n):m; })
   .replace(/&(lsqb|lbrack|rsqb|rbrack|quest|lcub|lbrace|rcub|rbrace|lt|gt|quot|apos|nbsp|amp);/gi,(m,n)=>({lsqb:"[",lbrack:"[",rsqb:"]",rbrack:"]",quest:"?",lcub:"{",lbrace:"{",rcub:"}",rbrace:"}",lt:"<",gt:">",quot:"\"",apos:"\x27",nbsp:" ",amp:"&"})[n.toLowerCase()]);
-const attrs=[...raw.matchAll(/\b(?:title|aria-label|placeholder|content|alt)\s*=\s*(?:"([^"]*)"|\x27([^\x27]*)\x27|([^\s>"\x27]+))/gi)].map(m=>m[1]??m[2]??m[3]).join("\n");
+const attrs=[...raw.matchAll(/\b(?:title|aria-label|placeholder|content|alt|value|label)\s*=\s*(?:"([^"]*)"|\x27([^\x27]*)\x27|([^\s>"\x27]+))/gi)].map(m=>m[1]??m[2]??m[3]).join("\n");
 const html=ent(raw.replace(/<[^>]+>/g," "))+"\n"+ent(attrs);
 const js=fs.readFileSync("app.js","utf8").split("\n");
 const block=(start)=>{ const i=js.findIndex(l=>l.startsWith(start)); if(i<0){ console.error("FEHLER: Tabelle "+start+" in app.js nicht gefunden (Platzhalter-Prüfung)"); process.exit(1); }
   const out=[]; for(let k=i;k<js.length;k++){ out.push(js[k]); if(k>i&&/^};/.test(js[k])) return out.join("\n"); } console.error("FEHLER: Ende von "+start+" nicht gefunden"); process.exit(1); };
-const strs=(src)=>[...src.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map(m=>m[1]).filter(s=>!/^[a-z]+(\.[A-Za-z0-9]+)+$/.test(s)).join("\n").replace(/<[^>]+>/g," "); const strsE=(src)=>ent(strs(src));
+const jsEsc=(t)=>t.replace(/\\(u\{[0-9a-fA-F]+\}|u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|[\s\S])/g,(m,e)=>{ if(e[0]==="u"&&e[1]==="{"){ const n=parseInt(e.slice(2,-1),16); return n<=0x10ffff?String.fromCodePoint(n):m; }
+  if(e[0]==="u"&&e.length===5||e[0]==="x"&&e.length===3) return String.fromCharCode(parseInt(e.slice(1),16)); return ({n:"\n",t:"\t",r:"\r"})[e]??e; });
+const strs=(src)=>[...src.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map(m=>jsEsc(m[1])).filter(s=>!/^[a-z]+(\.[A-Za-z0-9]+)+$/.test(s)).join("\n").replace(/<[^>]+>/g," "); const strsE=(src)=>ent(strs(src));
 const fremd=(src)=>{ for(let i=0;i<src.length;i++){ const c=src[i];
   if(c==="\""){ for(i++;i<src.length&&src[i]!=="\"";i++){ if(src[i]==="\\") i++; } continue; }
   if(c==="/"&&src[i+1]==="/"){ while(i<src.length&&src[i]!=="\n") i++; continue; }

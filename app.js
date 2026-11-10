@@ -1048,7 +1048,7 @@ const App = (function(){
   let selMode=false, selIds=new Set(), shownIds=[];   // Mehrfachauswahl (v1.1 Punkt 8): nur im RAM, Sperre räumt ab; shownIds = zuletzt gezeigte Zeilen (für „Alle“)
   let flushSelAll=null;   // Desktop: meldet ein noch offenes Strg+A (keyup fehlt, weil per Maus ins andere Fenster gewechselt wurde) — Release-Audit v1.9 Runde 2 a2-5
   // Desktop: meldet die aktuelle Markierung sofort an die Hülle (gesetzt im Zwischenablage-Block, nur mit DESK) — für Strg+A in deskKey (a2-1, wie Alien Pass v1.21)
-  let reportSel=null, selReset=null;
+  let reportSel=null, selReset=null, selForget=null;
   let clipTimer=null, clipOwnedAt=0, clipCopied=false, clipGateSel=false, failCount=0, lockedUntil=0, pendingImport=null, kdfTouched=false;
   let pendingUnlock=null, pendingSecret=null, pendingOtpauth='';   // Aegis-Hürde: Schlüssel warten auf den Code / Einrichtung läuft
   let bioGen=0;             // Generation ALLER Pforten (Alien Pass v1.8): jede Sperre erhöht sie, laufende Pforten verwerfen ihr Ergebnis
@@ -1363,7 +1363,7 @@ const App = (function(){
     if(bgAway) return; bgAway=true;
     // ein noch offenes Strg+A ZUERST melden: clearGateInputs leert sonst das Feld, und die markierte Passphrase bliebe ungemeldet in PRIMARY (Release-Audit v1.9 R3a-1)
     if(flushSelAll) flushSelAll();
-    hiddenAt=Date.now(); if(DESK&&reportSel) reportSel(); clearGateInputs(); if(DESK&&!DEK&&clipOwnedAt&&!clipCopied) clearClip();   // gesperrt: Markierungen sofort weg; eine gesperrt kopierte Passphrase bleibt bis zur Frist (Pass B-4)
+    hiddenAt=Date.now(); if(DESK&&reportSel) reportSel(); if(selForget) selForget(); clearGateInputs(); if(DESK&&!DEK&&clipOwnedAt&&!clipCopied) clearClip();   // gesperrt: Markierungen sofort weg; eine gesperrt kopierte Passphrase bleibt bis zur Frist (Pass B-4)
     if((DEK||pendingUnlock)&&settings().bgLock===0){ lockSaving(null, true); }   // „sofort“: Editor-Stand sichern, dann sperren; getippte Passphrasen nie stehen lassen; Kopiertes bleibt bis zum Zeitgeber (v1.3)
     else if(DEK&&editing) commitEditor(true);                          // sonst nur den Editor-Stand sichern, bevor Android die App einfriert
   }
@@ -1383,7 +1383,7 @@ const App = (function(){
   // die Markierung läge sonst bis zur Frist weiter in PRIMARY (Release-Audit v1.8 B-1). Eine Markierung im Notiztext bleibt per Mittelklick nutzbar.
   // Vor clearGateInputs zuerst die offene Markierung melden (v1.15, Querfund Alien Pass v1.23 run-13 na-2): bei gehaltener Maustaste in einem Gate-Feld
   // (Fensterwechsel, Minimieren) leerte clearGateInputs das Feld, bevor etwas gemeldet war — die Passphrase-Markierung blieb nach Frist und Entsperren in PRIMARY. onHidden ebenso.
-  if(DESK&&typeof DESK.onBackground==='function') DESK.onBackground(h=>{ if(h==='blur'){ if(flushSelAll) flushSelAll(); if(reportSel) reportSel(); const g=clipGateSel; clearGateInputs(); if((!DEK||g)&&clipOwnedAt&&!clipCopied) clearClip(); } else if(h) onHidden(); else onShown(); });
+  if(DESK&&typeof DESK.onBackground==='function') DESK.onBackground(h=>{ if(h==='blur'){ if(flushSelAll) flushSelAll(); if(reportSel) reportSel(); if(selForget) selForget(); const g=clipGateSel; clearGateInputs(); if((!DEK||g)&&clipOwnedAt&&!clipCopied) clearClip(); } else if(h) onHidden(); else onShown(); });
   if(DESK&&typeof DESK.onLock==='function') DESK.onLock(()=>{ if(DEK||pendingUnlock) lockSaving(); });   // Hülle meldet Ruhezustand/Bildschirmsperre — im Flatpak wirkungslos (kein logind im Käfig), Handbuch sagt es
 
   /* ---------- Zwischenablage (synchron im Klick-Handler aufrufen!) — wortgleich Alien Pass ---------- */
@@ -2264,7 +2264,8 @@ const App = (function(){
     const lastText=()=>selLast?selLast.t:'';
     // peek für die gemerkte Meldung (Pass run-13 na-1): nach Nachrollen + Zurückziehen stand der gemerkte Stand nie in PRIMARY — die Hülle merkt den kürzeren
     // PRIMARY-Stand, wenn er Anfang oder Ende der Meldung ist
-    const onSel=pk=>{ const t=selText(), f=selFrom; selFrom=null; if(!t&&selLast){ const l=lastText(), lf=selLast.f; if(l) report(l,lf,true); }
+    // lp===false: den gemerkten Stand OHNE peek melden (Release-Audit run-13 r2a-1: nach einem verlorenen mouseup hat Chromium nicht gerade geschrieben)
+    const onSel=(pk,lp)=>{ const t=selText(), f=selFrom; selFrom=null; if(!t&&selLast){ const l=lastText(), lf=selLast.f; if(l) report(l,lf,lp!==false); }
       report(t,f,pk===true||(selHeld&&selMoved())); };
     reportSel=onSel;
     // Markieren bis an den Rand (v1.14, run-12 b-1 MITTEL, in der Hülle gemessen): rollt Chromium beim Ziehen nach, während die Maus ruht, wächst die Markierung
@@ -2296,6 +2297,9 @@ const App = (function(){
     // selAtDown nach jedem Loslassen, Ziehen-und-Ablegen und beim Sperren leeren (run-12 r4-2): es hielt sonst nach der Sperre einen losgelösten Textknoten der
     // Markdown-Ansicht samt Notiztext bis zum nächsten Drücken fest (Klasse selFrom, v1.10 a-2).
     selReset=()=>{ selAtDown=[[],[]]; selHeld=false; selDrag=false; selLast=null; };
+    // Nach der Meldung beim Fensterwechsel/Verstecken (vor clearGateInputs) den Schnappschuss verwerfen (Release-Audit run-13 r2a-1): er hielt sonst die Passphrase
+    // (V8-Teilstring auf den ganzen Feldwert) bis zur nächsten Mausbewegung und meldete sie danach erneut mit peek
+    selForget=()=>{ selLast=null; };
     document.addEventListener('mousedown',ev=>{ if(ev.button===0){ selDrag=false; selHeld=true; selLast=null; selAtDown=selKeyAt(ev.target); } },true);
     const merkLast=()=>{ try{ const a=document.activeElement; if(isFld(a)){ if(a.selectionStart!==a.selectionEnd) selLast={t:a.value.substring(a.selectionStart,a.selectionEnd),f:a}; }
         else { const g=window.getSelection(); if(g&&g.rangeCount&&!g.isCollapsed) selLast={t:String(g),f:null}; } }catch(_){} };
@@ -2309,7 +2313,7 @@ const App = (function(){
     // Mausbewegung OHNE Taste bei noch gehaltenem Zustand = das mouseup ging verloren (Release-Audit run-13 a-4, Rückschritt durch selLast): wie ein Loslassen
     // behandeln — sonst überlebte selLast, und jeder spätere Tastendruck bei leerer Markierung meldete den alten Stand mit peek (PRIMARY-Lesen am fremden Besitzer)
     document.addEventListener('mousemove',ev=>{ if(ev.buttons&1){ if(selHeld&&!selDrag) selAtDown=selKeyAt(document.activeElement); selDrag=true; }
-      else if(selHeld){ selHeld=false; selDrag=false; onSel(); selAtDown=[[],[]]; selLast=null; } },true);
+      else if(selHeld){ selHeld=false; selDrag=false; onSel(false,false); selAtDown=[[],[]]; selLast=null; } },true);
     document.addEventListener('mouseup',ev=>{ const pk=ev.button===0&&selDrag&&selMoved(); if(pk) reselect(); if(ev.button===0){ selDrag=false; selHeld=false; } onSel(pk); if(ev.button===0){ selAtDown=[[],[]]; selLast=null; } });
     // Ziehen-und-Ablegen einer Markierung schluckt das mouseup: drückt man auf den TOTP-Schlüssel (.secret-box, user-select:all markiert schon beim Drücken
     // alles) und bewegt die Maus, startet Chromium ein Ziehen — der Schlüssel lag ungemeldet in PRIMARY, auch nach Frist und Sperre (v1.14, Querfund
