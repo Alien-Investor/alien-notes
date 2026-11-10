@@ -40,15 +40,21 @@ if grep -nE '(^|[^A-Za-z0-9_$])(alert|confirm|prompt)[[:space:]]*\(' app.js; the
 # „XX.10.2026“) und vX.Y; Attribute auch in einfachen Anführungszeichen; ein Wert in I18N/T außerhalb von "…" (einfache Anführungszeichen, Template-Literal)
 # bricht ab, weil die Prüfung ihn sonst gar nicht läse (Zerleger: "…" und Kommentare werden übersprungen). Gemessen 10.11.2026 über Arbeitsbaum, HEAD und alle
 # 15 Tags: 0 Fehlalarme; 10 Mutanten (todo/Todo/Fixme, ???, XX.10.2026, vX.Y, Attribut in ‘…’, Wert in '…' bzw. als Template in I18N/T) rot, vorher grün.
+# Release-Audit v1.15 Runde 1 (Prüfer b F4, 10.11.2026): Zahl-Entitäten (&#91; &#x5B;, auch ohne Semikolon) und die benannten Entitäten für Klammern/Fragezeichen
+# werden vor der Prüfung dekodiert (im Text, in den Attributen und in den I18N/T-Werten), Attribute auch mit Leerzeichen um „=“, ohne Anführungszeichen und groß
+# geschrieben (TITLE=…) — „&#91;Datum&#93;“, „title=TODO“ und „title = "[…]"“ gingen sonst durch. Gemessen: Arbeitsbaum, HEAD und alle 15 Tags ohne Fehlalarm,
+# 9 Mutanten rot, „&amp;#91;“ (zeigt den Text „&#91;“) bleibt grün.
 node -e '
 const fs=require("fs"); const RX=/\[(?![ xX]\])[^\]]{1,300}\](?!\()|\?\?\?|\bX{2,}\b|\bvX\.Y\b|\b(?:TODO|TBD|FIXME)\b/i;
 const raw=fs.readFileSync("index.html","utf8").replace(/<!--[\s\S]*?-->/g," ").replace(/<(script|style)[\s\S]*?<\/\1>/g," ");
-const attrs=[...raw.matchAll(/\b(?:title|aria-label|placeholder|content|alt)=(?:"([^"]*)"|\x27([^\x27]*)\x27)/g)].map(m=>m[1]??m[2]).join("\n");
-const html=raw.replace(/<[^>]+>/g," ").replace(/&nbsp;/g," ").replace(/&amp;/g,"&")+"\n"+attrs;
+const ent=(t)=>t.replace(/&#(?:x([0-9a-f]+)|([0-9]+));?/gi,(m,h,d)=>{ const n=h?parseInt(h,16):+d; return n>0&&n<=0x10ffff?String.fromCodePoint(n):m; })
+  .replace(/&(lsqb|lbrack|rsqb|rbrack|quest|lcub|lbrace|rcub|rbrace|lt|gt|quot|apos|nbsp|amp);/gi,(m,n)=>({lsqb:"[",lbrack:"[",rsqb:"]",rbrack:"]",quest:"?",lcub:"{",lbrace:"{",rcub:"}",rbrace:"}",lt:"<",gt:">",quot:"\"",apos:"\x27",nbsp:" ",amp:"&"})[n.toLowerCase()]);
+const attrs=[...raw.matchAll(/\b(?:title|aria-label|placeholder|content|alt)\s*=\s*(?:"([^"]*)"|\x27([^\x27]*)\x27|([^\s>"\x27]+))/gi)].map(m=>m[1]??m[2]??m[3]).join("\n");
+const html=ent(raw.replace(/<[^>]+>/g," "))+"\n"+ent(attrs);
 const js=fs.readFileSync("app.js","utf8").split("\n");
 const block=(start)=>{ const i=js.findIndex(l=>l.startsWith(start)); if(i<0){ console.error("FEHLER: Tabelle "+start+" in app.js nicht gefunden (Platzhalter-Prüfung)"); process.exit(1); }
   const out=[]; for(let k=i;k<js.length;k++){ out.push(js[k]); if(k>i&&/^};/.test(js[k])) return out.join("\n"); } console.error("FEHLER: Ende von "+start+" nicht gefunden"); process.exit(1); };
-const strs=(src)=>[...src.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map(m=>m[1]).filter(s=>!/^[a-z]+(\.[A-Za-z0-9]+)+$/.test(s)).join("\n").replace(/<[^>]+>/g," ");
+const strs=(src)=>[...src.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map(m=>m[1]).filter(s=>!/^[a-z]+(\.[A-Za-z0-9]+)+$/.test(s)).join("\n").replace(/<[^>]+>/g," "); const strsE=(src)=>ent(strs(src));
 const fremd=(src)=>{ for(let i=0;i<src.length;i++){ const c=src[i];
   if(c==="\""){ for(i++;i<src.length&&src[i]!=="\"";i++){ if(src[i]==="\\") i++; } continue; }
   if(c==="/"&&src[i+1]==="/"){ while(i<src.length&&src[i]!=="\n") i++; continue; }
@@ -56,7 +62,7 @@ const fremd=(src)=>{ for(let i=0;i<src.length;i++){ const c=src[i];
   if(c==="\x27"||c==="\x60") return src.slice(i,i+60); }
   return null; };
 for(const start of ["const I18N = {","const T = {"]){ const f=fremd(block(start)); if(f!==null){ console.error("FEHLER: "+start+" in app.js hat einen Wert außerhalb von \"…\" (einfache Anführungszeichen/Template) — die Platzhalter-Prüfung läse ihn nicht: "+JSON.stringify(f)); process.exit(1); } }
-for(const [name,text] of [["index.html",html],["app.js I18N",strs(block("const I18N = {"))],["app.js T",strs(block("const T = {"))]]){
+for(const [name,text] of [["index.html",html],["app.js I18N",strsE(block("const I18N = {"))],["app.js T",strsE(block("const T = {"))]]){
   const m=RX.exec(text); if(m){ console.error("FEHLER: Platzhalter in "+name+": "+JSON.stringify(m[0].slice(0,120))+" — erst auflösen (Gerätetest/Faktencheck)"); process.exit(1); } }
 ' || { echo >&2 "FEHLER: Platzhalter-Prüfung der App-Texte — Build abgebrochen!"; exit 1; }
 echo "Vendor-Integrität OK."

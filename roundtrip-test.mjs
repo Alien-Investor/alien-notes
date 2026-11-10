@@ -20,18 +20,23 @@ if(process.env.RT_APP) console.log('  ⚠ RT_APP aktiv: geprüft wird '+process.
   if(!vn||av!==vn) throw new Error(`APP_VERSION (${av}) != VERSION_NAME (${vn})`);
   console.log('  ✓ APP_VERSION', av, '= VERSION_NAME'); }
 // CHANGELOG-Abschnitt der aktuellen Version ohne Platzhalter (v1.14, wie Sachwert-Tresor v3.11 run-11 b-3/e-3): früh, schon in der Batterie vor Commit
-// und Tag — make-release.sh prüft dasselbe noch einmal am Tag, bevor der Text öffentlich wird. Markdown-Links [Text](…) zählen nicht.
+// und Tag — make-release.sh prüft dasselbe noch einmal am Tag, bevor der Text öffentlich wird.
 { const vn=(readFileSync('VERSION','utf8').match(/^VERSION_NAME=(.+)$/m)||[])[1]?.trim(), cl=readFileSync('CHANGELOG.md','utf8');
-  // Kopf auch ohne Datum finden (run-12 c-3: „## v1.15“ im Entwurf galt sonst als „noch kein Abschnitt“); jede [eckige Klammer] außer Link/Kästchen, mehrzeilig
-  const m0=new RegExp('^## v'+vn.replace(/\./g,'\\.')+'(?![0-9.])','m').exec(cl), i=m0?m0.index:-1, j=i<0?-1:cl.indexOf('\n## v',i+5), sec=i<0?'':cl.slice(i,j<0?undefined:j);
+  // Abschnitt wie make-release.sh (awk: Start = erste Zeile mit $1=="##" und $2=="v<Version>", Ende = nächste Zeile mit $1=="##"; v1.15, Audit run-13 c H-4):
+  // ein Kopf in anderer Form („## v1.15—…“, eingerückt) oder ein Ende, das keine Versionsüberschrift in Spalte 0 ist, stoppt schon hier, nicht erst beim Release
+  const L=cl.split('\n'), f1=l=>l.trim().split(/\s+/), esc=vn.replace(/\./g,'\\.');
+  const st=L.findIndex(l=>{ const f=f1(l); return f[0]==='##'&&f[1]==='v'+vn; });
+  const kopf=L.filter(l=>l.includes('##')&&new RegExp('v'+esc+'(?![0-9.])').test(l));
+  if(st<0&&kopf.length) throw new Error(`CHANGELOG: Kopf v${vn} in anderer Form als „## v${vn} …“ (${kopf[0].slice(0,40)})`);
+  if(st>=0&&!new RegExp('^## v'+esc+'( |$)').test(L[st])) throw new Error(`CHANGELOG: Kopf v${vn} nicht in Spalte 0 (${L[st].slice(0,40)})`);
+  const en=st<0?-1:L.findIndex((l,k)=>k>st&&f1(l)[0]==='##');
+  if(en>=0&&!/^## v[0-9]+(\.[0-9]+)+( |$)/.test(L[en])) throw new Error(`CHANGELOG-Abschnitt v${vn} endet nicht an einer Versionsüberschrift (${L[en].slice(0,60)})`);
+  const i=st, sec=st<0?'':L.slice(st+1,en<0?undefined:en).join('\n');
   // Seit v1.15 dieselbe Regel wie make-release.sh (Querfund Alien Pass v1.23 run-13 c-3/r2c-3): OHNE Ausnahme für Links und Kästchen, dazu {…}, ???, XX,
-  // vX.Y, YYYY/JJJJ, TT.MM, <Wort> (GitHub verschluckt unbekannte Tags still), jede ``` / ~~~ (Codeblock), und das Abschnittsende muss eine
-  // Versionsüberschrift in Spalte 0 sein (ein eingerücktes „## “ schnitt make-release.sh sonst still ab)
+  // vX.Y, YYYY/JJJJ, TT.MM, <Wort> (GitHub verschluckt unbekannte Tags still) und jede ``` / ~~~ (Codeblock)
   const ph=sec.match(/\[[^\]]{0,300}\]|\{[^}]{1,80}\}|\?\?\?|\bX{2,}\b|\bvX\.Y\b|\b(?:YYYY|JJJJ)\b|\bTT\.MM\b|<[A-Za-zÄÖÜäöü][^<>\n]{0,40}>|`{3}|~{3}/)||sec.match(/\b(TODO|TBD|FIXME)\b/i);
   if(ph) throw new Error(`Platzhalter oder Codeblock im CHANGELOG-Abschnitt v${vn}: ${ph[0]}`);
-  const inner=sec.split('\n').slice(1).find(l=>l.trim().split(/\s+/)[0]==='##');   // wie awk $1=="##": jede solche Zeile im Abschnitt beendete den Schnitt
-  if(inner) throw new Error(`CHANGELOG-Abschnitt v${vn}: eingerücktes oder verschachteltes „##“ (${inner.slice(0,60)})`);
-  console.log('  ✓ CHANGELOG v'+vn+(i<0?' (noch kein Abschnitt)':'')+' ohne Platzhalter, Codeblock und verschachteltes „##“'); }
+  console.log('  ✓ CHANGELOG v'+vn+(i<0?' (noch kein Abschnitt)':'')+' ohne Platzhalter und Codeblock, Kopf und Ende wie make-release.sh'); }
 const a = src.indexOf('/* === VAULT-FORMAT BEGIN ==='), z = src.indexOf('/* === VAULT-FORMAT END === */');
 if(a<0||z<0) throw new Error('Sentinel nicht gefunden');
 const region = src.slice(a, z);

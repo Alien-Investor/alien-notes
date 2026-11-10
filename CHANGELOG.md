@@ -10,22 +10,21 @@ Dateiformat unverändert, keine neuen Berechtigungen. Handy und Desktop lesen di
   wie bisher.
 - **Backup (Android):** Bei „Sperren im Hintergrund: sofort“ sperrte der Teilen-Dialog die App, bevor das Datum des Backups gespeichert war — „Letztes
   Backup“ blieb alt, die Erinnerung kam wieder. Das Datum wird jetzt gesetzt, sobald die Datei in Dokumente liegt, noch vor dem Teilen-Dialog.
-- **Meldungen unten im Bild:** Solange eine Auswahlliste offen ist (Kategorie, Einstellungen), lassen Meldungen wie „In den Papierkorb …“ Tipps auf die
-  Liste darunter durch. „Rückgängig“ bleibt antippbar. Ohne offene Liste fängt die Meldung Tipps weiter ab, damit nichts darunter versehentlich ausgelöst wird.
+- **Meldungen unten im Bild:** Liegt unter einer Meldung wie „In den Papierkorb …“ ein Eintrag einer offenen Auswahlliste (Kategorie, Einstellungen),
+  wählt ein Tipp auf die Meldung diesen Eintrag. „Rückgängig“ bleibt antippbar. Alles andere unter der Meldung bleibt geschützt, damit nichts versehentlich
+  ausgelöst wird.
 - **Rückfragen:** Strg+Z und Strg+Y wirken bei offener Rückfrage nicht mehr auf das Feld dahinter (am Desktop und mit Tastatur am Handy).
-- **Fingerabdruck:** Wer nach der Meldung „Notizen-Datei passt nicht mehr zum Fingerabdruck“ ein Backup zurückspielt und mit der Passphrase entsperrt, findet
-  das Entsperren per Fingerabdruck sofort wieder eingeschaltet, nicht erst nach der nächsten Sperre.
 - **Interne Zwischenspeicher:** Passphrase, PIN, das Geheimnis des Fingerabdruck-Entsperrens und der Schlüssel der Aegis-Hürde bleiben in einigen
   Randfällen nicht mehr im Suchspeicher der JavaScript-Engine stehen (während der Schlüsselableitung, nach einem Schreibfehler, nach einer beschädigten
   Datei, beim Sperren während einer laufenden Prüfung). Die Stärke-Anzeige der Passphrase wechselt mit der Sprache.
 - **Schutz beim Speichern:** Trägt eine Notiz durch einen Programmfehler eine Angabe, die die App beim Öffnen als „neuere App-Version“ abweisen würde,
-  scheitert schon das Speichern mit einer Meldung — die eigenen Notizen bleiben so immer zu öffnen.
+  scheitert schon das Speichern mit einer Meldung, statt dass die eigenen Notizen beim nächsten Entsperren abgewiesen werden.
 - **Desktop:** Weitere Fälle, in denen markierter Text nach der Kopier-Frist oder dem Sperren in der X11-Auswahl (Mittelklick) stehen blieb, sind behoben:
   nach einem Klick mit leichtem Zittern auf ein Kästchen, nach erneutem Markieren eines schon ganz markierten Felds, nach dem Zurückziehen der Maus bis zum
   Anfang und beim Fensterwechsel mit gehaltener Maustaste in einem Passphrase-Feld.
-- **Handbuch:** Der Abschnitt zur PIN nennt genauer, was sie verwirft: eine getauschte Notizen-Datei oder veränderte Kopfdaten; ist nur der Inhalt
-  beschädigt, meldet die App das und behält die PIN.
-- **Bauen und Veröffentlichen:** Die App wird aus einem sauberen Abbild des Versionsstands gebaut, die Abhängigkeiten genau nach der Sperrdatei. Das
+- **Handbuch:** Der Abschnitt zur PIN nennt genauer, was sie verwirft: eine getauschte Notizen-Datei oder einen veränderten Schlüsselbereich; ist die
+  Datei nur beschädigt oder nicht lesbar, meldet die App das und behält die PIN. Die Meldung zu unzulässigen Argon2-Werten spricht nicht mehr vom Import.
+- **Bauen und Veröffentlichen:** Die App wird aus einem sauberen Abbild des Versionsstands gebaut, die npm-Pakete genau nach der Sperrdatei. Das
   Release-Skript prüft die Signatur der Prüfsummen mit dem Schlüssel aus dem Versions-Tag. Die fertige Android-App wird zusätzlich im Bytecode geprüft.
 
 ## v1.14 — 2026-10-16

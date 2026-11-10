@@ -94,7 +94,7 @@ const I18N = {
   "help.hDesk":"Desktop version (Linux)",
   "help.lDesk":"<li><strong>No network — enforced by the system:</strong> the desktop app runs as a Flatpak without network permission; inside the sandbox there is no connection to the outside. On top of that the app itself blocks every connection. Check: <code>flatpak info --show-permissions org.alieninvestor.notes</code> — there is no <code>network</code>.</li><li><strong>Notes file:</strong> <code>~/.var/app/org.alieninvestor.notes/data/alien-notes/notes.ainv</code> — encrypted, readable only by you, rewritten completely on every change (never half-written). The app sees no other files: backup, import and “As file” go through the system file dialog, which only grants the chosen file.</li><li><strong>Clipboard:</strong> copied notes are marked as a password for KDE — Klipper keeps them out of its history. Other clipboard managers may ignore the mark. The app clears the clipboard after the set time, also in the background, on lock and on quit, but only if its own copy is still there. The same applies to text you select in the app, with mouse or keyboard, including Tab into a filled passphrase field (on Linux instantly pasteable with a middle click). Klipper can mirror every copy into this middle-click selection as well (setting “Keep the selection and clipboard the same”) — the app clears it there too. Selected text does not carry the KDE mark: if Klipper is set to keep the selection in its history, turn that off. Ctrl+C and Ctrl+X in the app copy like the copy button.</li><li><strong>Syncing with the phone:</strong> on the phone “Create backup” into a Syncthing folder, on the desktop import it under Backup — and the other way round. See “Backup &amp; Sync”.</li><li><strong>Locking:</strong> after inactivity and when the window has been minimised or hidden for longer than the chosen time — with “immediately” right when minimising (setting “Lock in background”; “background” here means minimised or hidden; switching to another window does not count, but it clears typed passphrases and PINs). On <strong>screen lock and suspend the desktop app does not lock by itself</strong> — inside the Flatpak it is not told. So use the system lock and, if you want, a short inactivity lock; Ctrl+L locks immediately.</li><li><strong>Keyboard:</strong> Ctrl+F search, Ctrl+N new note, Ctrl+S finish the note (save and close), Ctrl+Z / Ctrl+Shift+Z undo / redo in the open note, Ctrl+A only selects the content of a filled-in field or, in the Markdown view, the open note, Ctrl+L lock, Esc closes. From about 1000 pixels window width, list and note sit side by side.</li><li><strong>Honest limits:</strong> the desktop app ships its own browser engine (Electron) — security updates for it only arrive with a new app version, not through the system. No protection against screenshots (Linux has no way to block them). Under X11 every running program can read keyboard and clipboard; Wayland separates programs better. No fingerprint.</li>",
   "help.hPin":"Quick unlock with a PIN (desktop)",
-  "help.pPin":"Optionally a PIN replaces the passphrase after a lock (Settings → Quick unlock with a PIN). <strong>How it works:</strong> when you set it up, the app wraps a copy of the data key under a key derived from your PIN (Argon2id, same parameters as the notes file) and keeps that copy <em>in memory only</em>. A lock through inactivity or the background clears the session as before, but that wrapped copy stays; the PIN opens it again. Nothing of it is written to disk, the notes file stays unchanged and backups carry none of it. Quitting the app removes the copy, and after 24 hours at the latest the app discards it itself: the next start asks for the passphrase. <strong>What it costs:</strong> six digits are a tiny search space. With the file's Argon2 parameters an ordinary CPU tries them all in a few hours, a single graphics card in roughly ten minutes — never enough to protect the file, each extra digit only multiplies the effort by ten. The PIN only protects that copy in memory. With a PIN, “locked” therefore no longer means “key wiped from memory”: whoever can read the memory of the running program holds the wrapped key and can try PINs offline — the three attempts are a rule in the code, not a cryptographic limit. <strong>What discards the PIN:</strong> three wrong attempts, a passphrase change, deleting the notes, a swapped notes file or altered header data (if only the content is damaged, the app says so and keeps the PIN), the end of the 24 hours, and quitting the app. After that only the passphrase opens the notes; you can set up a new PIN in Settings. <strong>The deliberate bolt:</strong> “Lock now” (Ctrl+L) keeps the PIN but demands the passphrase once — afterwards the PIN applies again. If you share the computer with others or have unencrypted swap, leave the PIN off.",
+  "help.pPin":"Optionally a PIN replaces the passphrase after a lock (Settings → Quick unlock with a PIN). <strong>How it works:</strong> when you set it up, the app wraps a copy of the data key under a key derived from your PIN (Argon2id, same parameters as the notes file) and keeps that copy <em>in memory only</em>. A lock through inactivity or the background clears the session as before, but that wrapped copy stays; the PIN opens it again. Nothing of it is written to disk, the notes file stays unchanged and backups carry none of it. Quitting the app removes the copy, and after 24 hours at the latest the app discards it itself: the next start asks for the passphrase. <strong>What it costs:</strong> six digits are a tiny search space. With the file's Argon2 parameters an ordinary CPU tries them all in a few hours, a single graphics card in roughly ten minutes — never enough to protect the file, each extra digit only multiplies the effort by ten. The PIN only protects that copy in memory. With a PIN, “locked” therefore no longer means “key wiped from memory”: whoever can read the memory of the running program holds the wrapped key and can try PINs offline — the three attempts are a rule in the code, not a cryptographic limit. <strong>What discards the PIN:</strong> three wrong attempts, a passphrase change, deleting the notes, a swapped notes file or an altered key section (if the file is only damaged or unreadable, the app says so and keeps the PIN), the end of the 24 hours, and quitting the app. After that only the passphrase opens the notes; you can set up a new PIN in Settings. <strong>The deliberate bolt:</strong> “Lock now” (Ctrl+L) keeps the PIN but demands the passphrase once — afterwards the PIN applies again. If you share the computer with others or have unencrypted swap, leave the PIN off.",
   "set.bioTitle":"Fingerprint unlock (Android)",
   "set.bioOffIntro":"Unlocks the notes with the device fingerprint instead of the passphrase. <strong>Honestly:</strong> a fingerprint is convenient, but it can be forced — at a border, or by someone holding your hand. Android binds the key to every strong biometric of the device: where a strong face unlock is enrolled (some stock Pixels; not on GrapheneOS), that opens the notes too, after a confirmation tap. The passphrase stays the real protection: it is required after every restart of the phone (as long as the box below is unticked), after a passphrase change and as soon as a new fingerprint is enrolled in the system. Technically a random key wrapped by the Android keystore unlocks the data key; nothing of it enters backups.",
   "set.bioPass":"Passphrase to confirm",
@@ -147,7 +147,7 @@ const T = {
   "err.wait":{de:"Zu viele Fehlversuche — bitte {s} s warten.",en:"Too many failed attempts — wait {s} s."},
   "err.fileFormat":{de:"Keine gültige Alien-Notes-.notes-Datei (eine .vault-Datei von Alien Pass wird hier nicht angenommen).",en:"Not a valid Alien Notes .notes file (an Alien Pass .vault file is not accepted here)."},
   "err.fileNewer":{de:"Die Datei stammt aus einer neueren App-Version. Bitte App aktualisieren.",en:"The file comes from a newer app version. Please update the app."},
-  "err.fileBounds":{de:"Die Datei verlangt unzulässige Argon2-Parameter — Import abgelehnt.",en:"The file demands out-of-bounds Argon2 parameters — import refused."},
+  "err.fileBounds":{de:"Die Datei verlangt unzulässige Argon2-Parameter — sie wird nicht geöffnet.",en:"The file demands out-of-bounds Argon2 parameters — it is not opened."},
   "err.fileLarge":{de:"Datei zu groß.",en:"File too large."},
   "err.fileFull":{de:"⚠ Notizen-Datei würde über {m} MB wachsen — Änderung verworfen. Notizen kürzen oder Papierkorb leeren.",en:"⚠ Notes file would grow beyond {m} MB — change discarded. Shorten notes or empty the trash."},
   "toast.fileOver":{de:"Notizen-Datei über {m} MB: bis zum Aufräumen werden nur noch Änderungen gespeichert, die sie nicht weiter vergrößern (Löschen, Haken, kleine Korrekturen).",en:"Notes file over {m} MB: until you tidy up, only changes that do not grow it further are saved (deleting, ticks, small edits)."},
@@ -1236,7 +1236,9 @@ const App = (function(){
       // Sitzung VOR dem Aufbereiten prüfen (v1.15, Querfund Alien Pass v1.23 run-13 r2b-2, verify-v115 L): gesperrt oder andere Pforte schneller → die entschlüsselte
       // Datei nicht mehr anfassen; sanitizeVault legte sonst den Aegis-Schlüssel über seine Regex-Prüfungen in die Statics des Sperrbildschirms
       if(gen!==bioGen||DEK||pendingUnlock){ $('lock-pass').value=''; maskInputs('#screen-lock'); return; }   // eine andere Pforte hat die Sitzung schon geöffnet: nichts überschreiben
-      const v=sanitizeVault(obj);                                     // auch lokal: Whitelist beim Unlock
+      // Statics nach dem Aufbereiten leeren, auch bei einem Inhaltsfehler (v1.15, Release-Audit run-13 a-1/a-3): normalizeTotp ließ den Aegis-Schlüssel, line() bei
+      // „zu viele Notizen“ einen Notiztitel in RegExp.input — nach „Abbrechen“ der Hürde bzw. der Fehlermeldung stand er auf dem Sperrbildschirm
+      let v; try{ v=sanitizeVault(obj); }finally{ /(?:)/.exec(''); }   // auch lokal: Whitelist beim Unlock
       if(v.totp){ pendingUnlock={dek, kdf:f.kdf, wrap:f.wrap, vault:v}; }   // Aegis-Hürde: Schlüssel erst nach Code-Prüfung in die Sitzung
       else { DEK=dek; KDF=f.kdf; WRAP=f.wrap; VAULT=v; failCount=0; lockedUntil=0; saveLockState(); }
       bioRearmDek=dekX;
@@ -1274,7 +1276,7 @@ const App = (function(){
     }finally{ doTotp._busy=false; $('totp-code').value=''; }
     releaseHolds(); enterApp();
   }
-  function cancelTotp(){ clearIdle(); pendingUnlock=null; bioRearmDek=null; bioGen++; bioAuto=false; $('totp-code').value=''; err('totp-err'); boot(); }   // bioAuto=false: sonst Prompt-Schleife Fingerabdruck → Hürde → Abbruch → Fingerabdruck
+  function cancelTotp(){ clearIdle(); pendingUnlock=null; bioRearmDek=null; bioGen++; bioAuto=false; $('totp-code').value=''; err('totp-err'); /(?:)/.exec(''); boot(); }   // bioAuto=false: sonst Prompt-Schleife Fingerabdruck → Hürde → Abbruch → Fingerabdruck
   // Fehlversuchs-Bremse überlebt einen Neustart (außerhalb der verschlüsselten Datei, enthält nichts Geheimes)
   const LOCK_KEY='ai-notes-lock';
   // Der Zähler wird bei JEDEM Fehlversuch gespeichert und nur durch einen Erfolg gelöscht — kein Ablauf nach Zeit: am entsperrten Handy
@@ -2255,11 +2257,14 @@ const App = (function(){
     // onSel nur den leeren Endstand (report bricht bei '' ab) — PRIMARY behielt den letzten nicht leeren Stand nach Frist und Sperre. Ist der Endstand leer, wird
     // dieser gemeldet. Seite: den Text der AUSWAHL merken, nicht die Range — String(Range) weicht an Elementgrenzen in den Zeilenumbrüchen ab, Chromium legt
     // String(Selection) nach PRIMARY (Pass run-13 h2 „dquer“). Kein Neusetzen der Auswahl.
-    let selLast=null;
-    const lastText=()=>{ try{ if(!selLast) return ''; if(selLast.length===3){ const [a,x,y]=selLast; return a.value.substring(x,y); } return String(selLast[0]); }catch(_){ return ''; } };
+    // Feld: den markierten TEXT beim Ziehen merken, nicht [feld,s,e] (v1.15, Release-Audit run-13 a-2): leerte eine Pforte das Gate-Feld, während die Maus darin
+    // noch eine Markierung hielt (Fehlversuch/Erfolg nach Argon2), las lastText() beim Loslassen das leere Feld — die Markierung, die Chromium beim Ziehen nach
+    // PRIMARY gelegt hatte, wurde nie gemeldet. Die Kopie lebt nur bis zum nächsten Loslassen, dragstart oder selReset (Sperre).
+    let selLast=null;   // {t:Text, f:Feld|null}
+    const lastText=()=>selLast?selLast.t:'';
     // peek für die gemerkte Meldung (Pass run-13 na-1): nach Nachrollen + Zurückziehen stand der gemerkte Stand nie in PRIMARY — die Hülle merkt den kürzeren
     // PRIMARY-Stand, wenn er Anfang oder Ende der Meldung ist
-    const onSel=pk=>{ const t=selText(), f=selFrom; selFrom=null; if(!t&&selLast){ const l=lastText(), lf=selLast.length===3?selLast[0]:null; if(l) report(l,lf,true); }
+    const onSel=pk=>{ const t=selText(), f=selFrom; selFrom=null; if(!t&&selLast){ const l=lastText(), lf=selLast.f; if(l) report(l,lf,true); }
       report(t,f,pk===true||(selHeld&&selMoved())); };
     reportSel=onSel;
     // Markieren bis an den Rand (v1.14, run-12 b-1 MITTEL, in der Hülle gemessen): rollt Chromium beim Ziehen nach, während die Maus ruht, wächst die Markierung
@@ -2292,11 +2297,19 @@ const App = (function(){
     // Markdown-Ansicht samt Notiztext bis zum nächsten Drücken fest (Klasse selFrom, v1.10 a-2).
     selReset=()=>{ selAtDown=[[],[]]; selHeld=false; selDrag=false; selLast=null; };
     document.addEventListener('mousedown',ev=>{ if(ev.button===0){ selDrag=false; selHeld=true; selLast=null; selAtDown=selKeyAt(ev.target); } },true);
-    document.addEventListener('mousemove',ev=>{ if((ev.buttons&1)&&selHeld){ try{ const a=document.activeElement; if(isFld(a)){ if(a.selectionStart!==a.selectionEnd) selLast=[a,a.selectionStart,a.selectionEnd]; }
-        else { const g=window.getSelection(); if(g&&g.rangeCount&&!g.isCollapsed) selLast=[String(g)]; } }catch(_){} } },true);
+    const merkLast=()=>{ try{ const a=document.activeElement; if(isFld(a)){ if(a.selectionStart!==a.selectionEnd) selLast={t:a.value.substring(a.selectionStart,a.selectionEnd),f:a}; }
+        else { const g=window.getSelection(); if(g&&g.rangeCount&&!g.isCollapsed) selLast={t:String(g),f:null}; } }catch(_){} };
+    // Je Mausbewegung zweimal merken: im Capture (VOR Chromiums Schritt — der Stand, den PRIMARY beim Zurückziehen bis zum Anfang behält) und gleich danach
+    // (setTimeout 0, NACH dem Schritt — beim Vergrößern legt Chromium diesen Stand nach PRIMARY; Release-Audit run-13 a-2: der Capture allein meldete 14 statt
+    // 17 Zeichen, die Hülle hätte PRIMARY nie zugeordnet). NICHT bei selectionchange: das Nachrollen ohne Mausbewegung ändert die Markierung ohne PRIMARY —
+    // die erste a-2-Fassung merkte diese Zwischenstände, verify-desktop [2y] zurnach wurde rot (Rückschritt, gemessen).
+    document.addEventListener('mousemove',ev=>{ if((ev.buttons&1)&&selHeld){ merkLast(); setTimeout(()=>{ if(selHeld) merkLast(); },0); } },true);
     // Beim ERSTEN Bewegen den Stand nach Chromiums Fokuswechsel neu merken (v1.15, Pass run-13 r2a-1, Rückschritt durch a-1 allein): hatte ein Feld noch eine
     // verdeckte Vollmarkierung [0,len] (Tab-Fokus, Strg+A, select()) und lag der Fokus anderswo, ergab erneutes Ziehen vom Anfang bis zum Ende Endstand = gemerkter Stand → kein reselect.
-    document.addEventListener('mousemove',ev=>{ if(ev.buttons&1){ if(selHeld&&!selDrag) selAtDown=selKeyAt(document.activeElement); selDrag=true; } else selHeld=false; },true);
+    // Mausbewegung OHNE Taste bei noch gehaltenem Zustand = das mouseup ging verloren (Release-Audit run-13 a-4, Rückschritt durch selLast): wie ein Loslassen
+    // behandeln — sonst überlebte selLast, und jeder spätere Tastendruck bei leerer Markierung meldete den alten Stand mit peek (PRIMARY-Lesen am fremden Besitzer)
+    document.addEventListener('mousemove',ev=>{ if(ev.buttons&1){ if(selHeld&&!selDrag) selAtDown=selKeyAt(document.activeElement); selDrag=true; }
+      else if(selHeld){ selHeld=false; selDrag=false; onSel(); selAtDown=[[],[]]; selLast=null; } },true);
     document.addEventListener('mouseup',ev=>{ const pk=ev.button===0&&selDrag&&selMoved(); if(pk) reselect(); if(ev.button===0){ selDrag=false; selHeld=false; } onSel(pk); if(ev.button===0){ selAtDown=[[],[]]; selLast=null; } });
     // Ziehen-und-Ablegen einer Markierung schluckt das mouseup: drückt man auf den TOTP-Schlüssel (.secret-box, user-select:all markiert schon beim Drücken
     // alles) und bewegt die Maus, startet Chromium ein Ziehen — der Schlüssel lag ungemeldet in PRIMARY, auch nach Frist und Sperre (v1.14, Querfund
@@ -2572,7 +2585,7 @@ const App = (function(){
       if(!blob.k) bioAddK(f.kdf, blob.w);   // bio-AAD hat den Kopf bestätigt
       const obj=await decryptBody(f.body, dek, f.kdf);
       if(gen!==bioGen||DEK||pendingUnlock) return;                        // zwischendurch gesperrt oder anders entsperrt — VOR dem Aufbereiten (v1.15, Pass run-13 r2b-2)
-      const v=sanitizeVault(obj);
+      let v; try{ v=sanitizeVault(obj); }finally{ /(?:)/.exec(''); }   // Statics wie in doUnlock (run-13 a-1/a-3)
       if(v.totp){ pendingUnlock={dek, kdf:f.kdf, wrap:f.wrap, vault:v}; }
       else { DEK=dek; KDF=f.kdf; WRAP=f.wrap; VAULT=v; failCount=0; lockedUntil=0; saveLockState(); }
     }catch(e){
@@ -2639,7 +2652,7 @@ const App = (function(){
       const dek=await unwrapDek(slot.blob, pkey, f.kdf, false, 'pin');
       const obj=await decryptBody(f.body, dek, f.kdf);
       if(gen!==bioGen||DEK||pendingUnlock||PIN!==slot){ $('lock-pin').value=''; maskInputs('#screen-lock'); return; }   // eine andere Pforte war schneller oder der Slot ist verworfen — VOR dem Aufbereiten (v1.15, Pass run-13 r2b-2)
-      const v=sanitizeVault(obj);
+      let v; try{ v=sanitizeVault(obj); }finally{ /(?:)/.exec(''); }   // Statics wie in doUnlock (run-13 a-1/a-3)
       PIN.tries=0;
       if(v.totp){ pendingUnlock={dek, kdf:f.kdf, wrap:f.wrap, vault:v}; }   // Aegis-Hürde bleibt auch vor der PIN
       else { DEK=dek; KDF=f.kdf; WRAP=f.wrap; VAULT=v; failCount=0; lockedUntil=0; saveLockState(); }
@@ -2703,8 +2716,9 @@ const App = (function(){
       // (Release-Audit v1.9 a-1), wie Alien Pass v1.21 (run-11 e-3). Das zweite Melden im keyup verdrängt nichts (gleicher Hash im Ring).
       if(reportSel) reportSel();
       return true; }
-    // Offene Rückfrage: kein Strg+N/F/S daran vorbei; alle anderen Strg-Tasten (Einfügen, Rückgängig, Wortsprung; Strg+A siehe oben) wirken normal im
-    // Eingabefeld — vorher schluckte die Weiche jede, im Kategorie-Feld ging Strg+V nicht (Querfund Alien Pass v1.20, Review N-3)
+    // Offene Rückfrage: kein Strg+N/F/S daran vorbei; alle anderen Strg-Tasten (Einfügen, Wortsprung; Strg+A siehe oben) wirken normal im Eingabefeld —
+    // vorher schluckte die Weiche jede, im Kategorie-Feld ging Strg+V nicht (Querfund Alien Pass v1.20, Review N-3). Rückgängig/Wiederholen schluckt seit
+    // v1.15 schon dialogKey (Ablege-Schritt ohne beforeinput, verify-v115 U).
     if(dlgResolve) return k==='n'||k==='f'||k==='s';
     if(!DEK) return false;
     if(k==='f'){ closeHelp(); tab('list'); const q=$('search'); q.focus(); q.select(); return true; }
@@ -2846,6 +2860,14 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(window.ResizeObserver) new ResizeObserver(()=>App.skRedraw()).observe(document.getElementById('sk-wrap')); }
   // Tippen auf den Hintergrund = Abbrechen — aber nur, wenn auch das Drücken dort begann: sonst brach ein im Dialog begonnenes und über dem Hintergrund
   // beendetes Ziehen (Text markieren, Knopf verfehlt) die Rückfrage ab, der click landet am gemeinsamen Vorfahren #dlg (v1.14, Kit H-4 / Alien Pass v1.22)
+  // Toast über einer offenen Auswahl-Liste (v1.15, Querfund Alien Pass v1.24 / Ausgaben-Tracker v1.8; Release-Audit run-13 c-1): der Toast (z 200) lag über
+  // offenen Kombi-Menüs (z 60) und fing Tipps auf Einträge unter seiner Meldung ab. Er bleibt undurchlässig — ein Tipp auf die Meldung geht NUR an einen
+  // Eintrag einer offenen Liste, der genau darunter liegt. Die erste Fassung (per CSS durchlässig, solange irgendeine Liste offen ist, wie Pass v1.24) ließ
+  // den Tipp auch auf „OK“ der Rückfrage „Kategorie…“ (Kategorien ohne Rückgängig entfernt) oder auf ein Kästchen der Einstellungen durch (gemessen).
+  // Läuft vor der globalen Klick-Delegation (die schließt jede Liste bei einem Klick außerhalb eines Auswahlfelds); „Rückgängig“ bleibt unberührt.
+  const tst=document.getElementById('toast'); if(tst) tst.addEventListener('click',ev=>{ if(ev.target.closest('#toast-btn')) return;
+    tst.style.visibility='hidden'; let h=null; try{ h=document.elementFromPoint(ev.clientX,ev.clientY); }catch(_){ h=null; } tst.style.visibility='';
+    const o=h&&h.closest('.combo-menu:not(.hidden) .combo-opt'); if(o) o.click(); });
   const dg=document.getElementById('dlg'); if(dg){ let dgDown=null; dg.addEventListener('pointerdown',ev=>{ dgDown=ev.target; });
     dg.addEventListener('click',ev=>{ const d=dgDown; dgDown=null; if(ev.target===dg&&d===dg) App.dialogCancel(); }); }
   if(window.AlienDesktop){   // Zweispaltig im breiten Fenster (CSS html.desk): der Editor wird rechte Spalte der Liste statt eigener Ansicht
