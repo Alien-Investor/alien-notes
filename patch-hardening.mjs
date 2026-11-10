@@ -8,7 +8,7 @@
 //      bieten an, sie zu speichern; autocomplete="off" im HTML hält das nicht auf). Wirksam ist erst getSystemService("autofill") → null
 //      (Chromium fragt das View-Flag nicht ab; Gerätetest Alien Pass 26.09.2026), das Flag bleibt als zweite Schicht. Seit v1.5 (aus Alien Pass
 //      v1.15) entfernt dropAutofillRestore() die Restore-Extras aus jedem Intent — sonst NullPointerException in Activity.restoreAutofillSaveUi().
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
 
 const MANIFEST = 'android/app/src/main/AndroidManifest.xml';
 let m = readFileSync(MANIFEST, 'utf8');
@@ -614,6 +614,8 @@ const jm = readFileSync(MAIN, 'utf8'), jb = readFileSync(BIO, 'utf8'), jc = read
 const CLEAR_SRC = "    @PluginMethod\n    public void clear(PluginCall call) {\n        try {\n            if (Build.VERSION.SDK_INT >= 28) cm().clearPrimaryClip();\n            else cm().setPrimaryClip(ClipData.newPlainText(\"\", \" \"));\n            call.resolve();\n        } catch (Exception e) { call.reject(\"clip\"); }\n    }\n";
 // Kommentare in EINEM Durchlauf von links nach rechts wie javac (run-12 c3-3): erst Blockkommentare, dann Zeilenkommentare zu entfernen las `//*…*/ code`
 // falsch (javac: alles Kommentar; vorher blieb `/ code` stehen) und `"…//…"` als Kommentarbeginn. Zeichenketten und Zeichen bleiben stehen.
+// Einzige Abweichung von javac: noComments kennt nur LF als Zeilenende, javac auch ein einzelnes CR (JLS 3.4) — `// x<CR> code` verbärge Code. Darum ist
+// rohes CR in allen sechs Java-Dateien verboten (unten, v1.15, Querfund Pass run-13 d-5), statt noComments umzubauen.
 const noComments = (t) => t.replace(/"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (m) => (m[0] === '/' ? '' : m));
 const jbc = noComments(jb), jcc = noComments(jc);
 const js = readFileSync(SEC, 'utf8'), jv = readFileSync(VS, 'utf8'), jwr = readFileSync(WV, 'utf8'), jvc = noComments(jv);
@@ -640,7 +642,7 @@ if (!jm.includes('getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE)')
   // einmal — ein zweiter Setter NACH der wörtlichen Kopie (pb.setConfirmationRequired(false)) hob sie sonst auf
   || !jc.includes(CLEAR_SRC) || [jc, jcc].some((t) => (t.match(/public\s+void\s+clear\s*\(/g) || []).length !== 1)
   || [jb, jbc].some((t) => (t.match(/setConfirmationRequired\s*\(/g) || []).length !== 1 || (t.match(/setAllowedAuthenticators\s*\(/g) || []).length !== 1)
-  || !jb.includes(PROMPT_SRC) || (jb.match(/PromptInfo\.Builder\(\)/g) || []).length !== 1
+  || !jb.includes(PROMPT_SRC) || [jb, jbc].some((t) => (t.match(/PromptInfo\.Builder\(\)/g) || []).length !== 1)   // roh UND ohne Kommentare (v1.15, Pass run-13 d-7: vorher nur roh)
   || !jbc.includes('b.setUserAuthenticationParameters(0, KeyProperties.AUTH_BIOMETRIC_STRONG);')
   || [jm, js, jb, jc, jv, jwr].some((t) => /\\u+[0-9a-fA-F]{4}/.test(t) || t.includes('"""'))   // keine Unicode-Escapes, keine Textblöcke (noComments kennt sie nicht)
   // v1.14 (run-12 c2 Hinweis 2): FLAG_SECURE auch nicht über die LayoutParams (lp.flags &= ~FLAG_SECURE; updateViewLayout) — kein clearFlags nötig
@@ -666,6 +668,83 @@ if (!jm.includes('getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE)')
        return before(jbc.indexOf('public void status(')) && before(jbc.indexOf('public void unlock(')); })()
   || !/USE_FINGERPRINT"\s+android:maxSdkVersion="27"\s+tools:node="replace"/.test(readFileSync(MANIFEST, 'utf8'))) {   // cap sync bricht die Zeile um
   console.error('FEHLER: Java-Härtung unvollständig — Build abgebrochen!'); process.exit(1);
+}
+// v1.15 (Querfund Alien Pass v1.23 Release-Audit run-13 d-1…d-6 / r2d-1 / nb-1, Notes-Tabelle P17/P24/P28; Block wie Pass patch-hardening.mjs v1.24, die
+// vierzehn Pin-Texte byte-gleich, gemessen 10.11.2026: jeder steht wörtlich in den Notes-Vorlagen oben): auch die übrigen Hebel WÖRTLICH als unabhängige
+// Zweitkopie — bis dahin blieben eine Versionsweiche um den getSystemService-Hebel, eine Bedingung vor dropAutofillRestore in onNewIntent, ein fester
+// Boot-Zähler, beide aad()-Aufrufe als Zeichenkette, ein fünftes Plugin über getBridge().registerPlugin*/registerPluginInstance, ein umbenannter Plugin-Name
+// (app.js fiele STILL auf den Web-Weg zurück: navigator.clipboard ohne IS_SENSITIVE, FLAG_SECURE ohne Schalter, Notizen im localStorage), ein `// x<CR>`-
+// Versteck und Reflection grün. Dazu (Pass r2d-1/nb-1) die AUSWERTUNG der Neustart-Regel und der Kanarie — status(), enroll(), unlock() ab der Kopfzeile (die
+// @PluginMethod-Zeile davor prüft pm() unten) — und WOHER das Ergebnis der Kanarie kommt (canaryState) samt wipe/wipeAll/deleteKey: eine stets falsche
+// Bedingung (`… && keep`), ein `&& !rearm` oder ein canaryState(), das bei KeyPermanentlyInvalidatedException "ok" liefert, blieb sonst in Selbstprüfung UND
+// Endkontrolle grün. Gegenstück am Bytecode: PIN_GETSYS … PIN_DELKEY in build-apk.sh. Notes-Teile: sechs Java-Dateien, vier Plugins (Köpfe von SecureScreen/
+// VaultStore nach dem Muster CLIPHEAD/BIOHEAD), @PluginMethod-Menge auch für set bzw. read/write/del; dazu die Zählungen aus Pass v1.23 Runde 1, die Notes
+// noch nicht hatte (onCreate/dropAutofillRestore/write/set je genau einmal, roh UND ohne Kommentare).
+const GETSYS_SRC = "    @Override\n    public Object getSystemService(String name) {\n        if (\"autofill\".equals(name)) return null;   // Dienstname des AutofillManager (API 26+, Konstante ist nicht öffentlich)\n        return super.getSystemService(name);\n    }\n";
+const NEWINTENT_SRC = "    @Override\n    protected void onNewIntent(Intent intent) {\n        dropAutofillRestore(intent);\n        super.onNewIntent(intent);\n    }\n";
+const BOOTTAG_SRC = "    private String bootTag() {\n        try { int n = Settings.Global.getInt(getContext().getContentResolver(), Settings.Global.BOOT_COUNT); if (n > 0) return \"b:\" + n; } catch (Exception ignored) {}\n        try (BufferedReader r = new BufferedReader(new FileReader(\"/proc/sys/kernel/random/boot_id\"))) {\n            String s = r.readLine();\n            if (s != null && s.trim().length() >= 8) return \"id:\" + s.trim();\n        } catch (Exception ignored) {}\n        return \"t:\" + ((System.currentTimeMillis() - SystemClock.elapsedRealtime()) / 1000L);\n    }\n";
+const SAMEBOOT_SRC = "    private boolean sameBoot(String stored) {\n        if (stored == null || stored.length() < 3) return false;\n        String now = bootTag();\n        if (!stored.startsWith(\"t:\") || !now.startsWith(\"t:\")) return stored.equals(now);\n        try { return Math.abs(Long.parseLong(stored.substring(2)) - Long.parseLong(now.substring(2))) <= 120; }\n        catch (Exception e) { return false; }\n    }\n";
+const AAD_SRC = "    private static void aad(Cipher c, String boot) {\n        if (boot != null && !boot.isEmpty()) c.updateAAD(boot.getBytes(StandardCharsets.UTF_8));\n    }\n";
+const CLIPHEAD_SRC = "@CapacitorPlugin(name = \"SecureClip\")\npublic class SecureClipPlugin extends Plugin {\n";
+const BIOHEAD_SRC = "@CapacitorPlugin(name = \"Biometric\")\npublic class BiometricPlugin extends Plugin {\n";
+const STATUS_SRC = "    public void status(PluginCall call) {\n        JSObject o = new JSObject();\n        // Neue Registrierung schlägt Neustart (Tresor-Audit run-5 #1): Kanarie VOR der Boot-Prüfung und auch ohne Slot-Datei prüfen\n        if (\"invalidated\".equals(canaryState())) { wipeAll(); o.put(\"enabled\", false); o.put(\"reason\", \"invalidated\"); call.resolve(o); return; }\n        JSONObject st = readState();\n        if (st == null) { o.put(\"enabled\", false); o.put(\"reason\", \"none\"); call.resolve(o); return; }\n        final boolean keep = st.optBoolean(\"keep\", false);   // v1.8: beim Aktivieren gewählt, in der AAD mitauthentisiert — der Neustart-Zwang entfällt nur dann\n        if (!keep && !sameBoot(st.optString(\"boot\", null))) { wipe(); o.put(\"enabled\", false); o.put(\"reason\", \"reboot\"); call.resolve(o); return; }\n        try { cipherFor(Cipher.DECRYPT_MODE, Base64.decode(st.getString(\"iv\"), Base64.NO_WRAP)); }\n        catch (KeyPermanentlyInvalidatedException e) { wipe(); o.put(\"enabled\", false); o.put(\"reason\", \"invalidated\"); call.resolve(o); return; }\n        catch (IllegalStateException e) { wipe(); o.put(\"enabled\", false); o.put(\"reason\", \"none\"); call.resolve(o); return; }   // Datei ohne Schlüssel\n        catch (Exception e) { o.put(\"enabled\", false); o.put(\"reason\", \"unavailable\"); call.resolve(o); return; }\n        // Übergang von ≤ v1.6 (Review v1.6.1 H2): Slot-Schlüssel gültig = seit dem Einrichten kein Finger registriert → eine jetzt angelegte\n        // Kanarie ist gleichwertig. Wer die App vor dem nächsten Neustart öffnet, muss nach dem Update nichts neu aktivieren.\n        if (\"missing\".equals(canaryState())) { try { createKey(CANARY); } catch (Exception ignored) {} }\n        o.put(\"enabled\", true); o.put(\"reason\", \"ok\"); o.put(\"keep\", keep); call.resolve(o);\n    }\n";
+const ENROLL_SRC = "    public void enroll(PluginCall call) {\n        byte[] secret;\n        try { secret = Base64.decode(call.getString(\"secret\", \"\"), Base64.NO_WRAP); } catch (Exception e) { secret = null; }\n        if (secret == null || secret.length != 32) { call.reject(\"invalid\"); return; }\n        if (!\"ok\".equals(availability())) { call.reject(\"unavailable\"); return; }\n        final boolean rearm = Boolean.TRUE.equals(call.getBoolean(\"rearm\", false));\n        // v1.8: „Fingerabdruck auch nach Neustart“ (Kästchen beim Aktivieren, ab Werk aus). Eine automatische Neu-Einrichtung nach dem\n        // Neustart gibt es nur für Slots OHNE keep — deshalb schließen sich rearm und keep aus.\n        final boolean keep = Boolean.TRUE.equals(call.getBoolean(\"keep\", false)) && !rearm;\n        if (rearm) {\n            // Automatische Neu-Einrichtung nach Neustart NUR mit gültiger Kanarie: sonst wurde seit dem bewussten Aktivieren ein\n            // Fingerabdruck registriert (oder es gab nie ein bewusstes Aktivieren) → der Nutzer muss es in den Einstellungen selbst tun.\n            String cs = canaryState();\n            // missing = Slot aus der Zeit vor der Kanarie (Update von ≤ v1.6) oder nie bewusst aktiviert: ebenfalls nichts einrichten,\n            // aber eigener Code — kein Alarm „fremder Finger“, nur die Bitte, bewusst neu zu aktivieren (Alien-Pass-Besonderheit)\n            if (!\"ok\".equals(cs)) { if (\"error\".equals(cs)) { call.reject(\"unavailable\"); } else { wipeAll(); call.reject(\"missing\".equals(cs) ? \"nocanary\" : \"invalidated\"); } return; }\n        }\n        wipe();\n        final Cipher c;\n        try { if (!rearm) { deleteKey(CANARY); createKey(CANARY); } createKey(); c = cipherFor(Cipher.ENCRYPT_MODE, null); }   // bewusstes Aktivieren: frische Kanarie\n        catch (Exception e) { wipeAll(); call.reject(\"error\"); return; }\n        final byte[] sec = secret;\n        final String boot = bootTag();\n        final String ad = keep ? boot + \"|keep\" : boot;                           // ohne keep exakt wie bisher → Slots von ≤ v1.7 laufen unverändert weiter\n        prompt(call, c, cipher -> {\n            aad(cipher, ad);                                                      // Boot-Kennung (+ keep-Wahl) mitauthentisiert (Audit run-3, v1.8)\n            byte[] ct = cipher.doFinal(sec); Arrays.fill(sec, (byte) 0);\n            JSONObject st = new JSONObject();\n            st.put(\"iv\", Base64.encodeToString(cipher.getIV(), Base64.NO_WRAP));\n            st.put(\"ct\", Base64.encodeToString(ct, Base64.NO_WRAP));\n            st.put(\"boot\", boot);\n            if (keep) st.put(\"keep\", true);\n            writeState(st);\n            return new JSObject();\n        }, true);\n    }\n";
+const UNLOCK_SRC = "    public void unlock(PluginCall call) {\n        if (\"invalidated\".equals(canaryState())) { wipeAll(); call.reject(\"invalidated\"); return; }   // Tresor-Audit run-5 #1\n        JSONObject st = readState();\n        if (st == null) { call.reject(\"none\"); return; }\n        final boolean keep = st.optBoolean(\"keep\", false);   // v1.8: nur ein mit keep angelegter Slot überlebt den Neustart\n        if (!keep && !sameBoot(st.optString(\"boot\", null))) { wipe(); call.reject(\"reboot\"); return; }\n        final byte[] ct; final Cipher c;\n        try { ct = Base64.decode(st.getString(\"ct\"), Base64.NO_WRAP); c = cipherFor(Cipher.DECRYPT_MODE, Base64.decode(st.getString(\"iv\"), Base64.NO_WRAP)); }\n        catch (KeyPermanentlyInvalidatedException e) { wipe(); call.reject(\"invalidated\"); return; }\n        catch (Exception e) { wipe(); call.reject(\"error\"); return; }\n        final String boot = st.optString(\"boot\", \"\");\n        final String ad = keep ? boot + \"|keep\" : boot;\n        prompt(call, c, cipher -> {\n            aad(cipher, ad);                                                      // gleiche AAD wie beim Anlegen; Klartext-Feld (boot ODER keep) manipuliert → GCM-Fehler\n            byte[] pt = cipher.doFinal(ct);\n            String s = Base64.encodeToString(pt, Base64.NO_WRAP); Arrays.fill(pt, (byte) 0);\n            JSObject o = new JSObject(); o.put(\"secret\", s); return o;\n        }, false);\n    }\n";
+const CANARY_SRC = "    private static String canaryState() {\n        try {\n            KeyStore ks = KeyStore.getInstance(\"AndroidKeyStore\"); ks.load(null);\n            SecretKey k = (SecretKey) ks.getKey(CANARY, null);\n            if (k == null) return \"missing\";\n            Cipher.getInstance(\"AES/GCM/NoPadding\").init(Cipher.ENCRYPT_MODE, k);   // nur init: prüft die Gültigkeit, braucht keinen Fingerabdruck\n            return \"ok\";\n        } catch (KeyPermanentlyInvalidatedException e) { return \"invalidated\"; }\n        catch (Exception e) { return \"error\"; }\n    }\n";
+const WIPE_SRC = "    private void wipe() {\n        try { file().delete(); } catch (Exception ignored) {}\n        deleteKey(ALIAS);\n    }\n";
+const WIPEALL_SRC = "    private void wipeAll() { wipe(); deleteKey(CANARY); }\n";
+const DELKEY_SRC = "    private static void deleteKey(String alias) {\n        try { KeyStore ks = KeyStore.getInstance(\"AndroidKeyStore\"); ks.load(null); if (ks.containsAlias(alias)) ks.deleteEntry(alias); } catch (Exception ignored) {}\n    }\n";
+const SECHEAD_SRC = "@CapacitorPlugin(name = \"SecureScreen\")\npublic class SecureScreenPlugin extends Plugin {\n";
+const VSHEAD_SRC = "@CapacitorPlugin(name = \"VaultStore\")\npublic class VaultStorePlugin extends Plugin {\n";
+{
+  const bad = [], cnt = (t, re) => (t.match(re) || []).length, all = [jm, jc, jb, js, jv, jwr], jmc = noComments(jm), jsc = noComments(js);
+  // Zeichenketteninhalt weg (auf dem Text ohne Kommentare): dort zählt nur noch Code — `String a = "aad(cipher, ad);";` erfüllte sonst die Zählung (Pass d-4)
+  const noStr = (t) => t.replace(/"(?:[^"\\\n]|\\.)*"/g, '""'), jbs = noStr(jbc);
+  // d-5: rohes CR (javac: Zeilenende, noComments nicht) und Reflection (javac faltet "clear" + "Flags" zur Konstante, kein Methodenverweis im Bytecode)
+  if (all.some((t) => t.includes('\r'))) bad.push('rohes CR');
+  if (all.some((t) => /\bget(Declared)?(Method|Field|Constructor)s?\s*\(|\bforName\s*\(|java\.lang\.(reflect|invoke)|MethodHandle/.test(t))) bad.push('Reflection');
+  // d-3: genau die sechs Java-Dateien unter src/main/java (rekursiv, ein Symlink zählt als Datei), keine weitere .java/.kt unter src/main
+  const walk = (d) => readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(d + '/' + e.name) : [d + '/' + e.name]));
+  const want = [MAIN, CLIP, BIO, SEC, VS, WV].sort().join('\n');
+  if (walk('android/app/src/main/java').sort().join('\n') !== want || walk('android/app/src/main').filter((f) => /\.(java|kts?)$/.test(f)).sort().join('\n') !== want) bad.push('Java-Dateien');
+  // d-3: Plugins nur über die vier registerPlugin in onCreate (ONCREATE_SRC) — kein registerPluginInstance/registerPlugins/addPlugin*, keine fünfte Plugin-Klasse
+  if (cnt(jm, /registerPlugin\w*\s*\(/g) !== 4 || [jc, jb, js, jv, jwr].some((t) => /registerPlugin\w*\s*\(/.test(t)) || all.some((t) => /addPlugin|NativePlugin|PluginHandle/.test(t))) bad.push('Plugin-Registrierung');
+  if ([jc, jb, js, jv].some((t) => cnt(t, /@CapacitorPlugin\b/g) !== 1 || cnt(t, /\bextends\s+Plugin\b/g) !== 1) || /@CapacitorPlugin\b|\bextends\s+Plugin\b/.test(jm + jwr)) bad.push('Plugin-Klassen');
+  // d-6: Plugin-Name und Klassenkopf wörtlich (app.js sucht CAP.Plugins.SecureClip/Biometric/SecureScreen/VaultStore), @PluginMethod genau an write/clear,
+  // den fünf Biometric-Methoden, set bzw. read/write/del
+  if (!jc.includes(CLIPHEAD_SRC) || !jb.includes(BIOHEAD_SRC) || !js.includes(SECHEAD_SRC) || !jv.includes(VSHEAD_SRC)) bad.push('Plugin-Name');
+  const pm = (t, names) => [t, noComments(t)].every((x) => cnt(x, /@PluginMethod\b/g) === names.length) && names.every((n) => t.includes('    @PluginMethod\n    public void ' + n + '(PluginCall call) {'));
+  if (!pm(jc, ['write', 'clear']) || !pm(jb, ['available', 'status', 'disable', 'enroll', 'unlock']) || !pm(js, ['set']) || !pm(jv, ['read', 'write', 'del'])
+      || /@PluginMethod\b/.test(jm + jwr)) bad.push('@PluginMethod');
+  // d-1: Autofill-Hebel getSystemService und onNewIntent wörtlich, je genau eine Methode; d-2: setImportantForAutofill( genau einmal (eine Rücknahme in
+  // onResume blieb sonst grün), genau drei @Override (getSystemService, onNewIntent, onCreate)
+  if (!jm.includes(GETSYS_SRC) || [jm, jmc].some((t) => cnt(t, /\bgetSystemService\s*\(\s*String\b/g) !== 1)) bad.push('getSystemService');
+  if (!jm.includes(NEWINTENT_SRC) || [jm, jmc].some((t) => cnt(t, /\bvoid\s+onNewIntent\s*\(/g) !== 1)) bad.push('onNewIntent');
+  if ([jm, jmc].some((t) => cnt(t, /setImportantForAutofill\s*\(/g) !== 1 || cnt(t, /@Override\b/g) !== 3)) bad.push('Autofill/Override');
+  // Pass v1.23 Runde 1 (run-13 B1/B3/B6): onCreate, dropAutofillRestore, write und set je genau einmal — roh UND ohne Kommentare, auch `protected`/mit Leerzeichen
+  // (Notes zählte bisher `public void onCreate(` bzw. `void dropAutofillRestore(` nur roh)
+  if ([jm, jmc].some((t) => cnt(t, /\bvoid\s+onCreate\s*\(/g) !== 1 || cnt(t, /\bvoid\s+dropAutofillRestore\s*\(/g) !== 1)
+      || [jc, jcc].some((t) => cnt(t, /\bvoid\s+write\s*\(/g) !== 1) || [js, jsc].some((t) => cnt(t, /\bvoid\s+set\s*\(/g) !== 1)) bad.push('Methoden je genau einmal');
+  // d-4: Neustart-Regel — bootTag, sameBoot und aad wörtlich, je genau eine Methode; die Code-Zählungen zusätzlich ohne Zeichenketteninhalt
+  if (!jb.includes(BOOTTAG_SRC) || !jb.includes(SAMEBOOT_SRC) || !jb.includes(AAD_SRC)
+      || [jb, jbc].some((t) => cnt(t, /\bString\s+bootTag\s*\(/g) !== 1 || cnt(t, /\bboolean\s+sameBoot\s*\(/g) !== 1 || cnt(t, /\bvoid\s+aad\s*\(/g) !== 1)) bad.push('Neustart-Regel');
+  if (cnt(jbs, /\baad\(cipher, ad\);/g) !== 2 || cnt(jbs, /!keep && !sameBoot\(/g) !== 2 || cnt(jbs, /\bsameBoot\(/g) !== 3 || cnt(jbs, /\bbootTag\(\)/g) !== 3
+      || cnt(jbs, /optBoolean\("", false\)/g) !== 2 || cnt(jbs, /\bboot \+ ""/g) !== 2 || !jbs.includes('c.updateAAD(boot.getBytes(') || !jbs.includes('Settings.Global.BOOT_COUNT')
+      || !['setUserAuthenticationRequired(true)', 'setInvalidatedByBiometricEnrollment(true)', 'setConfirmationRequired(true)', 'BIOMETRIC_STRONG', 'FEATURE_FINGERPRINT', 'canaryState()'].every((s) => jbs.includes(s)))
+    bad.push('Neustart-Regel/AAD ohne Zeichenketten');
+  // r2d-1: status/enroll/unlock wörtlich und je genau einmal — roh als void-Methode (eine Kopie im Kommentar über einer geänderten Methode zählte sonst mit) und
+  // ohne Kommentare/Zeichenketten jeder Name genau einmal (keine Überladung, kein zweiter Aufrufweg)
+  if (!jb.includes(STATUS_SRC) || !jb.includes(ENROLL_SRC) || !jb.includes(UNLOCK_SRC)
+      || ['status', 'enroll', 'unlock'].some((n) => cnt(jb, new RegExp('\\bvoid\\s+' + n + '\\s*\\(', 'g')) !== 1 || cnt(jbs, new RegExp('\\b' + n + '\\s*\\(', 'g')) !== 1))
+    bad.push('Neustart-/Kanarien-Auswertung (status/enroll/unlock)');
+  // nb-1: canaryState wörtlich und genau einmal — roh UND ohne Kommentare genau eine `String canaryState(`, ohne Kommentare/Zeichenketten `canaryState(` genau 5×
+  // (die Methode + die vier Aufrufe in STATUS_SRC/ENROLL_SRC/UNLOCK_SRC: keine Überladung, kein zweiter Weg); wipe/wipeAll/deleteKey wörtlich, je genau eine Methode
+  if (!jb.includes(CANARY_SRC) || [jb, jbc].some((t) => cnt(t, /\bString\s+canaryState\s*\(/g) !== 1) || cnt(jbs, /\bcanaryState\s*\(/g) !== 5)
+    bad.push('Kanarie (canaryState)');
+  if (!jb.includes(WIPE_SRC) || !jb.includes(WIPEALL_SRC) || !jb.includes(DELKEY_SRC)
+      || ['wipe', 'wipeAll', 'deleteKey'].some((n) => [jb, jbc].some((t) => cnt(t, new RegExp('\\bvoid\\s+' + n + '\\s*\\(', 'g')) !== 1)))
+    bad.push('Slot/Kanarie verwerfen (wipe/wipeAll/deleteKey)');
+  if (bad.length) { console.error('FEHLER: Java-Härtung unvollständig (' + bad.join(', ') + ') — Build abgebrochen!'); process.exit(1); }
 }
 
 // Tastatur-Bitte (v1.13): Reihenfolge und Form gepinnt — das ODER muss NACH super stehen (vorher gesetzt überschriebe Chromium es), darf nicht zur
@@ -696,12 +775,103 @@ if (!jm.includes('getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE)')
   if (!capWv.includes('public InputConnection onCreateInputConnection(EditorInfo outAttrs) {') || !capWv.includes('public CapacitorWebView(Context context, AttributeSet attrs) {')) bad.push('Capacitor: CapacitorWebView geändert');
   // captureInput: CapacitorWebView gäbe eine leere BaseInputConnection (TYPE_NULL) zurück und reichte Tastaturtext per evaluateJavascript weiter — nie setzen.
   // Geprüft wird die von `cap sync` ERZEUGTE Konfiguration im Asset (die CLI liest .ts/.js VOR .json; Release-Audit v1.13 b2), dazu keine .ts/.js-Konfiguration.
+  // Seit v1.15 GENAUE Schlüsselmenge statt nur captureInput (Querfund Pass v1.23 run-13 r2d-2, wortgleich Pass bis auf die App-ID): android.webContentsDebuggingEnabled
+  // (chrome://inspect über adb, alle Notizen lesbar) und loggingBehavior "production" (Capacitor schreibt die Daten jedes Plugin-Aufrufs nach logcat, auch das
+  // Geheimnis aus enroll und den Inhalt jedes VaultStore.write) liefen sonst durch; ebenso server.url, plugins, useLegacyBridge … (Capacitor 6.2.2 CapConfig).
+  // Erlaubt: appId/appName/webDir/android.allowMixedContent=false wie heute, dazu nur loggingBehavior bzw. android.loggingBehavior = "none" und
+  // android.webContentsDebuggingEnabled = false (Release-Default: beide aus, weil nicht debuggable). Wortgleich an der fertigen APK in build-apk.sh (jq).
   { let cfg = null; try { cfg = JSON.parse(readFileSync('android/app/src/main/assets/capacitor.config.json', 'utf8')); } catch (_) { cfg = null; }
-    if (!cfg || (cfg.android && 'captureInput' in cfg.android) || 'captureInput' in cfg || existsSync('capacitor.config.ts') || existsSync('capacitor.config.js')) bad.push('captureInput/Konfiguration'); }
+    const obj = (o) => !!o && typeof o === 'object' && !Array.isArray(o), nur = (o, ks) => Object.keys(o).every((k) => ks.includes(k));
+    const cfgOk = obj(cfg) && obj(cfg.android) && nur(cfg, ['appId', 'appName', 'webDir', 'android', 'loggingBehavior'])
+      && nur(cfg.android, ['allowMixedContent', 'webContentsDebuggingEnabled', 'loggingBehavior']) && cfg.appId === 'org.alieninvestor.notes' && cfg.webDir === 'www'
+      && typeof cfg.appName === 'string' && cfg.appName !== '' && cfg.android.allowMixedContent === false
+      && (!('webContentsDebuggingEnabled' in cfg.android) || cfg.android.webContentsDebuggingEnabled === false)
+      && [cfg, cfg.android].every((o) => !('loggingBehavior' in o) || o.loggingBehavior === 'none');
+    if (!cfgOk || (cfg.android && 'captureInput' in cfg.android) || 'captureInput' in cfg || existsSync('capacitor.config.ts') || existsSync('capacitor.config.js')) bad.push('Konfiguration: captureInput/Schlüsselmenge'); }
   // Java ohne Kommentare und ohne Unicode-Escapes (javac löst \uXXXX VOR dem Parsen auf — ein \u000a beendete sonst einen Kommentar), genau eine Klasse
   { const code = jw.replace(/\/\/[^\n]*/g, '');
     if (/\\u+[0-9a-fA-F]{4}/.test(jw) || (code.match(/\bclass\b/g) || []).length !== 1 || !code.includes('public class NoLearnWebView extends CapacitorWebView {')
         || !code.includes('outAttrs.imeOptions |= EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING;') || /\bEditorInfo\s+[A-Za-z_]\w*\s*[=;]|\bint\s+EditorInfo\b/.test(code)) bad.push('Java-Form'); }
   if (bad.length) { console.error('FEHLER: Tastatur-Bitte unvollständig (' + bad.join(', ') + ') — Build abgebrochen!'); process.exit(1); }
   console.log('Tastatur-Bitte (NoLearnWebView + Layout) geprüft.');
+}
+
+// 8) @capacitor/share ohne exportierten Receiver und ohne Rückruf (v1.15, Querfund Alien Fitness v2.9 Audit run-2 A1 über Alien Pass v1.24; in Notes an der
+//    ausgelieferten v1.14-APK gemessen, run-13 TABELLE F-A1): load() registriert beim App-Start einen EXPORTIERTEN Broadcast-Receiver (Aktion
+//    android.intent.extra.CHOSEN_COMPONENT, onReceive ohne Fehlerbehandlung) — jede andere App auf dem Gerät hätte Alien Notes damit abstürzen lassen
+//    können (laut Android-Quelltext, am Gerät nicht ausgelöst); der Rückruf (implizite, veränderbare PendingIntent im Teilen-Dialog) konnte außerdem
+//    anderen Apps das gewählte Teilen-Ziel verraten. app.js liest das Ergebnis (activityType) nie (Backup und „Als Datei“ teilen nur). Darum fliegen Receiver
+//    und Rückruf raus: der Teilen-Dialog startet ohne IntentSender, Share.share() hängt weiter am Activity-Ergebnis, handleOnDestroy prüft
+//    broadcastReceiver != null. Upstream bis 8.0.3 weiter exportiert (8.0.3 prüft im Receiver nur eine Nonce, der Absturzweg bleibt).
+//    Exakter Textersatz in node_modules (Gradle baut das Plugin direkt von dort, im Abbild frisch aus npm ci); passen Version oder Text nicht, bricht der
+//    Build ab statt still ungepatcht zu bauen. Idempotent. Ersatztexte wortgleich Alien Fitness `apk/patch-hardening.mjs` (nur die Marke unterscheidet sich).
+//    Beweis am Bytecode der FERTIGEN APK: `share_ok` in build-apk.sh.
+{
+  const SHARE_DIR = 'node_modules/@capacitor/share';
+  const SHARE_SRC = `${SHARE_DIR}/android/src/main/java/com/capacitorjs/plugins/share/SharePlugin.java`;
+  const SHARE_MARK = '// alien-notes: Receiver und Rueckruf entfernt (patch-hardening.mjs, Querfund Alien Fitness v2.9 A1)';
+  const shareVer = JSON.parse(readFileSync(`${SHARE_DIR}/package.json`, 'utf8')).version;
+  if (shareVer !== '6.0.4') {
+    console.error(`FEHLER: @capacitor/share ist ${shareVer}, der Patch kennt nur 6.0.4 — erst Review (Skill app-release, Schritt 0)!`);
+    process.exit(1);
+  }
+  let sp = readFileSync(SHARE_SRC, 'utf8');
+  if (!sp.includes(SHARE_MARK)) {
+    const LOAD_OLD = `    @Override
+    public void load() {
+        broadcastReceiver =
+            new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        chosenComponent = intent.getParcelableExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName.class);
+                    } else {
+                        chosenComponent = getParcelableExtraLegacy(intent, Intent.EXTRA_CHOSEN_COMPONENT);
+                    }
+                }
+            };
+        ContextCompat.registerReceiver(
+            getContext(),
+            broadcastReceiver,
+            new IntentFilter(Intent.EXTRA_CHOSEN_COMPONENT),
+            ContextCompat.RECEIVER_EXPORTED
+        );
+    }
+`;
+    const LOAD_NEW = `    ${SHARE_MARK}
+    @Override
+    public void load() {}
+`;
+    const PI_OLD = `            int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                flags = flags | PendingIntent.FLAG_MUTABLE;
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                flags = flags | PendingIntent.FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT;
+            }
+
+            // requestCode parameter is not used. Providing 0
+            PendingIntent pi = PendingIntent.getBroadcast(getContext(), 0, new Intent(Intent.EXTRA_CHOSEN_COMPONENT), flags);
+            Intent chooser = Intent.createChooser(intent, dialogTitle, pi.getIntentSender());
+`;
+    const PI_NEW = `            Intent chooser = Intent.createChooser(intent, dialogTitle);
+`;
+    if (sp.split(LOAD_OLD).length !== 2 || sp.split(PI_OLD).length !== 2) {
+      console.error(`FEHLER: ${SHARE_SRC} passt nicht zum erwarteten 6.0.4-Text — Patch nicht anwendbar, Build abgebrochen!`);
+      process.exit(1);
+    }
+    sp = sp.replace(LOAD_OLD, LOAD_NEW).replace(PI_OLD, PI_NEW);
+    writeFileSync(SHARE_SRC, sp);
+    console.log('Share-Plugin gepatcht (kein exportierter Receiver, kein Rückruf).');
+  } else console.log('Share-Plugin bereits gepatcht.');
+  // Immer prüfen, auch auf dem „bereits gepatcht“-Weg (eine Marke allein beweist nichts). \b: unregisterReceiver (Aufräumen, mit Null-Prüfung) bleibt erlaubt.
+  sp = readFileSync(SHARE_SRC, 'utf8');
+  // seit den Diff-Reviews (08.11.2026): jede PendingIntent-Fabrik, createPendingResult, ChooserAction, ResultReceiver, CHOOSER_-Extras, die
+  // CHOSEN_COMPONENT-Zeichenkette in jeder Form und Reflection ebenfalls verboten. Vorprüfung am Text — der Beweis ist share_ok am Bytecode (build-apk.sh).
+  if (/\bregisterReceiver|RECEIVER_EXPORTED|PendingIntent\.[A-Za-z]+\(|getIntentSender|createPendingResult|ChooserAction|ResultReceiver|\.getMethod\(|Class\.forName|CHOSEN_COMPONENT|CHOOSER_|getDeclared(Method|Constructor|Field)|getConstructor|java\.lang\.(reflect|invoke)|MethodHandle|\\u+[0-9a-fA-F]{4}/.test(sp)
+      || (sp.match(/Intent\.createChooser\(/g) || []).length !== 1 || !sp.includes('            Intent chooser = Intent.createChooser(intent, dialogTitle);\n')
+      || (sp.match(/public void load\(\)/g) || []).length !== 1 || !sp.includes('    @Override\n    public void load() {}\n')) {
+    console.error('FEHLER: Share-Plugin enthält nach dem Patch noch Receiver/Rückruf (oder abweichende Form) — Build abgebrochen!');
+    process.exit(1);
+  }
 }

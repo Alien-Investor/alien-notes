@@ -24,9 +24,14 @@ if(process.env.RT_APP) console.log('  ⚠ RT_APP aktiv: geprüft wird '+process.
 { const vn=(readFileSync('VERSION','utf8').match(/^VERSION_NAME=(.+)$/m)||[])[1]?.trim(), cl=readFileSync('CHANGELOG.md','utf8');
   // Kopf auch ohne Datum finden (run-12 c-3: „## v1.15“ im Entwurf galt sonst als „noch kein Abschnitt“); jede [eckige Klammer] außer Link/Kästchen, mehrzeilig
   const m0=new RegExp('^## v'+vn.replace(/\./g,'\\.')+'(?![0-9.])','m').exec(cl), i=m0?m0.index:-1, j=i<0?-1:cl.indexOf('\n## v',i+5), sec=i<0?'':cl.slice(i,j<0?undefined:j);
-  const ph=sec.match(/\[(?![ xX]\])[^\]]{1,300}\](?!\()|\b(TODO|TBD|FIXME|XXX)\b/);
-  if(ph) throw new Error(`Platzhalter im CHANGELOG-Abschnitt v${vn}: ${ph[0]}`);
-  console.log('  ✓ CHANGELOG v'+vn+(i<0?' (noch kein Abschnitt)':'')+' ohne Platzhalter'); }
+  // Seit v1.15 dieselbe Regel wie make-release.sh (Querfund Alien Pass v1.23 run-13 c-3/r2c-3): OHNE Ausnahme für Links und Kästchen, dazu {…}, ???, XX,
+  // vX.Y, YYYY/JJJJ, TT.MM, <Wort> (GitHub verschluckt unbekannte Tags still), jede ``` / ~~~ (Codeblock), und das Abschnittsende muss eine
+  // Versionsüberschrift in Spalte 0 sein (ein eingerücktes „## “ schnitt make-release.sh sonst still ab)
+  const ph=sec.match(/\[[^\]]{0,300}\]|\{[^}]{1,80}\}|\?\?\?|\bX{2,}\b|\bvX\.Y\b|\b(?:YYYY|JJJJ)\b|\bTT\.MM\b|<[A-Za-zÄÖÜäöü][^<>\n]{0,40}>|`{3}|~{3}/)||sec.match(/\b(TODO|TBD|FIXME)\b/i);
+  if(ph) throw new Error(`Platzhalter oder Codeblock im CHANGELOG-Abschnitt v${vn}: ${ph[0]}`);
+  const inner=sec.split('\n').slice(1).find(l=>l.trim().split(/\s+/)[0]==='##');   // wie awk $1=="##": jede solche Zeile im Abschnitt beendete den Schnitt
+  if(inner) throw new Error(`CHANGELOG-Abschnitt v${vn}: eingerücktes oder verschachteltes „##“ (${inner.slice(0,60)})`);
+  console.log('  ✓ CHANGELOG v'+vn+(i<0?' (noch kein Abschnitt)':'')+' ohne Platzhalter, Codeblock und verschachteltes „##“'); }
 const a = src.indexOf('/* === VAULT-FORMAT BEGIN ==='), z = src.indexOf('/* === VAULT-FORMAT END === */');
 if(a<0||z<0) throw new Error('Sentinel nicht gefunden');
 const region = src.slice(a, z);
@@ -232,7 +237,12 @@ console.log('\n[6] TOTP RFC-6238-Testvektoren');
 
 console.log('\n[7] Passphrase: Würfelwörter, Zufall, Stärke-Schätzung');
 {
-  const w=V.genWords(6,'-',false,false); ok(w.pw.split('-').length===6&&w.pw.split('-').every(x=>words.includes(x))&&w.bits===78,'6 EFF-Wörter, 78 Bit: '+w.pw);
+  // Wortzahl über die EFF-Liste zählen, nicht per split (v1.15, Querfund Alien Pass v1.23 verify-v14): vier EFF-Wörter tragen selbst einen Bindestrich
+  // (drop-down, felt-tip, t-shirt, yo-yo) — mit Trennzeichen „-“ war die Prüfung in ~0,3 % der Läufe rot, ohne Fehler im Generator
+  const effN=(pw,sep)=>{ const t=pw.split(sep), c=[new Set([0])]; for(let i=1;i<=t.length;i++){ c[i]=new Set(); for(let j=0;j<i;j++) if(c[j].size&&words.includes(t.slice(j,i).join(sep))) c[j].forEach(n=>c[i].add(n+1)); } return c[t.length]; };
+  { const bs=words.filter(x=>x.includes('-')), pw=[...bs,words[0],words[1]].join('-');
+    ok(bs.length===4&&effN(pw,'-').has(6)&&pw.split('-').length!==6,'Zählung über die EFF-Liste: '+pw+' = 6 Wörter (split ergäbe '+pw.split('-').length+')'); }
+  const w=V.genWords(6,'-',false,false); ok(effN(w.pw,'-').has(6)&&w.bits===78,'6 EFF-Wörter, 78 Bit: '+w.pw);
   const w2=V.genWords(4,' ',true,true); ok(w2.pw.split(' ').length===4&&/[A-Z]/.test(w2.pw)&&/\d/.test(w2.pw),'Großschreibung + Ziffer: '+w2.pw);
   const cnt=new Array(10).fill(0); for(let i=0;i<100000;i++) cnt[V.randInt(10)]++; const chi=cnt.reduce((s,c)=>s+Math.pow(c-10000,2)/10000,0); ok(chi<27.9,'randInt gleichverteilt (χ²='+chi.toFixed(1)+' < 27.9 bei 9 df, p=0.001)');
   ok(V.passStrength('kurz')===0&&V.passStrength('zwoelf-zeichen')>=1&&V.passStrength('korrekt-pferd-batterie-heftklammer')===3,'Passphrase-Meter Stufen');
