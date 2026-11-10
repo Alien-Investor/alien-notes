@@ -48,6 +48,10 @@ if grep -nE '(^|[^A-Za-z0-9_$])(alert|confirm|prompt)[[:space:]]*\(' app.js; the
 # Text); die Kommentarformen <!-->, <!---> und --!> (der Browser schließt sie anders als die Prüfung, Text dahinter wäre sichtbar, aber ungeprüft) brechen ab;
 # value und label stehen in der Attributliste. Gemessen: Arbeitsbaum, HEAD und alle 15 Tags ohne Fehlalarm, 9 Mutanten rot, ein Wert mit echtem Backslash vor
 # „u005B“ bleibt grün.
+# Runde 3 (Prüfer B-3): der Text wird zusätzlich mit ENTFERNTEN Tags geprüft (vorher nur mit Leerzeichen an ihrer Stelle) — „TO<b></b>DO“ zeigt der
+# Browser als „TODO“. Grenze dieser Regel (bewusst): sie fängt VERSEHENTLICH stehengebliebene Platzhalter, keine absichtliche Verschleierung — offen bleiben
+# „Kommentare“ in Attributwerten und in style/textarea, Zeilenfortsetzung und Verkettung in app.js, ein Wort direkt an einem Nachbar-Element („…</h2><p>TO<b></b>DO“).
+# Gemessen: Arbeitsbaum, HEAD und alle 15 Tags ohne Fehlalarm; „TO<b></b>DO“ in index.html und „FIX<b></b>ME“ in I18N rot, vorher grün.
 node -e '
 const fs=require("fs"); const RX=/\[(?![ xX]\])[^\]]{1,300}\](?!\()|\?\?\?|\bX{2,}\b|\bvX\.Y\b|\b(?:TODO|TBD|FIXME)\b/i;
 const roh=fs.readFileSync("index.html","utf8");
@@ -56,13 +60,13 @@ const raw=roh.replace(/<!--[\s\S]*?-->/g," ").replace(/<(script|style)[\s\S]*?<\
 const ent=(t)=>t.replace(/&#(?:x([0-9a-f]+)|([0-9]+));?/gi,(m,h,d)=>{ const n=h?parseInt(h,16):+d; return n>0&&n<=0x10ffff?String.fromCodePoint(n):m; })
   .replace(/&(lsqb|lbrack|rsqb|rbrack|quest|lcub|lbrace|rcub|rbrace|lt|gt|quot|apos|nbsp|amp);/gi,(m,n)=>({lsqb:"[",lbrack:"[",rsqb:"]",rbrack:"]",quest:"?",lcub:"{",lbrace:"{",rcub:"}",rbrace:"}",lt:"<",gt:">",quot:"\"",apos:"\x27",nbsp:" ",amp:"&"})[n.toLowerCase()]);
 const attrs=[...raw.matchAll(/\b(?:title|aria-label|placeholder|content|alt|value|label)\s*=\s*(?:"([^"]*)"|\x27([^\x27]*)\x27|([^\s>"\x27]+))/gi)].map(m=>m[1]??m[2]??m[3]).join("\n");
-const html=ent(raw.replace(/<[^>]+>/g," "))+"\n"+ent(attrs);
+const html=ent(raw.replace(/<[^>]+>/g," "))+"\n"+ent(raw.replace(/<[^>]+>/g,""))+"\n"+ent(attrs);
 const js=fs.readFileSync("app.js","utf8").split("\n");
 const block=(start)=>{ const i=js.findIndex(l=>l.startsWith(start)); if(i<0){ console.error("FEHLER: Tabelle "+start+" in app.js nicht gefunden (Platzhalter-Prüfung)"); process.exit(1); }
   const out=[]; for(let k=i;k<js.length;k++){ out.push(js[k]); if(k>i&&/^};/.test(js[k])) return out.join("\n"); } console.error("FEHLER: Ende von "+start+" nicht gefunden"); process.exit(1); };
 const jsEsc=(t)=>t.replace(/\\(u\{[0-9a-fA-F]+\}|u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|[\s\S])/g,(m,e)=>{ if(e[0]==="u"&&e[1]==="{"){ const n=parseInt(e.slice(2,-1),16); return n<=0x10ffff?String.fromCodePoint(n):m; }
   if(e[0]==="u"&&e.length===5||e[0]==="x"&&e.length===3) return String.fromCharCode(parseInt(e.slice(1),16)); return ({n:"\n",t:"\t",r:"\r"})[e]??e; });
-const strs=(src)=>[...src.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map(m=>jsEsc(m[1])).filter(s=>!/^[a-z]+(\.[A-Za-z0-9]+)+$/.test(s)).join("\n").replace(/<[^>]+>/g," "); const strsE=(src)=>ent(strs(src));
+const strs=(src)=>[...src.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map(m=>jsEsc(m[1])).filter(s=>!/^[a-z]+(\.[A-Za-z0-9]+)+$/.test(s)).join("\n"); const strsE=(src)=>ent(strs(src).replace(/<[^>]+>/g," "))+"\n"+ent(strs(src).replace(/<[^>]+>/g,""));
 const fremd=(src)=>{ for(let i=0;i<src.length;i++){ const c=src[i];
   if(c==="\""){ for(i++;i<src.length&&src[i]!=="\"";i++){ if(src[i]==="\\") i++; } continue; }
   if(c==="/"&&src[i+1]==="/"){ while(i<src.length&&src[i]!=="\n") i++; continue; }

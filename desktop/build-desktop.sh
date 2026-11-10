@@ -93,6 +93,9 @@ echo "Electron $EL_VER: Hash OK."
 # Liste DESK_SRC und desk_summen oben (seit v1.15 dort; wortgleich `feste_quellen desktop` in release-quellen.sh, dazu ganz vendor/).
 DESK_SUMS0="$(desk_summen)" || { echo "FEHLER: Quellenliste unvollständig (DESK_SRC)" >&2; exit 1; }
 summe0() { awk -v f="$1" '$2==f{print $1}' <<<"$DESK_SUMS0"; }   # Soll einer Quelle vor dem Bau
+# jq ohne ~/.jq, wortgleich release-quellen.sh (Release-Audit v1.15 Runde 3): jq 1.7 liest ~/.jq als Vorspann jedes Programms, dort definierte Funktionen
+# überdecken eingebaute (gemessen: „def keys: [];“) — lock_gleich bestünde sonst jede Abweichung. HOME zeigt für jq auf einen Pfad, den nur root anlegen kann.
+jq() { HOME=/nonexistent command jq "$@"; }
 # lock_gleich wortgleich release-quellen.sh (Steuertool R2-1 #2, ohne nicht installierte optionale Pakete; Pass run-13 Punkt 3/15)
 lock_gleich() {
   local d="$1" weg k

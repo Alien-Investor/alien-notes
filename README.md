@@ -214,9 +214,10 @@ Schlüsselableitung schafft, und schlägt eine passende Argon2-Stufe vor.
 - **Sperre**: Schlüssel und alle Anzeigen werden aus dem Speicher entfernt; jede Sperre wartet vorher einen laufenden Speichervorgang ab.
   Nach Fehlversuchen greift eine Wartezeit. **Kein Autofill, auch kein fremdes** (seit 1.4): Die App nimmt ihre WebView vom Android-Autofill-Framework
   aus — ein Passwort-Manager, der als Autofill-Dienst eingerichtet ist, sieht die Passphrase-Felder nicht und kann nicht anbieten, sie zu speichern.
-  Nativer Code beschränkt sich auf vier kleine, im Repo im Klartext einsehbare Stücke: FLAG_SECURE,
-  Zwischenablage-Plugin, Fingerabdruck-Plugin und Dateispeicher (alle als Quelltext in `patch-hardening.mjs`; der Vendor-Hash-Check steht in
-  `build-www.sh`, ebenfalls Klartext).
+  Eigener nativer Code beschränkt sich auf kleine, im Repo im Klartext einsehbare Stücke: FLAG_SECURE (samt Schalter), Zwischenablage-,
+  Fingerabdruck- und Dateispeicher-Plugin und eine WebView-Unterklasse für die Tastatur-Bitte (alle als Quelltext in `patch-hardening.mjs`; der
+  Vendor-Hash-Check steht in `build-www.sh`, ebenfalls Klartext). Seit 1.15 patcht der Build das Teilen-Plugin von Capacitor, sodass es keinen
+  Empfänger anmeldet, den andere Apps ansprechen können, und dem Teilen-Dialog keinen Rückruf mitgibt.
 - **Fingerabdruck-Entsperren, Aegis-Hürde, PIN am Desktop:** wortgleich aus Alien Pass übernommen und dort ausführlich eingeordnet — siehe das
   [Alien-Pass-README](https://github.com/Alien-Investor/alien-pass#sicherheit). Kurz: Der Fingerabdruck-Slot liegt außerhalb der Datei im
   Android-Keystore und verlangt nach Neustart, Passphrase-Wechsel und neuem Fingerabdruck die Passphrase; die Aegis-Hürde hilft gegen jemanden,

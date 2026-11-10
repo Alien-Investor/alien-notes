@@ -2,30 +2,31 @@
 
 ## v1.15 — 2026-11-10
 
-Pflege-Release: eigenes App-Symbol und Korrekturen aus den Sicherheitsprüfungen der Schwester-Apps Alien Pass, Alien Fitness und Ausgaben-Tracker.
+Pflege-Release: eigenes App-Symbol und Korrekturen aus den Sicherheitsprüfungen der Schwester-Apps Alien Pass, Alien Fitness, Ausgaben-Tracker und
+BTC Steuertool und aus dem eigenen Release-Audit.
 Dateiformat unverändert, keine neuen Berechtigungen. Handy und Desktop lesen dieselbe Notizen-Datei wie 1.14.
 - **App-Symbol:** Das Alien im App-Symbol ist jetzt das eigene Alien-Investor-Logo (bisher eine Form nach dem Twemoji-Emoji „Alien“).
 - **Teilen (Android):** Der Baustein für den Teilen-Dialog meldet beim App-Start keinen Empfänger mehr an, den jede andere App ansprechen konnte. Damit kann
-  keine fremde App Alien Notes über diesen Weg zum Absturz bringen, und das gewählte Teilen-Ziel geht nicht mehr an andere Apps. Backup und „Als Datei“ teilen
+  keine fremde App Alien Notes über diesen Weg zum Absturz bringen, und andere Apps können das gewählte Teilen-Ziel nicht mehr erfahren. Backup und „Als Datei“ teilen
   wie bisher.
-- **Backup (Android):** Bei „Sperren im Hintergrund: sofort“ sperrte der Teilen-Dialog die App, bevor das Datum des Backups gespeichert war — „Letztes
+- **Backup (Android):** Bei „Sperren im Hintergrund nach: sofort“ sperrte der Teilen-Dialog die App, bevor das Datum des Backups gespeichert war — „Letztes
   Backup“ blieb alt, die Erinnerung kam wieder. Das Datum wird jetzt gesetzt, sobald die Datei in Dokumente liegt, noch vor dem Teilen-Dialog.
 - **Meldungen unten im Bild:** Liegt unter einer Meldung wie „In den Papierkorb …“ ein Eintrag einer offenen Auswahlliste (Kategorie, Einstellungen),
   wählt ein Tipp auf die Meldung diesen Eintrag. „Rückgängig“ bleibt antippbar. Alles andere unter der Meldung bleibt geschützt, damit nichts versehentlich
   ausgelöst wird.
-- **Rückfragen:** Strg+Z und Strg+Y wirken bei offener Rückfrage nicht mehr auf das Feld dahinter (am Desktop und mit Tastatur am Handy).
-- **Interne Zwischenspeicher:** Passphrase, PIN, das Geheimnis des Fingerabdruck-Entsperrens und der Schlüssel der Aegis-Hürde bleiben in einigen
-  Randfällen nicht mehr im Suchspeicher der JavaScript-Engine stehen (während der Schlüsselableitung, nach einem Schreibfehler, nach einer beschädigten
-  Datei, beim Sperren während einer laufenden Prüfung). Die Stärke-Anzeige der Passphrase wechselt mit der Sprache.
-- **Schutz beim Speichern:** Trägt eine Notiz durch einen Programmfehler eine Angabe, die die App beim Öffnen als „neuere App-Version“ abweisen würde,
-  scheitert schon das Speichern mit einer Meldung, statt dass die eigenen Notizen beim nächsten Entsperren abgewiesen werden.
+- **Rückfragen:** Strg+Z konnte bei offener Rückfrage einen ins Feld dahinter gezogenen Text zurücknehmen. Strg+Z und Strg+Y wirken bei offener
+  Rückfrage jetzt gar nicht mehr.
+- **Interne Textsuche:** Passphrase, PIN, das Geheimnis des Fingerabdruck-Entsperrens und der Schlüssel der Aegis-Hürde bleiben in einigen Randfällen
+  nicht mehr als letzter Treffer einer internen Textsuche in der JavaScript-Engine stehen (während der Schlüsselableitung, nach einem Schreibfehler,
+  nach einer beschädigten Datei, nach „Abbrechen“ der Aegis-Hürde, beim Sperren während einer laufenden Prüfung).
+- **Stärke-Anzeige:** Die Anzeige der Passphrase-Stärke wechselt mit der Sprache.
 - **Desktop:** Weitere Fälle, in denen markierter Text nach der Kopier-Frist oder dem Sperren in der X11-Auswahl (Mittelklick) stehen blieb, sind behoben:
   nach einem Klick mit leichtem Zittern auf ein Kästchen, nach erneutem Markieren eines schon ganz markierten Felds, nach dem Zurückziehen der Maus bis zum
   Anfang und beim Fensterwechsel mit gehaltener Maustaste in einem Passphrase-Feld.
-- **Handbuch:** Der Abschnitt zur PIN nennt genauer, was sie verwirft: eine getauschte Notizen-Datei oder einen veränderten Schlüsselbereich; ist die
-  Datei nur beschädigt oder nicht lesbar, meldet die App das und behält die PIN. Die Meldung zu unzulässigen Argon2-Werten spricht nicht mehr vom Import.
+- **Handbuch (Desktop):** Der Abschnitt zur PIN nennt genauer, was sie verwirft: eine getauschte Notizen-Datei oder einen veränderten Schlüsselbereich;
+  ist nur der Inhalt beschädigt oder die Datei nicht lesbar, meldet die App das und behält die PIN. Die Meldung zu unzulässigen Argon2-Werten spricht nicht mehr vom Import.
 - **Bauen und Veröffentlichen:** Die App wird aus einem sauberen Abbild des Versionsstands gebaut, die npm-Pakete genau nach der Sperrdatei. Das
-  Release-Skript prüft die Signatur der Prüfsummen mit dem Schlüssel aus dem Versions-Tag. Die fertige Android-App wird zusätzlich im Bytecode geprüft.
+  Release-Skript prüft die Signatur der Prüfsummen mit dem Schlüssel aus dem Versions-Tag. Die Prüfung der fertigen Android-App im Bytecode ist erweitert, auch das Teilen-Plugin wird dort geprüft.
 
 ## v1.14 — 2026-10-16
 

@@ -62,6 +62,20 @@ const BIO_DEP = '    implementation "androidx.biometric:biometric:1.1.0"   // Al
 let g = readFileSync(GRADLE, 'utf8');
 if (!g.includes('androidx.biometric:biometric')) { g = g.replace(/^dependencies \{\n/m, 'dependencies {\n' + BIO_DEP); writeFileSync(GRADLE, g); console.log('build.gradle: androidx.biometric ergänzt.'); }
 if (!readFileSync(GRADLE, 'utf8').includes('androidx.biometric:biometric:1.1.0')) { console.error('FEHLER: androidx.biometric fehlt in build.gradle — Build abgebrochen!'); process.exit(1); }
+// Runde 3 (Release-Audit v1.15, Prüfer H-1): AGP legt seit v1.14 einen DEPENDENCY_INFO-Block (Abhängigkeitsliste, mit Googles öffentlichem Schlüssel
+// verschlüsselt, nur für Google lesbar, 3296 Byte) in den Signing Block der APK — Daten in der eigenen APK, die man selbst nicht prüfen kann. Abgeschaltet
+// per dependenciesInfo (Wortlaut der AGP-Doku), genau einmal und nur hier; build-apk.sh prüft am Signing Block der FERTIGEN APK, dass nur v2 (+ Füllung)
+// darin steht. Die Einträge der APK (PIN_EINTRAEGE) ändert das nicht.
+const DEPINFO = '    dependenciesInfo {\n        // Alien Notes: keine verschlüsselte Abhängigkeitsliste im Signing Block (patch-hardening.mjs)\n        includeInApk = false\n        includeInBundle = false\n    }\n';
+g = readFileSync(GRADLE, 'utf8');
+if (!g.includes(DEPINFO)) { g = g.replace(/^android \{\n/m, () => 'android {\n' + DEPINFO); writeFileSync(GRADLE, g); console.log('build.gradle: dependenciesInfo abgeschaltet.'); }
+{ const g2 = readFileSync(GRADLE, 'utf8'), TOK = /dependenciesInfo|includeInApk|includeInBundle/g, fremd = [];
+  const lauf = (d) => { for (const e of readdirSync(d, { withFileTypes: true })) { const f = d + '/' + e.name;
+    if (e.isDirectory()) { if (e.name !== 'build' && e.name !== '.gradle') lauf(f); }
+    else if (/\.gradle(\.kts)?$|\.properties$/.test(e.name) && f !== GRADLE && TOK.test(readFileSync(f, 'utf8'))) fremd.push(f); TOK.lastIndex = 0; } };
+  lauf('android');
+  if (g2.split(DEPINFO).length !== 2 || (g2.match(TOK) || []).length !== 3 || (g2.match(/^android \{$/gm) || []).length !== 1 || fremd.length) {
+    console.error('FEHLER: dependenciesInfo nicht genau einmal abgeschaltet' + (fremd.length ? ' (auch in ' + fremd.join(', ') + ')' : '') + ' — Build abgebrochen!'); process.exit(1); } }
 
 //   4) SecureClip-Plugin: Zwischenablage nativ schreiben/leeren, Inhalt als „sensibel“ markiert (keine System-Vorschau, API 33+)
 const JAVA_DIR = 'android/app/src/main/java/org/alieninvestor/notes';
